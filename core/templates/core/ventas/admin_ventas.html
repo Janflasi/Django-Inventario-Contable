@@ -1,0 +1,671 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Ventas - Admin{% endblock %}
+
+{% block content %}
+<style>
+.ventas-container {
+    background: #f8fafc;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 1rem;
+    min-height: calc(100vh - 70px);
+}
+
+.ventas-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.ventas-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.ventas-header p {
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-left: 4px solid var(--color);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card.total { --color: #3b82f6; }
+.stat-card.efectivo { --color: #10b981; }
+.stat-card.transferencia { --color: #8b5cf6; }
+.stat-card.credito { --color: #f59e0b; }
+.stat-card.mixto { --color: #06b6d4; }
+.stat-card.compartido { --color: #ec4899; }
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--color);
+    margin: 0;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.5rem;
+}
+
+.filters-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.filters-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.filter-input, .filter-select {
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: border-color 0.3s ease;
+}
+
+.filter-input:focus, .filter-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-filter {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-filter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-clear {
+    background: #6b7280;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-clear:hover {
+    background: #4b5563;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-dashboard {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-dashboard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.ventas-table-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.table-header {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    color: white;
+    padding: 1.5rem;
+}
+
+.table-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.ventas-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ventas-table th {
+    background: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.ventas-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+}
+
+.ventas-table tr:hover {
+    background: #f8fafc;
+}
+
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge.efectivo { background: #dcfce7; color: #166534; }
+.badge.transferencia { background: #f3e8ff; color: #7c3aed; }
+.badge.credito { background: #fef3c7; color: #d97706; }
+.badge.mixto { background: #cffafe; color: #0e7490; }
+.badge.compartido { background: #fce7f3; color: #be185d; }
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 2rem 0;
+}
+
+.pagination a, .pagination span {
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #374151;
+    font-weight: 500;
+}
+
+.pagination a:hover {
+    background: #f3f4f6;
+    text-decoration: none;
+}
+
+.pagination .current {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.no-results i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+    .ventas-container {
+        padding: 0.5rem;
+    }
+    
+    .ventas-header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .ventas-table {
+        font-size: 0.9rem;
+    }
+    
+    .ventas-table th, .ventas-table td {
+        padding: 0.75rem 0.5rem;
+    }
+}
+</style>
+
+<div class="ventas-container">
+    <!-- Header con estadísticas principales -->
+    <div class="ventas-header">
+        <h1><i class="bi bi-graph-up"></i> Gestión de Ventas</h1>
+        <p>Análisis completo de todas las ventas realizadas</p>
+    </div>
+
+    <!-- Estadísticas principales -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <p class="stat-number">{{ total_ventas }}</p>
+            <p class="stat-label">Total Ventas</p>
+        </div>
+        <div class="stat-card total">
+            <p class="stat-number" data-monto="{{ monto_total }}">{{ monto_total|default:0 }}</p>
+            <p class="stat-label">Monto Total</p>
+        </div>
+        <div class="stat-card efectivo">
+            <p class="stat-number" data-monto="{{ total_efectivo }}">{{ total_efectivo|default:0 }}</p>
+            <p class="stat-label">Efectivo</p>
+        </div>
+        <div class="stat-card transferencia">
+            <p class="stat-number" data-monto="{{ total_transferencia }}">{{ total_transferencia|default:0 }}</p>
+            <p class="stat-label">Transferencia</p>
+        </div>
+        {% if total_credito > 0 %}
+        <div class="stat-card credito">
+            <p class="stat-number" data-monto="{{ total_credito }}">{{ total_credito }}</p>
+            <p class="stat-label">Crédito/Fiado</p>
+        </div>
+        {% endif %}
+        {% if total_mixto > 0 %}
+        <div class="stat-card mixto">
+            <p class="stat-number" data-monto="{{ total_mixto }}">{{ total_mixto }}</p>
+            <p class="stat-label">Pago Mixto</p>
+        </div>
+        {% endif %}
+        {% if total_compartido > 0 %}
+        <div class="stat-card compartido">
+            <p class="stat-number" data-monto="{{ total_compartido }}">{{ total_compartido }}</p>
+            <p class="stat-label">Pago Compartido</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sección de filtros -->
+    <div class="filters-section">
+        <h3 class="filters-title">
+            <i class="bi bi-funnel"></i>
+            Filtros de Búsqueda
+        </h3>
+        
+        <form method="get" id="filtros-form">
+            <div class="filters-grid">
+                <!-- Filtro por período -->
+                <div class="filter-group">
+                    <label class="filter-label">Período de Tiempo</label>
+                    <select name="filtro_fecha" class="filter-select" onchange="toggleCustomDates()">
+                        <option value="hoy" {% if filtro_fecha == 'hoy' %}selected{% endif %}>Hoy</option>
+                        <option value="ayer" {% if filtro_fecha == 'ayer' %}selected{% endif %}>Ayer</option>
+                        <option value="semana" {% if filtro_fecha == 'semana' %}selected{% endif %}>Esta Semana</option>
+                        <option value="mes" {% if filtro_fecha == 'mes' %}selected{% endif %}>Este Mes</option>
+                        <option value="trimestre" {% if filtro_fecha == 'trimestre' %}selected{% endif %}>Este Trimestre</option>
+                        <option value="año" {% if filtro_fecha == 'año' %}selected{% endif %}>Este Año</option>
+                        <option value="personalizado" {% if filtro_fecha == 'personalizado' %}selected{% endif %}>Período Personalizado</option>
+                    </select>
+                </div>
+
+                <!-- Filtro por método de pago -->
+                <div class="filter-group">
+                    <label class="filter-label">Método de Pago</label>
+                    <select name="filtro_metodo" class="filter-select">
+                        <option value="todos" {% if filtro_metodo == 'todos' %}selected{% endif %}>Todos los Métodos</option>
+                        {% for metodo_code, metodo_name in metodos_pago %}
+                            <option value="{{ metodo_code }}" {% if filtro_metodo == metodo_code %}selected{% endif %}>
+                                {{ metodo_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Filtro por mesa -->
+                <div class="filter-group">
+                    <label class="filter-label">Número de Mesa</label>
+                    <input type="number" name="buscar_mesa" class="filter-input" 
+                           placeholder="Ej: 5" value="{{ buscar_mesa }}">
+                </div>
+
+                <!-- Filtro por mesero -->
+                <div class="filter-group">
+                    <label class="filter-label">Mesero</label>
+                    <select name="buscar_mesero" class="filter-select">
+                        <option value="">Todos los Meseros</option>
+                        {% for mesero in meseros_disponibles %}
+                            <option value="{{ mesero.username }}" {% if buscar_mesero == mesero.username %}selected{% endif %}>
+                                {{ mesero.first_name }} {{ mesero.last_name }} ({{ mesero.username }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Fechas personalizadas (ocultas por defecto) -->
+            <div id="custom-dates" class="filters-grid" style="display: {% if filtro_fecha == 'personalizado' %}grid{% else %}none{% endif %};">
+                <div class="filter-group">
+                    <label class="filter-label">Fecha Inicio</label>
+                    <input type="date" name="fecha_inicio" class="filter-input" value="{{ fecha_inicio }}">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Fecha Fin</label>
+                    <input type="date" name="fecha_fin" class="filter-input" value="{{ fecha_fin }}">
+                </div>
+            </div>
+
+            <div class="filter-buttons">
+                <button type="submit" class="btn-filter">
+                    <i class="bi bi-search"></i> Filtrar Ventas
+                </button>
+                <a href="{% url 'admin_ventas' %}" class="btn-clear">
+                    <i class="bi bi-x-circle"></i> Limpiar Filtros
+                </a>
+                <a href="{% url 'admin_dashboard' %}" class="btn-dashboard">
+                    <i class="bi bi-house-door"></i> Panel Principal
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de ventas -->
+    <div class="ventas-table-container">
+        <div class="table-header">
+            <h3><i class="bi bi-table"></i> Lista de Ventas ({{ total_ventas }} resultados)</h3>
+        </div>
+        
+        {% if ventas %}
+            <table class="ventas-table">
+                <thead>
+                    <tr>
+                        <th>ID Venta</th>
+                        <th>Fecha y Hora</th>
+                        <th>Mesa</th>
+                        <th>Mesero</th>
+                        <th>Total</th>
+                        <th>Método de Pago</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venta in ventas %}
+                        <tr>
+                            <td><strong>#{{ venta.id }}</strong></td>
+                            <td>
+                                {% if venta.fecha %}
+                                    {{ venta.fecha|date:"d/m/Y" }}<br>
+                                    <small>{{ venta.fecha|time:"H:i" }}</small>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if venta.mesa %}
+                                    <i class="bi bi-table"></i> Mesa {{ venta.mesa.numero }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if venta.mesero %}
+                                    <i class="bi bi-person"></i>
+                                    {{ venta.mesero.first_name }} {{ venta.mesero.last_name }}
+                                    <br><small>@{{ venta.mesero.username }}</small>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong class="total-venta" data-monto="{{ venta.total }}">{{ venta.total|default:0 }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge {{ venta.metodo_pago }}">
+                                    {{ venta.get_metodo_pago_display|default:venta.metodo_pago }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if venta.cerrada %}
+                                    <span style="color: #10b981;"><i class="bi bi-check-circle"></i> Cerrada</span>
+                                {% else %}
+                                    <span style="color: #f59e0b;"><i class="bi bi-clock"></i> Pendiente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Paginación -->
+            {% if ventas.has_other_pages %}
+                <div class="pagination">
+                    {% if ventas.has_previous %}
+                        <a href="?page=1&{{ request.GET.urlencode }}">« Primera</a>
+                        <a href="?page={{ ventas.previous_page_number }}&{{ request.GET.urlencode }}">‹ Anterior</a>
+                    {% endif %}
+                    
+                    <span class="current">
+                        Página {{ ventas.number }} de {{ ventas.paginator.num_pages }}
+                    </span>
+                    
+                    {% if ventas.has_next %}
+                        <a href="?page={{ ventas.next_page_number }}&{{ request.GET.urlencode }}">Siguiente ›</a>
+                        <a href="?page={{ ventas.paginator.num_pages }}&{{ request.GET.urlencode }}">Última »</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="no-results">
+                <i class="bi bi-search"></i>
+                <h3>No se encontraron ventas</h3>
+                <p>No hay ventas que coincidan con los filtros seleccionados.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Función para formatear números colombianos
+function formatearPesosColombianos(numero) {
+    try {
+        if (!numero || numero === 0 || numero === '0') {
+            return '$0';
+        }
+        
+        let numeroEntero = parseInt(parseFloat(numero));
+        if (isNaN(numeroEntero)) {
+            return '$0';
+        }
+        
+        // Usar toLocaleString con configuración colombiana
+        return '$' + numeroEntero.toLocaleString('es-CO');
+    } catch (e) {
+        // Función de respaldo manual
+        try {
+            let numeroEntero = parseInt(parseFloat(numero));
+            if (isNaN(numeroEntero)) return '$0';
+            
+            let numeroStr = numeroEntero.toString();
+            let partes = [];
+            
+            // Dividir en grupos de 3 dígitos desde la derecha
+            while (numeroStr.length > 3) {
+                partes.unshift(numeroStr.slice(-3));
+                numeroStr = numeroStr.slice(0, -3);
+            }
+            partes.unshift(numeroStr);
+            
+            return '$' + partes.join('.');
+        } catch (e2) {
+            return '$0';
+        }
+    }
+}
+
+function formatearNumeros() {
+    // Formatear estadísticas principales
+    document.querySelectorAll('.stat-number[data-monto]').forEach(function(element) {
+        let monto = element.getAttribute('data-monto');
+        if (monto && monto !== '0' && monto !== 'None') {
+            element.textContent = formatearPesosColombianos(monto);
+        } else {
+            element.textContent = '$0';
+        }
+    });
+    
+    // Formatear totales en tabla
+    document.querySelectorAll('.total-venta[data-monto]').forEach(function(element) {
+        let monto = element.getAttribute('data-monto');
+        if (monto && monto !== '0' && monto !== 'None') {
+            element.textContent = formatearPesosColombianos(monto);
+        } else {
+            element.textContent = '$0';
+        }
+    });
+    
+    // Formatear números sin data-monto pero que contengan solo números grandes
+    document.querySelectorAll('.stat-number:not([data-monto])').forEach(function(element) {
+        let texto = element.textContent.trim();
+        if (!isNaN(texto) && texto !== '' && parseInt(texto) > 100) {
+            let numeroEntero = parseInt(texto);
+            if (numeroEntero > 1000) {
+                element.textContent = formatearPesosColombianos(numeroEntero);
+            }
+        }
+    });
+}
+
+function toggleCustomDates() {
+    const select = document.querySelector('select[name="filtro_fecha"]');
+    const customDates = document.getElementById('custom-dates');
+    
+    if (select && customDates) {
+        if (select.value === 'personalizado') {
+            customDates.style.display = 'grid';
+        } else {
+            customDates.style.display = 'none';
+        }
+    }
+}
+
+// Animación de entrada para las tarjetas de estadísticas
+document.addEventListener('DOMContentLoaded', function() {
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+    
+    // Formatear números con múltiples intentos
+    setTimeout(formatearNumeros, 100);
+    setTimeout(formatearNumeros, 300);
+    setTimeout(formatearNumeros, 800);
+    setTimeout(formatearNumeros, 1500);
+    
+    // Debug: mostrar valores en consola
+    console.log('🔍 Valores detectados:');
+    document.querySelectorAll('[data-monto]').forEach(el => {
+        console.log('Elemento:', el.className, 'Monto:', el.getAttribute('data-monto'));
+    });
+});
+
+// Formatear cuando se actualice dinámicamente
+window.addEventListener('load', function() {
+    setTimeout(formatearNumeros, 200);
+});
+</script>
+
+{% endblock %}

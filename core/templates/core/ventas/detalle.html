@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %}
+{% block title %}Detalle de Venta{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Cuenta de Mesa {{ venta.mesa.numero }}</h3>
+  <p>Mesero: {{ venta.mesero.username }}</p>
+  <p>Fecha: {{ venta.fecha }}</p>
+  <p><strong>Total actual:</strong> ${{ venta.total }}</p>
+
+  <!-- Aquí luego puedes mostrar los productos pedidos y opciones para agregar -->
+</div>
+{% endblock %}

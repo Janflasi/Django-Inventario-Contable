@@ -1,0 +1,11 @@
+{% extends "core/base.html" %}
+{% block title %}Eliminar Cuenta{% endblock %}
+{% block content %}
+<h2>¿Estás seguro?</h2>
+<p>Esta acción eliminará tu cuenta permanentemente.</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">Eliminar</button>
+  <a href="{% url 'perfil' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

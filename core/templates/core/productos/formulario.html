@@ -1,0 +1,225 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}{{ titulo }} Producto{% endblock %}
+{% block content %}
+<style>
+.f-c{background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;padding:2rem 1rem;min-height:calc(100vh - 70px)}
+.f-h{text-align:center;margin-bottom:2rem}
+.f-t{color:#1e293b;font-size:2.5rem;font-weight:800;margin-bottom:.5rem;background:linear-gradient(135deg,#10b981 0%,#059669 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.f-s{color:#64748b;font-size:1.1rem;font-weight:400}
+.f-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:2rem;box-shadow:0 4px 6px rgba(0,0,0,.05);max-width:800px;margin:0 auto;transition:all .3s ease}
+.f-card:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.1)}
+.f-group{margin-bottom:1.5rem;position:relative}
+.f-label{color:#374151;font-weight:600;margin-bottom:.5rem;font-size:.9rem;display:flex;align-items:center;gap:.4rem}
+.f-control{border:2px solid #e5e7eb;border-radius:8px;padding:.75rem;font-size:.95rem;transition:all .3s ease;background:#fff;color:#1f2937;width:100%;box-sizing:border-box}
+.f-control:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.1);outline:none;transform:translateY(-1px)}
+.f-control:hover{border-color:#d1d5db}
+.f-icon{position:absolute;right:.75rem;top:2.5rem;color:#9ca3af;pointer-events:none;transition:all .3s ease}
+.f-group:focus-within .f-icon{color:#10b981;transform:scale(1.1)}
+.f-error{color:#ef4444;font-size:.8rem;margin-top:.25rem;display:flex;align-items:center;gap:.25rem;animation:slideIn .3s ease}
+.f-help{color:#6b7280;font-size:.8rem;margin-top:.25rem;font-style:italic}
+.f-buttons{display:flex;gap:1rem;justify-content:space-between;margin-top:2rem;flex-wrap:wrap}
+.btn-cancel{background:linear-gradient(135deg,#6b7280 0%,#4b5563 100%);color:#fff;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem;transition:all .3s ease;border:none;font-size:.9rem}
+.btn-submit{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;padding:.75rem 1.5rem;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:.5rem;transition:all .3s ease;border:none;cursor:pointer;font-size:.9rem}
+.btn-cancel:hover,.btn-submit:hover{transform:translateY(-2px);color:#fff;text-decoration:none;opacity:.9}
+.is-invalid{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.1)!important;animation:shake .5s ease-in-out}
+.ganancia-info{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#fff;padding:1rem;border-radius:12px;margin:1rem 0;text-align:center;font-weight:600;opacity:0;transition:all .3s ease}
+.ganancia-info.show{opacity:1;transform:translateY(0)}
+.price-assistant{background:#f8fafc;border:2px solid #e5e7eb;border-radius:16px;padding:1.5rem;margin:1rem 0;animation:slideIn .5s ease}
+.assistant-header{text-align:center;margin-bottom:1rem}
+.assistant-header h4{color:#1e293b;font-weight:700;margin:0;font-size:1.2rem}
+.assistant-header p{color:#64748b;margin:.25rem 0 0 0;font-size:.9rem}
+.recommendations-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1rem}
+.rec-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;text-align:center;transition:all .3s ease;cursor:pointer}
+.rec-card:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,.1);border-color:#10b981}
+.rec-card.recommended{border-color:#10b981;background:linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 100%)}
+.rec-card h5{margin:0 0 .5rem 0;color:#1e293b;font-weight:600;font-size:.9rem}
+.rec-card .price{font-size:1.3rem;font-weight:800;color:#10b981;margin:.25rem 0}
+.rec-card .profit{font-size:.85rem;color:#6b7280}
+.quick-actions{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+.btn-quick{background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;padding:.5rem 1rem;border-radius:8px;font-weight:600;cursor:pointer;transition:all .3s ease;font-size:.8rem}
+.btn-quick:hover{transform:translateY(-2px);opacity:.9}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,20%,40%,60%,80%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-5px)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.f-card{animation:fadeInUp .6s ease forwards}
+@media(max-width:768px){.f-c{padding:1rem}.f-t{font-size:2rem}.f-card{padding:1.5rem}.f-buttons{flex-direction:column}.btn-cancel,.btn-submit{width:100%;justify-content:center}}
+</style>
+
+<div class="f-c">
+  <div class="f-h">
+    <h1 class="f-t">📦 {{ titulo }} Productos</h1>
+    <p class="f-s">{% if titulo == 'Crear' %}Agrega un nuevo producto a tu inventario{% else %}Actualiza la información del producto{% endif %}</p>
+  </div>
+
+  <div class="f-card">
+    <form method="post" enctype="multipart/form-data" novalidate id="productoForm">
+      {% csrf_token %}
+      <div class="row g-3">
+        {% for field in form %}
+          <div class="col-md-6">
+            <div class="f-group">
+              <label class="f-label">
+                {% if field.name == 'nombre' %}🏷️{% endif %}
+                {% if field.name == 'precio_costo' %}💸{% endif %}
+                {% if field.name == 'precio' %}💰{% endif %}
+                {% if field.name == 'descripcion' %}📝{% endif %}
+                {% if field.name == 'categoria' %}📂{% endif %}
+                {% if field.name == 'cantidad' %}📦{% endif %}
+                {{ field.label }}
+              </label>
+              <div class="position-relative">
+                {{ field }}
+                {% if field.name == 'precio' or field.name == 'precio_costo' %}
+                  <span class="f-icon">$</span>
+                {% elif field.name == 'cantidad' %}
+                  <span class="f-icon">#</span>
+                {% elif field.name == 'nombre' %}
+                  <span class="f-icon">📝</span>
+                {% endif %}
+              </div>
+              {% if field.help_text %}
+                <div class="f-help">{{ field.help_text }}</div>
+              {% endif %}
+              {% if field.errors %}
+                <div class="f-error">
+                  ⚠️ {{ field.errors.0 }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      
+      <div class="ganancia-info" id="gananciaInfo">
+        💰 <span id="gananciaText">Ingresa precios para calcular ganancia</span>
+      </div>
+      
+      <!-- ASISTENTE DE PRECIOS -->
+      <div class="price-assistant" id="priceAssistant" style="display:none;">
+        <div class="assistant-header">
+          <h4>🤖 Asistente de Precios</h4>
+          <p>Recomendaciones basadas en tu inventario</p>
+        </div>
+        <div class="recommendations-grid" id="recommendationsGrid">
+          <!-- Las recomendaciones se cargan aquí -->
+        </div>
+        <div class="quick-actions">
+          <button type="button" class="btn-quick" onclick="aplicarMargen(25)">Aplicar 25%</button>
+          <button type="button" class="btn-quick" onclick="aplicarMargen(50)">Aplicar 50%</button>
+          <button type="button" class="btn-quick" onclick="aplicarMargen(100)">Aplicar 100%</button>
+        </div>
+      </div>
+      
+      <div class="f-buttons">
+        <a href="{% url 'productos_listar' %}" class="btn-cancel">
+          <i class="bi bi-arrow-left"></i>Cancelar
+        </a>
+        <button type="submit" class="btn-submit">
+          <i class="bi bi-check-circle"></i>{{ titulo }} Producto
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const f=document.getElementById('productoForm');
+const pc=document.querySelector('input[name="precio_costo"]');
+const pv=document.querySelector('input[name="precio"]');
+const gi=document.getElementById('gananciaInfo');
+const gt=document.getElementById('gananciaText');
+const pa=document.getElementById('priceAssistant');
+const rg=document.getElementById('recommendationsGrid');
+const categoria=document.querySelector('select[name="categoria"]');
+
+function calcularGanancia(){
+const costo=parseFloat(pc.value)||0;
+const venta=parseFloat(pv.value)||0;
+if(costo>0&&venta>0){
+const ganancia=venta-costo;
+const porcentaje=((ganancia/costo)*100).toFixed(1);
+gt.innerHTML=`Ganancia: ${ganancia.toFixed(2)} (${porcentaje}% sobre costo)`;
+gi.classList.add('show');
+gi.style.background=ganancia>0?'linear-gradient(135deg,#10b981 0%,#059669 100%)':'linear-gradient(135deg,#ef4444 0%,#dc2626 100%)'
+}else{
+gt.innerHTML='Ingresa precios para calcular ganancia';
+gi.classList.remove('show')
+}}
+
+function mostrarAsistente(){
+const costo=parseFloat(pc.value)||0;
+if(costo>0){
+pa.style.display='block';
+generarRecomendaciones(costo)
+}else{
+pa.style.display='none'
+}}
+
+function generarRecomendaciones(costo){
+const recomendaciones=[
+{tipo:'Conservador',margen:25,descripcion:'Margen bajo, competitivo'},
+{tipo:'Equilibrado',margen:50,descripcion:'Margen estándar recomendado',recommended:true},
+{tipo:'Premium',margen:75,descripcion:'Margen alto, producto exclusivo'},
+{tipo:'Lujo',margen:100,descripcion:'Margen muy alto, máxima ganancia'}
+];
+
+rg.innerHTML='';
+recomendaciones.forEach(rec=>{
+const precio=(costo*(1+rec.margen/100)).toFixed(2);
+const ganancia=(precio-costo).toFixed(2);
+const card=document.createElement('div');
+card.className=`rec-card ${rec.recommended?'recommended':''}`;
+card.innerHTML=`
+<h5>${rec.tipo}</h5>
+<div class="price">${precio}</div>
+<div class="profit">+${ganancia} (${rec.margen}%)</div>
+<small>${rec.descripcion}</small>
+`;
+card.onclick=()=>aplicarPrecio(precio);
+rg.appendChild(card)
+})
+}
+
+function aplicarPrecio(precio){
+pv.value=precio;
+calcularGanancia();
+pv.focus();
+pv.style.background='#ecfdf5';
+setTimeout(()=>pv.style.background='#fff',1000)
+}
+
+function aplicarMargen(margen){
+const costo=parseFloat(pc.value)||0;
+if(costo>0){
+const precio=(costo*(1+margen/100)).toFixed(2);
+aplicarPrecio(precio)
+}}
+
+pc.addEventListener('input',()=>{calcularGanancia();mostrarAsistente()});
+pv.addEventListener('input',calcularGanancia);
+
+f.querySelectorAll('input,select,textarea').forEach(el=>{
+el.classList.add('f-control');
+el.addEventListener('focus',()=>{el.parentElement.style.transform='scale(1.02)';el.parentElement.style.transition='transform .2s ease'});
+el.addEventListener('blur',()=>{el.parentElement.style.transform='scale(1)'});
+el.addEventListener('input',()=>{el.classList.remove('is-invalid');const e=el.parentElement.parentElement.querySelector('.f-error');if(e){e.style.opacity='0';setTimeout(()=>e.remove(),300)}})
+});
+
+f.addEventListener('submit',e=>{
+let v=true;
+const r=f.querySelectorAll('input[required],select[required],textarea[required]');
+r.forEach(el=>{
+if(!el.value.trim()){
+el.classList.add('is-invalid');v=false;
+if(!el.parentElement.parentElement.querySelector('.f-error')){
+const d=document.createElement('div');d.className='f-error';d.innerHTML='⚠️ Este campo es obligatorio';el.parentElement.parentElement.appendChild(d)
+}}});
+if(!v){e.preventDefault();const fe=f.querySelector('.is-invalid');if(fe){fe.scrollIntoView({behavior:'smooth',block:'center'});fe.focus()}}
+});
+
+calcularGanancia();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,567 @@
+{% extends 'core/base.html' %}
+{% block title %}Lista de Productos{% endblock %}
+
+{% block content %}
+<style>
+/* Variables CSS para colores consistentes */
+:root {
+  --primary-green: #10b981;
+  --primary-green-dark: #059669;
+  --secondary-purple: #8b5cf6;
+  --warning-orange: #f59e0b;
+  --danger-red: #ef4444;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --bg-light: #f8fafc;
+  --bg-white: #ffffff;
+  --border-light: #e2e8f0;
+  --shadow-sm: 0 4px 6px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 15px rgba(16,185,129,.3);
+}
+
+/* Contenedor principal */
+.productos-container {
+  background: var(--bg-light);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 1rem;
+  min-height: calc(100vh - 70px);
+}
+
+/* Header */
+.productos-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+}
+
+.productos-title {
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.productos-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+/* Sección de acciones */
+.productos-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.btn-agregar {
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  border: none;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-agregar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16,185,129,.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* Tabla desktop */
+.productos-table-desktop {
+  background: var(--bg-white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  display: none; /* Oculto por defecto, se muestra en desktop */
+}
+
+.productos-table-desktop table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.productos-table-desktop th {
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+  color: white;
+  padding: 1rem 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.productos-table-desktop td {
+  padding: 0.9rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.productos-table-desktop tr:hover {
+  background: var(--bg-light);
+}
+
+/* Cards para móvil */
+.productos-cards-mobile {
+  display: block; /* Visible por defecto en móvil */
+  gap: 1rem;
+}
+
+.producto-card {
+  background: var(--bg-white);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+.producto-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.producto-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.producto-nombre {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  margin: 0;
+  flex: 1;
+}
+
+.producto-categoria {
+  background: linear-gradient(135deg, var(--secondary-purple) 0%, #7c3aed 100%);
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 0.75rem;
+}
+
+.producto-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.info-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.info-value.precio {
+  color: var(--primary-green);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.info-value.ganancia {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: white;
+  text-align: center;
+}
+
+.info-value.ganancia.positive {
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+}
+
+.info-value.ganancia.negative {
+  background: linear-gradient(135deg, var(--danger-red) 0%, #dc2626 100%);
+}
+
+.info-value.stock {
+  background: var(--bg-light);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.6rem;
+  border-radius: 15px;
+  font-weight: 600;
+  text-align: center;
+  display: inline-block;
+  width: fit-content;
+}
+
+.producto-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.btn-accion {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-editar {
+  background: linear-gradient(135deg, var(--warning-orange) 0%, #d97706 100%);
+  color: white;
+}
+
+.btn-eliminar {
+  background: linear-gradient(135deg, var(--danger-red) 0%, #dc2626 100%);
+  color: white;
+}
+
+.btn-accion:hover {
+  transform: translateY(-1px);
+  color: white;
+  text-decoration: none;
+  opacity: 0.9;
+}
+
+/* Estado vacío */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Responsive breakpoints */
+@media (min-width: 768px) {
+  .productos-container {
+    padding: 1.5rem;
+  }
+  
+  .productos-title {
+    font-size: 2.5rem;
+  }
+  
+  .productos-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .productos-cards-mobile {
+    display: none;
+  }
+  
+  .productos-table-desktop {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .productos-container {
+    padding: 2rem;
+  }
+  
+  .productos-table-desktop th,
+  .productos-table-desktop td {
+    padding: 1rem;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.producto-card,
+.productos-table-desktop {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+/* Estilos para elementos de tabla en desktop */
+.desktop-nombre {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.desktop-categoria {
+  background: linear-gradient(135deg, var(--secondary-purple) 0%, #7c3aed 100%);
+  color: white;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.desktop-precio {
+  color: var(--primary-green);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.desktop-ganancia {
+  padding: 0.25rem 0.5rem;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: white;
+}
+
+.desktop-ganancia.positive {
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+}
+
+.desktop-ganancia.negative {
+  background: linear-gradient(135deg, var(--danger-red) 0%, #dc2626 100%);
+}
+
+.desktop-stock {
+  background: var(--bg-light);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.desktop-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.desktop-btn {
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.desktop-btn.editar {
+  background: linear-gradient(135deg, var(--warning-orange) 0%, #d97706 100%);
+  color: white;
+}
+
+.desktop-btn.eliminar {
+  background: linear-gradient(135deg, var(--danger-red) 0%, #dc2626 100%);
+  color: white;
+}
+
+.desktop-btn:hover {
+  transform: translateY(-1px);
+  color: white;
+  text-decoration: none;
+  opacity: 0.9;
+}
+</style>
+
+<div class="productos-container">
+  <!-- Header -->
+  <div class="productos-header">
+    <h1 class="productos-title">📦 Lista de Productos</h1>
+    <p class="productos-subtitle">Gestiona tu inventario con control de costos y ganancias</p>
+  </div>
+
+  <!-- Acciones -->
+  <div class="productos-actions">
+    <a href="{% url 'producto_crear' %}" class="btn-agregar">
+      <i class="bi bi-plus-circle"></i>Agregar Producto
+    </a>
+  </div>
+
+  <!-- Vista Desktop - Tabla -->
+  <div class="productos-table-desktop">
+    <table>
+      <thead>
+        <tr>
+          <th><i class="bi bi-tag"></i> Nombre</th>
+          <th><i class="bi bi-folder"></i> Categoría</th>
+          <th><i class="bi bi-wallet"></i> Costo</th>
+          <th><i class="bi bi-currency-dollar"></i> Venta</th>
+          <th><i class="bi bi-graph-up"></i> Ganancia</th>
+          <th><i class="bi bi-box"></i> Stock</th>
+          <th><i class="bi bi-gear"></i> Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for producto in productos %}
+        <tr>
+          <td class="desktop-nombre">{{ producto.nombre }}</td>
+          <td><span class="desktop-categoria">{{ producto.categoria.nombre }}</span></td>
+          <td class="desktop-precio">${{ producto.precio_costo|floatformat:0 }}</td>
+          <td class="desktop-precio">${{ producto.precio|floatformat:0 }}</td>
+          <td>
+            <span class="desktop-ganancia {% if producto.ganancia_unitaria >= 0 %}positive{% else %}negative{% endif %}">
+              ${{ producto.ganancia_unitaria|floatformat:0 }}
+            </span>
+          </td>
+          <td><span class="desktop-stock">{{ producto.cantidad }}</span></td>
+          <td class="desktop-actions">
+            <a href="{% url 'producto_editar' producto.id %}" class="desktop-btn editar">
+              <i class="bi bi-pencil"></i>Editar
+            </a>
+            <a href="{% url 'producto_eliminar' producto.id %}" class="desktop-btn eliminar">
+              <i class="bi bi-trash"></i>Eliminar
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="empty-state">
+            <div class="empty-icon">📦</div>
+            <strong>No hay productos disponibles</strong><br>
+            <small>¡Agrega tu primer producto para comenzar!</small>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Vista Móvil - Cards -->
+  <div class="productos-cards-mobile">
+    {% for producto in productos %}
+    <div class="producto-card">
+      <!-- Header del card -->
+      <div class="producto-card-header">
+        <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+        <span class="producto-categoria">{{ producto.categoria.nombre }}</span>
+      </div>
+
+      <!-- Grid de información -->
+      <div class="producto-info-grid">
+        <div class="info-item">
+          <span class="info-label">💰 Costo</span>
+          <span class="info-value">${{ producto.precio_costo|floatformat:0 }}</span>
+        </div>
+        
+        <div class="info-item">
+          <span class="info-label">💲 Venta</span>
+          <span class="info-value precio">${{ producto.precio|floatformat:0 }}</span>
+        </div>
+        
+        <div class="info-item">
+          <span class="info-label">📈 Ganancia</span>
+          <span class="info-value ganancia {% if producto.ganancia_unitaria >= 0 %}positive{% else %}negative{% endif %}">
+            ${{ producto.ganancia_unitaria|floatformat:0 }}
+          </span>
+        </div>
+        
+        <div class="info-item">
+          <span class="info-label">📦 Stock</span>
+          <span class="info-value stock">{{ producto.cantidad }} unidades</span>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="producto-actions">
+        <a href="{% url 'producto_editar' producto.id %}" class="btn-accion btn-editar">
+          <i class="bi bi-pencil"></i>Editar
+        </a>
+        <a href="{% url 'producto_eliminar' producto.id %}" class="btn-accion btn-eliminar">
+          <i class="bi bi-trash"></i>Eliminar
+        </a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <div class="empty-icon">📦</div>
+      <strong>No hay productos disponibles</strong><br>
+      <small>¡Agrega tu primer producto para comenzar!</small>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animación de entrada
+  const cards = document.querySelectorAll('.producto-card');
+  const table = document.querySelector('.productos-table-desktop');
+  
+  if (window.innerWidth < 768) {
+    // Animar cards en móvil
+    cards.forEach((card, index) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      setTimeout(() => {
+        card.style.transition = 'all 0.5s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, index * 100);
+    });
+  } else {
+    // Animar tabla en desktop
+    if (table) {
+      table.style.opacity = '0';
+      table.style.transform = 'translateY(20px)';
+      setTimeout(() => {
+        table.style.transition = 'all 0.6s ease';
+        table.style.opacity = '1';
+        table.style.transform = 'translateY(0)';
+      }, 200);
+    }
+  }
+});
+</script>
+{% endblock %}

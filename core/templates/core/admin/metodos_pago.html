@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Resumen de Métodos de Pago{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">💰 Resumen de Pagos</h2>
+
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th>Método de Pago</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Efectivo</td>
+        <td>${{ efectivo_total|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <td>Transferencia</td>
+        <td>${{ transferencia_total|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <td>Crédito (Fiado)</td>
+        <td>${{ credito_total|floatformat:2 }}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="table-info fw-bold">
+        <td>Total General</td>
+        <td>${{ total_general|floatformat:2 }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Volver al Panel</a>
+</div>
+{% endblock %}

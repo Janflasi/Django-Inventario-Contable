@@ -1,0 +1,213 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Panel de Administración{% endblock %}
+
+{% block content %}
+<style>
+.a-c{background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;padding:1rem;min-height:calc(100vh - 70px)}
+.a-h{text-align:center;margin-bottom:2rem}
+.a-t{color:#1e293b;font-size:2rem;font-weight:700;margin-bottom:.5rem}
+.a-s{color:#64748b;font-size:1rem;font-weight:400}
+.s-g,.ac-g{display:grid;gap:1rem;max-width:1200px;margin:0 auto 2rem}
+.s-g{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.ac-g{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.s-c,.ac-c{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;transition:all .3s ease;box-shadow:0 1px 3px rgba(0,0,0,.1);position:relative}
+.s-c::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent-color);border-radius:12px 12px 0 0}
+.s-c:hover,.ac-c:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,.15);border-color:var(--accent-color)}
+.ac-c:hover{border-color:var(--card-color)}
+.s-c{text-align:center;overflow:hidden}
+.s-i{font-size:2.5rem;margin-bottom:.8rem;color:var(--accent-color)}
+.s-t{color:#475569;font-size:.8rem;font-weight:600;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em}
+.s-n{color:var(--accent-color);font-size:2rem;font-weight:800;margin:0}
+.ac-t{color:#1e293b;font-size:1.1rem;font-weight:600;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem}
+.ac-t i{color:var(--card-color);font-size:1.2rem}
+.ac-d{color:#64748b;font-size:.9rem;line-height:1.5;margin-bottom:1.5rem}
+.ac-b{background:var(--card-color);color:#fff;padding:.7rem 1.2rem;border-radius:8px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;transition:all .3s ease;font-size:.9rem;width:100%;justify-content:center}
+.ac-b:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(0,0,0,.2);color:#fff;text-decoration:none;opacity:.9}
+.s-usuarios{--accent-color:#3b82f6}.s-productos{--accent-color:#10b981}.s-categorias{--accent-color:#8b5cf6}.s-ventas{--accent-color:#f59e0b}.s-movimientos{--accent-color:#06b6d4}.s-devoluciones{--accent-color:#f97316}
+.c-usuarios{--card-color:#3b82f6}.c-productos{--card-color:#10b981}.c-categorias{--card-color:#8b5cf6}.c-contabilidad{--card-color:#06b6d4}.c-mesas{--card-color:#e11d48}.c-gastos{--card-color:#dc2626}.c-devoluciones{--card-color:#f97316}.c-ventas{--card-color:#f59e0b}
+.sys-a{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin:2rem auto;max-width:1200px}
+.n-b{background:linear-gradient(135deg,#ff6b6b 0%,#ffd93d 100%);color:#fff;padding:.8rem 1.5rem;border-radius:25px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:.6rem;transition:all .4s cubic-bezier(0.175,0.885,0.32,1.275);font-size:1rem;text-transform:uppercase;letter-spacing:.5px;position:relative;overflow:hidden;border:none;box-shadow:0 4px 15px rgba(255,107,107,.3)}
+.n-b::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);transition:left .6s}
+.n-b:hover::before{left:100%}
+.n-b:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 8px 25px rgba(255,107,107,.4);color:#fff;text-decoration:none}
+.n-i{font-size:1.2rem;animation:bounce 2s infinite}
+.n-badge{background:#dc2626;color:#fff;border-radius:50%;padding:.2rem .5rem;font-size:.7rem;font-weight:800;min-width:1.2rem;height:1.2rem;display:flex;align-items:center;justify-content:center;animation:pulse 2s infinite;box-shadow:0 0 0 3px rgba(220,38,38,.3)}
+.d-b{background:linear-gradient(135deg,#dc2626 0%,#ef4444 100%);color:#fff;padding:.8rem 1.5rem;border-radius:20px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:.6rem;transition:all .4s cubic-bezier(0.175,0.885,0.32,1.275);font-size:1rem;position:relative;overflow:hidden;border:2px solid transparent;box-shadow:0 4px 15px rgba(220,38,38,.3);text-transform:uppercase;letter-spacing:.3px}
+.d-b::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);transition:left .5s}
+.d-b:hover::before{left:100%}
+.d-b:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 8px 25px rgba(220,38,38,.5);color:#fff;text-decoration:none;border-color:rgba(255,255,255,.4)}
+.d-i{font-size:1.2rem;animation:shake 3s infinite ease-in-out}
+.m-b{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:.8rem 1.5rem;border-radius:12px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.6rem;transition:all .3s ease;font-size:1rem;border:2px solid transparent;position:relative;overflow:hidden}
+.m-b::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#764ba2 0%,#667eea 100%);opacity:0;transition:opacity .3s ease}
+.m-b:hover::after{opacity:1}
+.m-b:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(102,126,234,.3);color:#fff;text-decoration:none;border-color:rgba(255,255,255,.3)}
+.m-b span{position:relative;z-index:1}
+.m-i{font-size:1.1rem;position:relative;z-index:1}
+.dev-b{background:linear-gradient(135deg,#f97316 0%,#fb923c 100%);color:#fff;padding:.8rem 1.5rem;border-radius:15px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:.6rem;transition:all .4s cubic-bezier(0.175,0.885,0.32,1.275);font-size:1rem;position:relative;overflow:hidden;border:2px solid transparent;box-shadow:0 4px 15px rgba(249,115,22,.3);text-transform:uppercase;letter-spacing:.3px}
+.dev-b::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);transition:left .5s}
+.dev-b:hover::before{left:100%}
+.dev-b:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 8px 25px rgba(249,115,22,.5);color:#fff;text-decoration:none;border-color:rgba(255,255,255,.4)}
+.dev-i{font-size:1.2rem;animation:rotate 4s infinite ease-in-out}
+.dev-badge{background:#dc2626;color:#fff;border-radius:50%;padding:.2rem .5rem;font-size:.7rem;font-weight:800;min-width:1.2rem;height:1.2rem;display:flex;align-items:center;justify-content:center;animation:pulse 2s infinite;box-shadow:0 0 0 3px rgba(220,38,38,.3)}
+.v-b{background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%);color:#fff;padding:.8rem 1.5rem;border-radius:15px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:.6rem;transition:all .4s cubic-bezier(0.175,0.885,0.32,1.275);font-size:1rem;position:relative;overflow:hidden;border:2px solid transparent;box-shadow:0 4px 15px rgba(245,158,11,.3);text-transform:uppercase;letter-spacing:.3px}
+.v-b::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);transition:left .5s}
+.v-b:hover::before{left:100%}
+.v-b:hover{transform:translateY(-3px) scale(1.05);box-shadow:0 8px 25px rgba(245,158,11,.5);color:#fff;text-decoration:none;border-color:rgba(255,255,255,.4)}
+.v-i{font-size:1.2rem;animation:cash 3s infinite ease-in-out}
+.sec-sep{height:1px;background:#e2e8f0;margin:2rem auto;max-width:1200px}
+@keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}60%{transform:translateY(-4px)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.7)}70%{box-shadow:0 0 0 8px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+@keyframes shake{0%,100%{transform:rotate(0deg)}10%,30%,50%,70%,90%{transform:rotate(-2deg)}20%,40%,60%,80%{transform:rotate(2deg)}}
+@keyframes rotate{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+@keyframes cash{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@media(max-width:768px){.a-c{padding:.5rem}.a-t{font-size:1.5rem}.a-s{font-size:.9rem}.s-g{grid-template-columns:repeat(2,1fr);gap:.8rem}.ac-g{grid-template-columns:1fr;gap:1rem}.s-c,.ac-c{padding:1rem}.s-i{font-size:2rem}.s-n{font-size:1.5rem}.s-t{font-size:.7rem}.sys-a{flex-direction:column;align-items:center}.n-b,.m-b,.d-b,.dev-b,.v-b{width:100%;max-width:300px;justify-content:center}}
+@media(max-width:480px){.s-g{grid-template-columns:1fr}.s-c{padding:1rem}}
+</style>
+
+<div class="a-c">
+  <div class="a-h">
+    <h1 class="a-t">🚀 Panel de Administración</h1>
+    <p class="a-s">Controla y gestiona tu sistema de manera eficiente</p>
+  </div>
+  
+  <div class="s-g">
+    <div class="s-c s-usuarios">
+      <i class="bi bi-people s-i"></i>
+      <h5 class="s-t">Usuarios Registrados</h5>
+      <p class="s-n">{{ total_usuarios }}</p>
+    </div>
+    <div class="s-c s-productos">
+      <i class="bi bi-box-seam s-i"></i>
+      <h5 class="s-t">Productos Activos</h5>
+      <p class="s-n">{{ total_productos }}</p>
+    </div>
+    <div class="s-c s-ventas">
+      <i class="bi bi-cash-coin s-i"></i>
+      <h5 class="s-t">Ventas Realizadas</h5>
+      <p class="s-n">{{ total_ventas }}</p>
+    </div>
+    <div class="s-c s-movimientos">
+      <i class="bi bi-bar-chart s-i"></i>
+      <h5 class="s-t">Movimientos</h5>
+      <p class="s-n">{{ total_movimientos }}</p>
+    </div>
+    <div class="s-c s-devoluciones">
+      <i class="bi bi-arrow-counterclockwise s-i"></i>
+      <h5 class="s-t">Devoluciones</h5>
+      <p class="s-n" id="total-devoluciones">0</p>
+    </div>
+  </div>
+
+  <!-- Botones de sistema especiales -->
+  <div class="sys-a">
+    <a href="{% url 'ver_notificaciones' %}" class="n-b">
+      <span class="n-i">📢</span>
+      <span>Notificaciones</span>
+      {% if notificaciones_nuevas > 0 %}
+        <span class="n-badge">{{ notificaciones_nuevas }}</span>
+      {% endif %}
+    </a>
+    
+    <a href="{% url 'ver_deudores' %}" class="d-b">
+      <i class="bi bi-person-x-fill d-i"></i>
+      <span>Ver Deudores</span>
+    </a>
+    
+    <!-- NUEVO BOTÓN DE VENTAS -->
+    <a href="{% url 'admin_ventas' %}" class="v-b">
+      <i class="bi bi-receipt v-i"></i>
+      <span>Ver Todas las Ventas</span>
+    </a>
+    
+    <!-- BOTÓN FUNCIONAL DE DEVOLUCIONES -->
+    <a href="{% url 'gestionar_devoluciones' %}" class="dev-b">
+      <i class="bi bi-arrow-counterclockwise dev-i"></i>
+      <span>Devoluciones</span>
+      <span class="dev-badge" id="dev-pendientes">0</span>
+    </a>
+    
+    {% if user.is_superuser or user.perfil.rol == 'admin' %}
+      <a href="{% url 'seguimiento_mesas' %}" class="m-b">
+        <i class="bi bi-table m-i"></i>
+        <span>Seguimiento de Mesas</span>
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="sec-sep"></div>
+
+  <div class="ac-g">
+    <div class="ac-c c-usuarios">
+      <h5 class="ac-t"><i class="bi bi-person-gear"></i>Gestión de Usuarios</h5>
+      <p class="ac-d">Administra roles, permisos y configuraciones de usuarios del sistema.</p>
+      <a href="{% url 'asignar_roles' %}" class="ac-b"><i class="bi bi-arrow-right-circle"></i>Asignar Roles</a>
+    </div>
+    <div class="ac-c c-productos">
+      <h5 class="ac-t"><i class="bi bi-bag-check"></i>Catálogo de Productos</h5>
+      <p class="ac-d">Gestiona tu inventario: agrega, edita o elimina productos y controla stock.</p>
+      <a href="{% url 'productos_listar' %}" class="ac-b"><i class="bi bi-box-arrow-up-right"></i>Ver Productos</a>
+    </div>
+    <div class="ac-c c-categorias">
+      <h5 class="ac-t"><i class="bi bi-tags"></i>Categorías</h5>
+      <p class="ac-d">Organiza tu catálogo mediante categorías para facilitar la navegación.</p>
+      <a href="{% url 'categorias_listar' %}" class="ac-b"><i class="bi bi-folder-plus"></i>Ver Categorías</a>
+    </div>
+    <div class="ac-c c-contabilidad">
+      <h5 class="ac-t"><i class="bi bi-receipt"></i>Contabilidad</h5>
+      <p class="ac-d">Visualiza flujo financiero: ingresos, egresos y reportes detallados.</p>
+      <a href="{% url 'movimientos_contables' %}" class="ac-b"><i class="bi bi-graph-up-arrow"></i>Ver Movimientos</a>
+    </div>
+    <div class="ac-c c-gastos">
+      <h5 class="ac-t"><i class="bi bi-credit-card-2-front"></i>Gestión de Gastos</h5>
+      <p class="ac-d">Controla todos los gastos de la empresa: arriendos, pagos a empleados, servicios y más.</p>
+      <a href="{% url 'gastos_dashboard' %}" class="ac-b"><i class="bi bi-cash-stack"></i>Ver Gastos</a>
+    </div>
+    <!-- TARJETA FUNCIONAL DE DEVOLUCIONES -->
+    <div class="ac-c c-devoluciones">
+      <h5 class="ac-t"><i class="bi bi-arrow-counterclockwise"></i>Sistema de Devoluciones</h5>
+      <p class="ac-d">Autoriza y gestiona las solicitudes de devolución de productos realizadas por los bartenders.</p>
+      <a href="{% url 'gestionar_devoluciones' %}" class="ac-b"><i class="bi bi-check-circle"></i>Gestionar Devoluciones</a>
+    </div>
+    <!-- NUEVA TARJETA DE VENTAS -->
+    <div class="ac-c c-ventas">
+      <h5 class="ac-t"><i class="bi bi-graph-up"></i>Reporte de Ventas</h5>
+      <p class="ac-d">Analiza todas las ventas con filtros avanzados por fecha, método de pago y más.</p>
+      <a href="{% url 'admin_ventas' %}" class="ac-b"><i class="bi bi-bar-chart-line"></i>Ver Reportes</a>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const s=document.querySelectorAll('.s-c');
+s.forEach((c,i)=>{c.style.opacity='0';c.style.transform='translateY(20px)';setTimeout(()=>{c.style.transition='all .6s ease';c.style.opacity='1';c.style.transform='translateY(0)'},i*100)});
+const a=document.querySelectorAll('.ac-c');
+a.forEach((c,i)=>{c.style.opacity='0';c.style.transform='translateY(20px)';setTimeout(()=>{c.style.transition='all .6s ease';c.style.opacity='1';c.style.transform='translateY(0)'},500+i*100)});
+const counters=document.querySelectorAll('.s-n');
+counters.forEach(counter=>{const target=parseInt(counter.textContent);if(isNaN(target))return;let count=0;const increment=target/50;const updateCounter=()=>{if(count<target){count+=increment;counter.textContent=Math.floor(count);setTimeout(updateCounter,20)}else{counter.textContent=target}};setTimeout(updateCounter,600)});
+const systemBtns=document.querySelectorAll('.n-b,.m-b,.d-b,.dev-b,.v-b');
+systemBtns.forEach((btn,i)=>{btn.style.opacity='0';btn.style.transform='scale(0.8)';setTimeout(()=>{btn.style.transition='all .5s cubic-bezier(0.175,0.885,0.32,1.275)';btn.style.opacity='1';btn.style.transform='scale(1)'},800+i*200)});
+
+// SISTEMA DE DEVOLUCIONES FUNCIONAL
+function actualizarDevoluciones() {
+    fetch('{% url "devoluciones_api_pendientes" %}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('dev-pendientes').textContent = data.pendientes;
+            document.getElementById('total-devoluciones').textContent = data.pendientes;
+            if (data.pendientes > 0) {
+                document.getElementById('dev-pendientes').style.display = 'flex';
+            } else {
+                document.getElementById('dev-pendientes').style.display = 'none';
+            }
+        })
+        .catch(error => console.log('Error:', error));
+}
+
+// Actualizar cada 30 segundos
+setInterval(actualizarDevoluciones, 30000);
+actualizarDevoluciones();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'core/base.html' %}
+{% block title %}Cerrar caja del día{% endblock %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 720px;">
+  <div class="card shadow-sm rounded-4">
+    <div class="card-body">
+      <h4 class="text-primary mb-3">Cerrar caja - {{ fecha }}</h4>
+
+      {% if ventas %}
+        <ul class="list-group mb-3">
+          {% for venta in ventas %}
+            <li class="list-group-item d-flex justify-content-between">
+              Mesa {{ venta.mesa.numero }} - ${{ venta.total }}
+              <span class="badge bg-success">#{{ venta.id }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <div class="mb-3">
+          <strong>Total del día:</strong> ${{ total }}
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <button class="btn btn-danger" type="submit">Cerrar caja</button>
+        </form>
+      {% else %}
+        <div class="alert alert-info">No hay ventas pendientes por cerrar hoy.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

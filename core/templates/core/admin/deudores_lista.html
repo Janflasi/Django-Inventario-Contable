@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Lista de Deudores{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">💸 Lista de Deudores</h2>
+
+  {% if deudas %}
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Teléfono</th>
+          <th>Monto Adeudado</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for deuda in deudas %}
+          <tr class="{% if deuda.pagado %}table-success{% else %}table-warning{% endif %}">
+            <td>{{ deuda.nombre_cliente }}</td>
+            <td>{{ deuda.telefono_cliente }}</td>
+            <td>${{ deuda.monto_adeudado }}</td>
+            <td>{{ deuda.fecha_registro|date:"d/m/Y H:i" }}</td>
+            <td>{{ deuda.pagado|yesno:"Pagado, Pendiente" }}</td>
+            <td>
+              {% if not deuda.pagado %}
+              <form method="POST" action="{% url 'marcar_deuda_pagada' deuda.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">Marcar como Pagado</button>
+              </form>
+              {% else %}
+                <span class="text-muted">✔</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">No hay deudas registradas.</div>
+  {% endif %}
+
+  <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary mt-3">Volver al Panel</a>
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+{% extends 'core/base.html' %}
+{% block title %}Estadísticas{% endblock %}
+
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<style>
+.stats-main{padding:1.5rem;background:#f8fafc;min-height:calc(100vh - 70px)}
+.stats-header{text-align:center;margin-bottom:2rem}
+.stats-title{color:#1e293b;font-size:2.2rem;font-weight:800;margin-bottom:.5rem}
+.periodo-tabs{display:flex;justify-content:center;gap:1rem;margin-bottom:2rem}
+.tab-btn{padding:.8rem 1.5rem;background:#fff;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;font-weight:600;transition:all .3s}
+.tab-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin-bottom:2rem}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:2rem}
+.chart-box{background:#fff;padding:1.5rem;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.1);position:relative;height:350px}
+.chart-full{grid-column:1/-1;height:250px}
+.stat-box{background:#fff;padding:1.5rem;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.1);border-left:4px solid var(--color)}
+.stat-value{font-size:1.8rem;font-weight:800;color:var(--color);margin:.5rem 0}
+.stat-label{color:#64748b;font-size:.9rem;font-weight:600}
+.top-section{background:#fff;border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 4px 15px rgba(0,0,0,.1)}
+.section-title{color:#1e293b;font-size:1.3rem;font-weight:700;margin-bottom:1rem}
+.top-item{display:flex;justify-content:space-between;align-items:center;padding:.8rem;border-radius:8px;margin-bottom:.5rem;background:#f8fafc}
+.item-name{font-weight:600;color:#1e293b}
+.item-value{color:#3b82f6;font-weight:700}
+.ventas{--color:#10b981}
+.utilidad{--color:#3b82f6}
+.productos{--color:#f59e0b}
+.clientes{--color:#8b5cf6}
+.chart-title{color:#1e293b;font-size:1.1rem;font-weight:700;margin-bottom:1rem;text-align:center}
+</style>
+
+<div class="stats-main">
+  <div class="stats-header">
+    <h1 class="stats-title">📊 Estadísticas del Bar</h1>
+    <p style="color:#64748b">Análisis completo de rendimiento</p>
+  </div>
+
+  <!-- GRÁFICAS PRINCIPALES -->
+  <div class="chart-grid">
+    <!-- Balance General -->
+    <div class="chart-box">
+      <h3 class="chart-title">💰 Balance General</h3>
+      <canvas id="balanceChart"></canvas>
+    </div>
+    
+    <!-- Ventas por Período -->
+    <div class="chart-box">
+      <h3 class="chart-title">📈 Ventas por Período</h3>
+      <canvas id="ventasChart"></canvas>
+    </div>
+
+    <!-- Métodos de Pago -->
+    <div class="chart-box chart-full">
+      <h3 class="chart-title">💳 Distribución Métodos de Pago</h3>
+      <canvas id="metodosChart"></canvas>
+    </div>
+  </div>
+
+  <!-- TABS DE PERÍODOS -->
+  <div class="periodo-tabs">
+    <div class="tab-btn active" onclick="mostrarPeriodo('hoy')">📅 Hoy</div>
+    <div class="tab-btn" onclick="mostrarPeriodo('semana')">📆 Semana</div>
+    <div class="tab-btn" onclick="mostrarPeriodo('mes')">🗓️ Mes</div>
+  </div>
+
+  <!-- ESTADÍSTICAS POR PERÍODO -->
+  <div id="periodo-hoy" class="stats-grid">
+    <div class="stat-box ventas">
+      <div class="stat-label">Ventas Hoy</div>
+      <div class="stat-value">${{ ventas_hoy.total|floatformat:0|default:"0" }}</div>
+      <small>{{ ventas_hoy.count|default:"0" }} transacciones</small>
+    </div>
+    <div class="stat-box utilidad">
+      <div class="stat-label">Utilidad Hoy</div>
+      <div class="stat-value" style="color:{% if utilidad_hoy >= 0 %}#10b981{% else %}#ef4444{% endif %}">${{ utilidad_hoy|floatformat:0 }}</div>
+    </div>
+  </div>
+
+  <div id="periodo-semana" class="stats-grid" style="display:none">
+    <div class="stat-box ventas">
+      <div class="stat-label">Ventas Semana</div>
+      <div class="stat-value">${{ ventas_semana.total|floatformat:0|default:"0" }}</div>
+      <small>{{ ventas_semana.count|default:"0" }} transacciones</small>
+    </div>
+    <div class="stat-box utilidad">
+      <div class="stat-label">Utilidad Semana</div>
+      <div class="stat-value" style="color:{% if utilidad_semana >= 0 %}#10b981{% else %}#ef4444{% endif %}">${{ utilidad_semana|floatformat:0 }}</div>
+    </div>
+  </div>
+
+  <div id="periodo-mes" class="stats-grid" style="display:none">
+    <div class="stat-box ventas">
+      <div class="stat-label">Ventas Mes</div>
+      <div class="stat-value">${{ ventas_mes.total|floatformat:0|default:"0" }}</div>
+      <small>{{ ventas_mes.count|default:"0" }} transacciones</small>
+    </div>
+    <div class="stat-box utilidad">
+      <div class="stat-label">Utilidad Mes</div>
+      <div class="stat-value" style="color:{% if utilidad_mes >= 0 %}#10b981{% else %}#ef4444{% endif %}">${{ utilidad_mes|floatformat:0 }}</div>
+    </div>
+  </div>
+
+  <!-- PRODUCTOS Y CLIENTES EN GRID -->
+  <div class="chart-grid">
+    <div class="top-section">
+      <h3 class="section-title">🏆 Productos Más Vendidos</h3>
+      {% for producto in productos_top %}
+      <div class="top-item">
+        <div>
+          <span class="item-name">{{ producto.producto__nombre }}</span>
+          <small style="color:#64748b;margin-left:.5rem">{{ producto.total_vendido }} unidades</small>
+        </div>
+        <span class="item-value">${{ producto.ingresos|floatformat:0 }}</span>
+      </div>
+      {% empty %}
+      <p style="color:#64748b;text-align:center">No hay datos de productos aún</p>
+      {% endfor %}
+    </div>
+
+    <div class="top-section">
+      <h3 class="section-title">👥 Clientes Frecuentes</h3>
+      {% for cliente in clientes_frecuentes %}
+      <div class="top-item">
+        <div>
+          <span class="item-name">{{ cliente.nombre_cliente }}</span>
+          <small style="color:#64748b;margin-left:.5rem">{{ cliente.visitas }} visitas</small>
+        </div>
+        <span class="item-value">${{ cliente.total_gastado|floatformat:0 }}</span>
+      </div>
+      {% empty %}
+      <p style="color:#64748b;text-align:center">No hay datos de clientes frecuentes</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+// Datos del backend
+const datosStats = {
+  ventasHoy: {{ ventas_hoy.total|default:0 }},
+  ventasSemana: {{ ventas_semana.total|default:0 }},
+  ventasMes: {{ ventas_mes.total|default:0 }},
+  utilidadHoy: {{ utilidad_hoy|default:0 }},
+  utilidadSemana: {{ utilidad_semana|default:0 }},
+  utilidadMes: {{ utilidad_mes|default:0 }},
+  metodosPago: [
+    {% for metodo in metodos_pago %}
+    { nombre: '{{ metodo.metodo_pago|capfirst }}', total: {{ metodo.total|default:0 }}, count: {{ metodo.count|default:0 }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+};
+
+// GRÁFICA DE BALANCE
+const balanceCtx = document.getElementById('balanceChart').getContext('2d');
+new Chart(balanceCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Ingresos', 'Gastos', 'Por Cobrar'],
+    datasets: [{
+      data: [
+        {{ total_ingresos|default:0 }},
+        {{ total_gastos|default:0 }},
+        {{ total_por_cobrar|default:0 }}
+      ],
+      backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' }
+    }
+  }
+});
+
+// GRÁFICA DE VENTAS POR PERÍODO
+const ventasCtx = document.getElementById('ventasChart').getContext('2d');
+new Chart(ventasCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Hoy', 'Semana', 'Mes'],
+    datasets: [{
+      label: 'Ventas ($)',
+      data: [datosStats.ventasHoy, datosStats.ventasSemana, datosStats.ventasMes],
+      backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6'],
+      borderRadius: 8
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true }
+    }
+  }
+});
+
+// GRÁFICA DE MÉTODOS DE PAGO
+if (datosStats.metodosPago.length > 0) {
+  const metodosCtx = document.getElementById('metodosChart').getContext('2d');
+  new Chart(metodosCtx, {
+    type: 'line',
+    data: {
+      labels: datosStats.metodosPago.map(m => m.nombre),
+      datasets: [{
+        label: 'Total ($)',
+        data: datosStats.metodosPago.map(m => m.total),
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+// FUNCIONES EXISTENTES
+function mostrarPeriodo(periodo) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('[id^="periodo-"]').forEach(div => div.style.display = 'none');
+  
+  event.target.classList.add('active');
+  document.getElementById(`periodo-${periodo}`).style.display = 'grid';
+}
+
+// Animación de números
+document.addEventListener('DOMContentLoaded', () => {
+  const valores = document.querySelectorAll('.stat-value');
+  valores.forEach(valor => {
+    const texto = valor.textContent;
+    const numerico = parseInt(texto.replace(/[$,]/g, ''));
+    if (isNaN(numerico)) return;
+    
+    let actual = 0;
+    const incremento = Math.abs(numerico) / 30;
+    const animacion = () => {
+      if (Math.abs(actual) < Math.abs(numerico)) {
+        actual += numerico >= 0 ? incremento : -incremento;
+        valor.textContent = (numerico >= 0 ? '$' : '-$') + Math.abs(Math.floor(actual)).toLocaleString();
+        setTimeout(animacion, 25);
+      } else {
+        valor.textContent = texto;
+      }
+    };
+    setTimeout(animacion, 200);
+  });
+});
+</script>
+{% endblock %}

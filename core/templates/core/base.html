@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Inventario{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    .header-fixed {
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      min-height: 70px;
+      padding: 15px 0;
+    }
+    
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0;
+      color: white;
+    }
+    
+    .user-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+    
+    .user-btn:hover {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+    
+    .login-btn {
+      background: rgba(52, 152, 219, 0.9);
+      border: 1px solid rgba(52, 152, 219, 1);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .login-btn:hover {
+      background: rgba(52, 152, 219, 1);
+      color: white;
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    /* 🔥 NUEVOS ESTILOS PARA LOS MENSAJES */
+    .messages-container {
+      position: fixed;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1060;
+      width: calc(100% - 2rem);
+      max-width: 600px;
+      pointer-events: none;
+    }
+
+    .alert-custom {
+      pointer-events: auto;
+      margin-bottom: 0.75rem;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      font-weight: 500;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .alert-custom.alert-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border-left: 4px solid #065f46;
+    }
+
+    .alert-custom.alert-info {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border-left: 4px solid #1e40af;
+    }
+
+    .alert-custom.alert-warning {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      border-left: 4px solid #92400e;
+    }
+
+    .alert-custom.alert-danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      border-left: 4px solid #991b1b;
+    }
+
+    .alert-custom .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+    }
+
+    .alert-custom .btn-close:hover {
+      opacity: 1;
+    }
+
+    /* Animaciones de entrada y salida */
+    .alert-custom.fade-in {
+      animation: slideInDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .alert-custom.fade-out {
+      transform: translateY(-20px);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @keyframes slideInDown {
+      from {
+        transform: translateY(-30px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Barra de progreso para auto-close */
+    .alert-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 0 0 12px 12px;
+      transition: width linear;
+    }
+
+    .alert-custom.alert-success .alert-progress {
+      background: rgba(255, 255, 255, 0.4);
+    }
+    
+    @media (max-width: 768px) {
+      .header-title {
+        font-size: 1.2rem;
+      }
+      .mobile-hide {
+        display: none !important;
+      }
+      
+      .messages-container {
+        width: calc(100% - 1rem);
+        top: 80px;
+      }
+      
+      .alert-custom {
+        font-size: 0.9rem;
+        padding: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- 🔥 SISTEMA DE MENSAJES MEJORADO -->
+  {% if messages %}
+  <div class="messages-container">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-custom alert-dismissible fade-in" 
+           role="alert" 
+           data-auto-dismiss="true"
+           data-delay="5000">
+        <div class="d-flex align-items-center">
+          {% if message.tags == 'success' %}
+            <i class="bi bi-check-circle-fill me-2"></i>
+          {% elif message.tags == 'info' %}
+            <i class="bi bi-info-circle-fill me-2"></i>
+          {% elif message.tags == 'warning' %}
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          {% elif message.tags == 'error' or message.tags == 'danger' %}
+            <i class="bi bi-x-circle-fill me-2"></i>
+          {% endif %}
+          <span>{{ message }}</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        <div class="alert-progress"></div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- HEADER CON CONDICIONAL DE AUTENTICACIÓN -->
+  <header class="header-fixed shadow-lg">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between align-items-center">
+        <!-- Título -->
+        <h3 class="header-title d-flex align-items-center">
+          <i class="bi bi-speedometer2 me-2"></i>
+          <span class="mobile-hide">Container </span> Bar
+        </h3>
+        
+        <!-- Menú Usuario o Botón Login -->
+        {% if user.is_authenticated %}
+          <!-- Usuario autenticado: mostrar menú -->
+          <div class="dropdown">
+            <button class="btn user-btn dropdown-toggle d-flex align-items-center" 
+                    type="button" 
+                    id="usuarioDropdown" 
+                    data-bs-toggle="dropdown" 
+                    aria-expanded="false">
+              <i class="bi bi-person-circle me-2"></i>
+              <span class="mobile-hide">{{ request.user.username }}</span>
+            </button>
+            
+            <ul class="dropdown-menu dropdown-menu-end animate__animated animate__fadeIn" 
+                aria-labelledby="usuarioDropdown">
+              <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'perfil' %}">
+                  <i class="bi bi-person-lines-fill me-2 text-primary"></i>
+                  <span>Ver perfil</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item d-flex align-items-center" href="{% url 'perfil_editar' %}">
+                  <i class="bi bi-pencil-square me-2 text-success"></i>
+                  <span>Editar perfil</span>
+                </a>
+              </li>
+              <li><hr class="dropdown-divider my-2"></li>
+              <li>
+                <a class="dropdown-item d-flex align-items-center text-danger" href="{% url 'logout' %}">
+                  <i class="bi bi-box-arrow-right me-2"></i>
+                  <span>Cerrar sesión</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        {% else %}
+          <!-- Usuario no autenticado: mostrar botón de login -->
+          <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'login' %}" class="login-btn d-flex align-items-center">
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              <span class="mobile-hide">Iniciar </span>Sesión
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-grow-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    // 🔥 SISTEMA DE AUTO-CIERRE DE MENSAJES
+    document.addEventListener('DOMContentLoaded', function() {
+      // Auto-cerrar mensajes después de 5 segundos
+      const alerts = document.querySelectorAll('.alert-custom[data-auto-dismiss="true"]');
+      
+      alerts.forEach(function(alert) {
+        const delay = parseInt(alert.getAttribute('data-delay')) || 5000;
+        const progressBar = alert.querySelector('.alert-progress');
+        
+        // Animar barra de progreso
+        if (progressBar) {
+          progressBar.style.width = '100%';
+          progressBar.style.transition = `width ${delay}ms linear`;
+          
+          // Después de un momento, empezar a reducir la barra
+          setTimeout(() => {
+            progressBar.style.width = '0%';
+          }, 100);
+        }
+        
+        // Auto-cerrar después del delay
+        setTimeout(function() {
+          // Aplicar animación de salida
+          alert.classList.add('fade-out');
+          
+          // Remover completamente después de la animación
+          setTimeout(() => {
+            alert.remove();
+          }, 400);
+        }, delay);
+      });
+
+      // Mejorar cierre manual
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-close')) {
+          const alert = e.target.closest('.alert-custom');
+          if (alert) {
+            alert.classList.add('fade-out');
+            setTimeout(() => {
+              alert.remove();
+            }, 400);
+          }
+        }
+      });
+    });
+
+    // Animación suave para dropdowns
+    document.addEventListener('DOMContentLoaded', function() {
+      const dropdownToggle = document.getElementById('usuarioDropdown');
+      const dropdownMenu = dropdownToggle?.nextElementSibling;
+      
+      if (dropdownToggle && dropdownMenu) {
+        dropdownToggle.addEventListener('click', function() {
+          setTimeout(() => {
+            dropdownMenu.classList.add('animate__fadeIn');
+          }, 10);
+        });
+      }
+    });
+  </script>
+  
+  <script>
+    // Si se llega a una página desde el historial del navegador, forzar recarga
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted || window.performance.navigation.type === 2) {
+        window.location.reload();
+      }
+    });
+  </script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</body>
+</html>

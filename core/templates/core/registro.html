@@ -1,0 +1,229 @@
+{% extends "core/base.html" %}
+{% block title %}Registro{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5" style="max-width: 450px;">
+  <div class="card shadow-lg border-0">
+    <div class="card-body p-5">
+      <!-- Encabezado del formulario -->
+      <div class="text-center mb-4">
+        <div class="mb-3">
+          <i class="fas fa-user-plus fa-3x text-primary"></i>
+        </div>
+        <h2 class="fw-bold text-dark mb-2">Crear Cuenta</h2>
+        <p class="text-muted">Únete a nuestra comunidad</p>
+      </div>
+
+      <!-- Formulario -->
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Errores generales -->
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ form.non_field_errors }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+          </div>
+        {% endif %}
+
+        <!-- Campos del formulario -->
+        {% for field in form %}
+          <div class="mb-4">
+            <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-dark">
+              {{ field.label }}
+            </label>
+            
+            <!-- Contenedor para el input con icono -->
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0">
+                {% if 'username' in field.name or 'usuario' in field.name %}
+                  <i class="fas fa-user text-muted"></i>
+                {% elif 'email' in field.name or 'correo' in field.name %}
+                  <i class="fas fa-envelope text-muted"></i>
+                {% elif 'password' in field.name or 'contraseña' in field.name %}
+                  <i class="fas fa-lock text-muted"></i>
+                {% elif 'phone' in field.name or 'telefono' in field.name %}
+                  <i class="fas fa-phone text-muted"></i>
+                {% elif 'first_name' in field.name or 'nombre' in field.name %}
+                  <i class="fas fa-user text-muted"></i>
+                {% elif 'last_name' in field.name or 'apellido' in field.name %}
+                  <i class="fas fa-user text-muted"></i>
+                {% else %}
+                  <i class="fas fa-edit text-muted"></i>
+                {% endif %}
+              </span>
+              
+              <!-- Campo del formulario con clases aplicadas manualmente -->
+              {% if field.field.widget.input_type == 'file' %}
+                <input type="file" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control border-start-0">
+              {% elif field.field.widget.input_type == 'password' %}
+                <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control border-start-0" placeholder="Ingresa tu contraseña">
+              {% elif field.field.widget.input_type == 'email' %}
+                <input type="email" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control border-start-0" placeholder="tu@correo.com" value="{{ field.value|default:'' }}">
+              {% elif field.field.widget.input_type == 'text' %}
+                <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control border-start-0" placeholder="{{ field.label }}" value="{{ field.value|default:'' }}">
+              {% else %}
+                {{ field }}
+                <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    const campo = document.getElementById('{{ field.id_for_label }}');
+                    if (campo) {
+                      campo.className = 'form-control border-start-0';
+                    }
+                  });
+                </script>
+              {% endif %}
+            </div>
+            
+            <!-- Errores del campo -->
+            {% if field.errors %}
+              <div class="text-danger small mt-1">
+                <i class="fas fa-exclamation-circle me-1"></i>
+                {{ field.errors|striptags }}
+              </div>
+            {% endif %}
+            
+            <!-- Ayuda personalizada en español -->
+            {% if 'username' in field.name %}
+              <div class="form-text text-muted small">
+                <i class="fas fa-info-circle me-1"></i>
+                Máximo 150 caracteres. Solo letras, números y @/./+/-/_ permitidos.
+              </div>
+            {% elif 'password1' in field.name %}
+              <div class="form-text text-muted small">
+                <i class="fas fa-shield-alt me-1"></i>
+                <ul class="list-unstyled mb-0 mt-1">
+                  <li>• Tu contraseña no puede ser muy similar a tu información personal</li>
+                  <li>• Debe contener al menos 8 caracteres</li>
+                  <li>• No puede ser una contraseña muy común</li>
+                  <li>• No puede ser completamente numérica</li>
+                </ul>
+              </div>
+            {% elif 'password2' in field.name %}
+              <div class="form-text text-muted small">
+                <i class="fas fa-check-circle me-1"></i>
+                Ingresa la misma contraseña para verificación.
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        <!-- Botón de envío -->
+        <div class="d-grid gap-2 mt-4">
+          <button type="submit" class="btn btn-primary btn-lg fw-semibold py-3">
+            <i class="fas fa-user-plus me-2"></i>
+            Crear Mi Cuenta
+          </button>
+        </div>
+      </form>
+
+      <!-- Enlaces adicionales -->
+      <div class="text-center mt-4">
+        <p class="text-muted mb-2">¿Ya tienes una cuenta?</p>
+        <a href="#" class="text-decoration-none fw-semibold">
+          Iniciar Sesión Aquí
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos adicionales -->
+<style>
+.card {
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9ff 100%);
+  border-radius: 20px;
+}
+
+.form-control {
+  border-radius: 12px;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+.form-control:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+  transform: translateY(-2px);
+}
+
+.input-group-text {
+  border-radius: 12px 0 0 12px;
+  border: 2px solid #e9ecef;
+  border-right: none;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+}
+
+.input-group:focus-within .input-group-text {
+  border-color: var(--bs-primary);
+  background: linear-gradient(145deg, rgba(13, 110, 253, 0.1), rgba(13, 110, 253, 0.05));
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.alert {
+  border-radius: 12px;
+  border: none;
+}
+
+.form-label {
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.text-danger {
+  color: #dc3545 !important;
+}
+
+/* Animación de entrada */
+.card {
+  animation: deslizarArriba 0.6s ease-out;
+}
+
+@keyframes deslizarArriba {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ocultar textos de ayuda automáticos de Django */
+.helptext {
+  display: none !important;
+}
+
+.form-text:not(.text-muted) {
+  display: none !important;
+}
+
+/* Diseño adaptable */
+@media (max-width: 576px) {
+  .container {
+    max-width: 95% !important;
+    margin-top: 2rem;
+  }
+  
+  .card-body {
+    padding: 2rem !important;
+  }
+}
+</style>
+{% endblock %}

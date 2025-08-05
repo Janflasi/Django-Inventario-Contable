@@ -1,0 +1,201 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Mis Devoluciones{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 1000px;">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="text-dark mb-2">
+            <i class="bi bi-clock-history text-warning me-2"></i>
+            Mis Solicitudes de Devolución
+          </h2>
+          <p class="text-muted">Historial y estado de tus solicitudes</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{% url 'solicitar_devolucion' %}" class="btn btn-warning">
+            <i class="bi bi-plus-circle me-2"></i>Nueva Solicitud
+          </a>
+          <a href="{% url 'inicio' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Volver
+          </a>
+        </div>
+      </div>
+
+      {% if devoluciones %}
+        <!-- Lista de devoluciones -->
+        <div class="row">
+          {% for devolucion in devoluciones %}
+          <div class="col-12 mb-3">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <div class="row align-items-center">
+                  <div class="col-md-2">
+                    <div class="text-center">
+                      {% if devolucion.estado == 'pendiente' %}
+                        <span class="badge bg-warning fs-6 px-3 py-2">
+                          <i class="bi bi-clock me-1"></i>Pendiente
+                        </span>
+                      {% elif devolucion.estado == 'autorizada' %}
+                        <span class="badge bg-success fs-6 px-3 py-2">
+                          <i class="bi bi-check-circle me-1"></i>Autorizada
+                        </span>
+                      {% elif devolucion.estado == 'rechazada' %}
+                        <span class="badge bg-danger fs-6 px-3 py-2">
+                          <i class="bi bi-x-circle me-1"></i>Rechazada
+                        </span>
+                      {% elif devolucion.estado == 'procesada' %}
+                        <span class="badge bg-primary fs-6 px-3 py-2">
+                          <i class="bi bi-check-all me-1"></i>Procesada
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-7">
+                    <h5 class="text-dark mb-2">{{ devolucion.producto.nombre }}</h5>
+                    <div class="text-muted small">
+                      <p class="mb-1">
+                        <i class="bi bi-box me-1"></i>
+                        <strong>Cantidad:</strong> {{ devolucion.cantidad }} unidades
+                      </p>
+                      <p class="mb-1">
+                        <i class="bi bi-calendar me-1"></i>
+                        <strong>Solicitado:</strong> {{ devolucion.fecha_solicitud|date:"d/m/Y H:i" }}
+                      </p>
+                      <p class="mb-0">
+                        <i class="bi bi-chat-text me-1"></i>
+                        <strong>Motivo:</strong> {{ devolucion.observaciones|truncatewords:10 }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-md-3 text-end">
+                    <div class="text-muted small mb-2">
+                      <strong>Valor:</strong><br>
+                      ${{ devolucion.valor_total|floatformat:0 }} COP
+                    </div>
+                    <button class="btn btn-outline-info btn-sm" data-bs-toggle="collapse" data-bs-target="#detalle-{{ devolucion.id }}">
+                      <i class="bi bi-eye me-1"></i>Ver detalles
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Detalles expandibles -->
+                <div class="collapse mt-3" id="detalle-{{ devolucion.id }}">
+                  <hr>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <h6 class="text-dark">Observaciones completas:</h6>
+                      <p class="text-muted">{{ devolucion.observaciones }}</p>
+                    </div>
+                    <div class="col-md-6">
+                      <h6 class="text-dark">Estado y fechas:</h6>
+                      <ul class="list-unstyled text-muted small">
+                        <li><strong>Solicitado:</strong> {{ devolucion.fecha_solicitud|date:"d/m/Y H:i" }}</li>
+                        {% if devolucion.fecha_autorizacion %}
+                          <li><strong>{% if devolucion.estado == 'rechazada' %}Rechazado{% else %}Autorizado{% endif %}:</strong> {{ devolucion.fecha_autorizacion|date:"d/m/Y H:i" }}</li>
+                        {% endif %}
+                        {% if devolucion.fecha_procesamiento %}
+                          <li><strong>Procesado:</strong> {{ devolucion.fecha_procesamiento|date:"d/m/Y H:i" }}</li>
+                        {% endif %}
+                        {% if devolucion.autorizada_por %}
+                          <li><strong>Gestionado por:</strong> {{ devolucion.autorizada_por.username }}</li>
+                        {% endif %}
+                      </ul>
+                      {% if devolucion.comentario_admin %}
+                        <h6 class="text-dark">Comentario del administrador:</h6>
+                        <p class="text-muted small">{{ devolucion.comentario_admin }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <!-- Estado vacío -->
+        <div class="text-center py-5">
+          <div class="mb-4">
+            <i class="bi bi-inbox" style="font-size: 4rem; color: #6c757d;"></i>
+          </div>
+          <h4 class="text-muted mb-3">No tienes solicitudes de devolución</h4>
+          <p class="text-muted mb-4">Cuando solicites una devolución, aparecerá aquí con su estado</p>
+          <a href="{% url 'solicitar_devolucion' %}" class="btn btn-warning">
+            <i class="bi bi-plus-circle me-2"></i>Crear primera solicitud
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+.badge {
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.text-warning {
+  color: #f59e0b !important;
+}
+
+.bg-warning {
+  background-color: #f59e0b !important;
+}
+
+.collapse {
+  transition: all 0.3s ease;
+}
+
+hr {
+  border-color: #e9ecef;
+  opacity: 0.5;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animación de entrada para las cards
+  const cards = document.querySelectorAll('.card');
+  cards.forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+      card.style.transition = 'all 0.6s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, index * 100);
+  });
+  
+  // Actualizar estados cada 30 segundos
+  setInterval(() => {
+    location.reload();
+  }, 30000);
+});
+</script>
+{% endblock %}

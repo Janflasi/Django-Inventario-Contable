@@ -1,0 +1,201 @@
+{% extends 'core/base.html' %} 
+{% block title %}Productos disponibles{% endblock %}  
+
+{% block content %} 
+<div class="container mt-4">
+  <!-- Header con diseño moderno -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-1 text-primary fw-bold">
+        <i class="fas fa-box me-2"></i>Productos disponibles
+      </h3>
+      <p class="text-muted mb-0">Gestiona el inventario de tu container bar</p>
+    </div>
+    <div class="badge bg-primary fs-6 px-3 py-2">
+      {{ productos|length }} producto{{ productos|length|pluralize }}
+    </div>
+  </div>
+
+  <!-- Tabla con diseño mejorado -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" id="tabla-productos">
+          <thead class="bg-light">
+            <tr>
+              <th class="border-0 fw-semibold text-dark py-3 ps-4">Nombre</th>
+              <th class="border-0 fw-semibold text-dark py-3">Categoría</th>
+              <th class="border-0 fw-semibold text-dark py-3">Descripción</th>
+              <th class="border-0 fw-semibold text-dark py-3">Precio</th>
+              <th class="border-0 fw-semibold text-dark py-3">Cantidad disponible</th>
+              <th class="border-0 fw-semibold text-dark py-3 pe-4">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos %}
+              <tr class="{% if producto.cantidad <= 5 %}table-danger bg-danger bg-opacity-10{% endif %} border-0">
+                <td class="py-3 ps-4">
+                  <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                      <i class="fas fa-cocktail text-primary"></i>
+                    </div>
+                    <div>
+                      <span class="fw-semibold">{{ producto.nombre }}</span>
+                      {% if producto.cantidad <= 5 %}
+                        <span class="badge bg-danger ms-2 small">Stock Bajo</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3">
+                  <span class="badge bg-secondary bg-opacity-20 text-dark">{{ producto.categoria }}</span>
+                </td>
+                <td class="py-3 text-muted">{{ producto.descripcion }}</td>
+                <td class="py-3">
+                  <span class="fw-bold text-success">${{ producto.precio }}</span>
+                </td>
+                <td class="py-3">
+                  <span class="badge 
+                    {% if producto.cantidad <= 5 %}bg-danger{% elif producto.cantidad <= 20 %}bg-warning{% else %}bg-success{% endif %} 
+                    fs-6 px-2 py-1">
+                    {{ producto.cantidad }}
+                  </span>
+                </td>
+                <td class="py-3 pe-4">
+                  <a href="{% url 'notificar_admin' producto.id %}" 
+                     class="btn btn-warning btn-sm rounded-pill px-3 shadow-sm">
+                    <i class="fas fa-bell me-1"></i>Notificar
+                  </a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-5">
+                  <div class="text-muted">
+                    <i class="fas fa-box-open fs-1 mb-3 d-block"></i>
+                    <h5>No hay productos registrados</h5>
+                    <p class="mb-0">Agrega productos para comenzar a gestionar tu inventario</p>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen de stock (opcional) -->
+  {% if productos %}
+  <div class="row mt-4">
+    <div class="col-md-4">
+      <div class="card border-0 bg-danger bg-opacity-10">
+        <div class="card-body text-center">
+          <i class="fas fa-exclamation-triangle text-danger fs-2 mb-2"></i>
+          <h4 class="text-danger mb-0" id="stock-critico">0</h4>
+          <small class="text-muted">Stock Crítico (≤5)</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 bg-warning bg-opacity-10">
+        <div class="card-body text-center">
+          <i class="fas fa-exclamation-circle text-warning fs-2 mb-2"></i>
+          <h4 class="text-warning mb-0" id="stock-medio">0</h4>
+          <small class="text-muted">Stock Medio (6-20)</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 bg-success bg-opacity-10">
+        <div class="card-body text-center">
+          <i class="fas fa-check-circle text-success fs-2 mb-2"></i>
+          <h4 class="text-success mb-0" id="stock-bueno">0</h4>
+          <small class="text-muted">Stock Bueno (>20)</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+  /* Estilos adicionales para mejorar la apariencia */
+  .table > :not(caption) > * > * {
+    border-bottom-width: 1px;
+    border-color: #f8f9fa;
+  }
+  
+  .table tbody tr:hover {
+    background-color: #f8f9fa !important;
+  }
+  
+  .card {
+    border-radius: 12px;
+  }
+  
+  .btn-warning {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #ffc107;
+    --bs-btn-border-color: #ffc107;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #ffca2c;
+    --bs-btn-hover-border-color: #ffc720;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-warning:hover {
+    transform: translateY(-1px);
+  }
+  
+  .badge {
+    font-weight: 500;
+  }
+</style>
+
+<script>
+// Tu script original mantenido exactamente igual
+document.addEventListener("DOMContentLoaded", function () {
+  const filas = document.querySelectorAll("#tabla-productos tbody tr");
+  let productosCriticos = [];
+  let stockCritico = 0, stockMedio = 0, stockBueno = 0;
+
+  filas.forEach((fila) => {
+    // Verificar que la fila tenga contenido de producto (no sea la fila vacía)
+    if (fila.children.length > 1) {
+      const cantidad = parseInt(fila.children[4].textContent.trim());
+      const nombre = fila.children[0].textContent.trim();
+      
+      if (cantidad <= 5) {
+        productosCriticos.push(`🧃 ${nombre} (Stock: ${cantidad})`);
+        stockCritico++;
+      } else if (cantidad <= 20) {
+        stockMedio++;
+      } else {
+        stockBueno++;
+      }
+    }
+  });
+
+  // Actualizar contadores si existen los elementos
+  const stockCriticoEl = document.getElementById('stock-critico');
+  const stockMedioEl = document.getElementById('stock-medio');
+  const stockBuenoEl = document.getElementById('stock-bueno');
+  
+  if (stockCriticoEl) stockCriticoEl.textContent = stockCritico;
+  if (stockMedioEl) stockMedioEl.textContent = stockMedio;
+  if (stockBuenoEl) stockBuenoEl.textContent = stockBueno;
+
+  // Tu alerta original
+  if (productosCriticos.length > 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: '¡Stock bajo!',
+      html: '<b>Productos críticos:</b><br><br>' + productosCriticos.join('<br>'),
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    });
+  }
+});
+</script>
+{% endblock %}

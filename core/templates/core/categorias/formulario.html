@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo }} Categoría{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2>{{ titulo }} Categoría</h2>
+  <form method="post" class="mt-4">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">{{ titulo }}</button>
+    <a href="{% url 'categorias_listar' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Solicitar Devolución{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="text-dark mb-2">
+            <i class="bi bi-arrow-counterclockwise text-warning me-2"></i>
+            Solicitar Devolución
+          </h2>
+          <p class="text-muted">Complete la información del producto a devolver</p>
+        </div>
+        <a href="{% url 'inicio' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>Volver
+        </a>
+      </div>
+
+      <!-- Formulario -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-warning bg-opacity-10 border-0">
+          <h5 class="card-title text-dark mb-0">
+            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+            Información de la Devolución
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.producto.id_for_label }}" class="form-label fw-bold">
+                  {{ form.producto.label }}
+                </label>
+                {{ form.producto }}
+                {% if form.producto.errors %}
+                  <div class="text-danger small mt-1">{{ form.producto.errors.0 }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="{{ form.cantidad.id_for_label }}" class="form-label fw-bold">
+                  {{ form.cantidad.label }}
+                </label>
+                {{ form.cantidad }}
+                {% if form.cantidad.errors %}
+                  <div class="text-danger small mt-1">{{ form.cantidad.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-bold">
+                {{ form.observaciones.label }}
+              </label>
+              {{ form.observaciones }}
+              {% if form.observaciones.errors %}
+                <div class="text-danger small mt-1">{{ form.observaciones.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                Especifica claramente el motivo: producto vencido, dañado, defectuoso, etc.
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex gap-3 justify-content-end">
+              <a href="{% url 'inicio' %}" class="btn btn-outline-secondary px-4">
+                <i class="bi bi-x-circle me-2"></i>Cancelar
+              </a>
+              <button type="submit" class="btn btn-warning px-4">
+                <i class="bi bi-send-fill me-2"></i>Enviar Solicitud
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Información adicional -->
+      <div class="alert alert-info mt-4" role="alert">
+        <h6 class="alert-heading">
+          <i class="bi bi-info-circle-fill me-2"></i>Información importante
+        </h6>
+        <ul class="mb-0">
+          <li>Tu solicitud será revisada por un administrador</li>
+          <li>Recibirás notificación del estado de tu solicitud</li>
+          <li>El producto se devolverá al inventario solo tras autorización</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 0.2rem rgba(245, 158, 11, 0.25);
+}
+
+.alert {
+  border-radius: 10px;
+  border: none;
+}
+
+.text-warning {
+  color: #f59e0b !important;
+}
+
+.bg-warning {
+  background-color: #f59e0b !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Validación en tiempo real de cantidad
+  const productoSelect = document.getElementById('id_producto');
+  const cantidadInput = document.getElementById('id_cantidad');
+  
+  if (productoSelect && cantidadInput) {
+    productoSelect.addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      if (selectedOption.value) {
+        cantidadInput.max = selectedOption.dataset.stock || '999';
+        cantidadInput.placeholder = `Máximo disponible: ${selectedOption.dataset.stock || 'N/A'}`;
+      }
+    });
+    
+    cantidadInput.addEventListener('input', function() {
+      const max = parseInt(this.max) || 999;
+      const value = parseInt(this.value) || 0;
+      
+      if (value > max) {
+        this.value = max;
+        this.style.borderColor = '#dc3545';
+      } else {
+        this.style.borderColor = '#d1d5db';
+      }
+    });
+  }
+  
+  // Animación de entrada
+  const card = document.querySelector('.card');
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(20px)';
+  
+  setTimeout(() => {
+    card.style.transition = 'all 0.6s ease';
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+  }, 100);
+});
+</script>
+{% endblock %}

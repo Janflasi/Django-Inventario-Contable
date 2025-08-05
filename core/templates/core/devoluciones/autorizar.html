@@ -1,0 +1,237 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Autorizar Devolución{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="text-dark mb-2">
+            <i class="bi bi-shield-check text-primary me-2"></i>
+            Autorizar Devolución
+          </h2>
+          <p class="text-muted">Revisa y toma una decisión sobre esta solicitud</p>
+        </div>
+        <a href="{% url 'gestionar_devoluciones' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>Volver
+        </a>
+      </div>
+
+      <!-- Información de la solicitud -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-info bg-opacity-10">
+          <h5 class="card-title text-dark mb-0">
+            <i class="bi bi-info-circle-fill text-info me-2"></i>
+            Detalles de la Solicitud
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <div class="row">
+            <div class="col-md-6">
+              <h6 class="text-dark mb-3">Información del Producto</h6>
+              <ul class="list-unstyled">
+                <li class="mb-2">
+                  <strong>Producto:</strong> 
+                  <span class="text-primary">{{ devolucion.producto.nombre }}</span>
+                </li>
+                <li class="mb-2">
+                  <strong>Categoría:</strong> 
+                  {{ devolucion.producto.categoria.nombre|default:"Sin categoría" }}
+                </li>
+                <li class="mb-2">
+                  <strong>Cantidad a devolver:</strong> 
+                  <span class="badge bg-warning">{{ devolucion.cantidad }} unidades</span>
+                </li>
+                <li class="mb-2">
+                  <strong>Stock actual:</strong> 
+                  <span class="badge bg-success">{{ devolucion.producto.cantidad }} unidades</span>
+                </li>
+                <li class="mb-2">
+                  <strong>Precio unitario:</strong> 
+                  ${{ devolucion.producto.precio|floatformat:0 }} COP
+                </li>
+                <li class="mb-0">
+                  <strong>Valor total:</strong> 
+                  <span class="text-danger fw-bold">${{ devolucion.valor_total|floatformat:0 }} COP</span>
+                </li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6 class="text-dark mb-3">Información de la Solicitud</h6>
+              <ul class="list-unstyled">
+                <li class="mb-2">
+                  <strong>Solicitado por:</strong> 
+                  <span class="text-info">{{ devolucion.solicitada_por.username }}</span>
+                </li>
+                <li class="mb-2">
+                  <strong>Fecha de solicitud:</strong> 
+                  {{ devolucion.fecha_solicitud|date:"d/m/Y H:i" }}
+                </li>
+                <li class="mb-2">
+                  <strong>Estado actual:</strong> 
+                  <span class="badge bg-warning">{{ devolucion.get_estado_display }}</span>
+                </li>
+              </ul>
+              
+              <h6 class="text-dark mb-3 mt-4">Motivo de la Devolución</h6>
+              <div class="bg-light rounded p-3">
+                <p class="mb-0 text-muted">{{ devolucion.observaciones }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario de decisión -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary bg-opacity-10">
+          <h5 class="card-title text-dark mb-0">
+            <i class="bi bi-clipboard-check text-primary me-2"></i>
+            Tomar Decisión
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+              <label class="form-label fw-bold">Comentario del Administrador</label>
+              <textarea name="comentario_admin" class="form-control" rows="4" 
+                        placeholder="Escribe un comentario explicando tu decisión (opcional)"></textarea>
+              <div class="form-text">
+                <i class="bi bi-info-circle me-1"></i>
+                Este comentario será visible para el solicitante
+              </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="card border-success">
+                  <div class="card-body text-center p-4">
+                    <i class="bi bi-check-circle-fill text-success mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="text-success mb-3">Autorizar Devolución</h6>
+                    <p class="text-muted small mb-3">
+                      El producto se podrá devolver al inventario una vez procesado
+                    </p>
+                    <button type="submit" name="accion" value="autorizar" class="btn btn-success w-100">
+                      <i class="bi bi-check-circle me-2"></i>Autorizar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <div class="card border-danger">
+                  <div class="card-body text-center p-4">
+                    <i class="bi bi-x-circle-fill text-danger mb-3" style="font-size: 2rem;"></i>
+                    <h6 class="text-danger mb-3">Rechazar Devolución</h6>
+                    <p class="text-muted small mb-3">
+                      La solicitud será marcada como rechazada definitivamente
+                    </p>
+                    <button type="submit" name="accion" value="rechazar" class="btn btn-danger w-100">
+                      <i class="bi bi-x-circle me-2"></i>Rechazar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-3">
+              <a href="{% url 'gestionar_devoluciones' %}" class="btn btn-outline-secondary px-4">
+                <i class="bi bi-arrow-left me-2"></i>Cancelar y volver
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.badge {
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.form-control {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.bg-info {
+  background-color: #0dcaf0 !important;
+}
+
+.text-info {
+  color: #0dcaf0 !important;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animación de entrada
+  const cards = document.querySelectorAll('.card');
+  cards.forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+      card.style.transition = 'all 0.6s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, index * 200);
+  });
+  
+  // Confirmación antes de enviar
+  const buttons = document.querySelectorAll('button[type="submit"]');
+  buttons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      const accion = this.value;
+      const producto = '{{ devolucion.producto.nombre }}';
+      const cantidad = '{{ devolucion.cantidad }}';
+      
+      let mensaje = '';
+      if (accion === 'autorizar') {
+        mensaje = `¿Estás seguro de AUTORIZAR la devolución de ${cantidad} unidades de "${producto}"?`;
+      } else {
+        mensaje = `¿Estás seguro de RECHAZAR la devolución de ${cantidad} unidades de "${producto}"?`;
+      }
+      
+      if (!confirm(mensaje)) {
+        e.preventDefault();
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

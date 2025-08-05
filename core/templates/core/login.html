@@ -1,0 +1,329 @@
+{% extends "core/base.html" %}
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<style>
+  .login-container {
+    min-height: calc(100vh - 70px);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .login-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  
+  .login-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 450px;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .login-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  
+  .login-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+  }
+  
+  .login-title {
+    color: #2c3e50;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  
+  .login-subtitle {
+    color: #7f8c8d;
+    font-size: 1rem;
+    font-weight: 400;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-label {
+    color: #34495e;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+    font-size: 0.9rem;
+  }
+  
+  .form-control-modern {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1rem;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .form-control-modern:focus {
+    outline: none;
+    border-color: #3498db;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .btn-login {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+  }
+  
+  .btn-login:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+    background: linear-gradient(135deg, #2980b9, #3498db);
+  }
+  
+  .btn-login:active {
+    transform: translateY(-1px);
+  }
+  
+  .login-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e9ecef;
+  }
+  
+  .login-footer p {
+    color: #7f8c8d;
+    margin-bottom: 0;
+  }
+  
+  .login-footer a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .login-footer a:hover {
+    color: #2980b9;
+    text-decoration: underline;
+  }
+  
+  .error-messages {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #e74c3c;
+  }
+  
+  .success-messages {
+    background: rgba(46, 204, 113, 0.1);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #27ae60;
+  }
+  
+  .input-icon {
+    position: relative;
+  }
+  
+  .input-icon i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+    z-index: 2;
+  }
+  
+  .input-icon .form-control-modern {
+    padding-left: 50px;
+  }
+  
+  @media (max-width: 768px) {
+    .login-card {
+      padding: 2rem 1.5rem;
+      margin: 1rem;
+    }
+    
+    .login-title {
+      font-size: 1.6rem;
+    }
+    
+    .login-icon {
+      width: 60px;
+      height: 60px;
+    }
+  }
+  
+  /* Animaciones */
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .login-card {
+    animation: slideInUp 0.6s ease-out;
+  }
+</style>
+
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-icon">
+        <i class="bi bi-person-lock text-white" style="font-size: 2rem;"></i>
+      </div>
+      <h1 class="login-title">¡Bienvenido!</h1>
+      <p class="login-subtitle">Inicia sesión para acceder al panel</p>
+    </div>
+    
+    <!-- Mensajes de error -->
+    {% if form.errors %}
+      <div class="error-messages">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+            <div>{{ error }}</div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    {% endif %}
+    
+    <!-- Mensajes de éxito (si los hay) -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="success-messages">
+          <i class="bi bi-check-circle me-2"></i>
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+    
+    <form method="post" novalidate>
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label class="form-label" for="{{ form.username.id_for_label }}">
+          <i class="bi bi-person me-2"></i>Usuario
+        </label>
+        <div class="input-icon">
+          <i class="bi bi-person"></i>
+          <input type="text" 
+                 class="form-control-modern" 
+                 name="{{ form.username.name }}"
+                 id="{{ form.username.id_for_label }}"
+                 placeholder="Ingresa tu usuario"
+                 value="{{ form.username.value|default:'' }}"
+                 required>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password.id_for_label }}">
+          <i class="bi bi-lock me-2"></i>Contraseña
+        </label>
+        <div class="input-icon">
+          <i class="bi bi-lock"></i>
+          <input type="password" 
+                 class="form-control-modern" 
+                 name="{{ form.password.name }}"
+                 id="{{ form.password.id_for_label }}"
+                 placeholder="Ingresa tu contraseña"
+                 required>
+        </div>
+      </div>
+      
+      <button type="submit" class="btn-login">
+        <i class="bi bi-box-arrow-in-right me-2"></i>
+        Iniciar Sesión
+      </button>
+    </form>
+    
+    <div class="login-footer">
+      <p>¿No tienes cuenta? <a href="{% url 'registro' %}">Regístrate aquí</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animación de entrada de los campos
+  const inputs = document.querySelectorAll('.form-control-modern');
+  inputs.forEach((input, index) => {
+    input.style.opacity = '0';
+    input.style.transform = 'translateX(-20px)';
+    
+    setTimeout(() => {
+      input.style.transition = 'all 0.4s ease';
+      input.style.opacity = '1';
+      input.style.transform = 'translateX(0)';
+    }, 200 + (index * 100));
+  });
+  
+  // Efectos de focus mejorados
+  inputs.forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement.style.transform = 'scale(1.02)';
+    });
+    
+    input.addEventListener('blur', function() {
+      this.parentElement.style.transform = 'scale(1)';
+    });
+  });
+  
+  // Auto-focus en el primer campo
+  if (inputs.length > 0) {
+    setTimeout(() => {
+      inputs[0].focus();
+    }, 800);
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends 'core/base.html' %}
+{% block title %}Análisis de Productos{% endblock %}
+
+{% block content %}
+<style>
+.a-c{background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;padding:1.5rem;min-height:calc(100vh - 70px)}
+.a-h{text-align:center;margin-bottom:2rem}
+.a-t{color:#1e293b;font-size:2.5rem;font-weight:800;margin-bottom:.5rem;background:linear-gradient(135deg,#10b981 0%,#059669 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.a-s{color:#64748b;font-size:1.1rem;font-weight:400}
+.summary-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin-bottom:2rem;max-width:1400px;margin-left:auto;margin-right:auto}
+.summary-card{background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 4px 6px rgba(0,0,0,.05);border:1px solid #e2e8f0;text-align:center;transition:all .3s ease}
+.summary-card:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,0,0,.1)}
+.card-icon{font-size:2.5rem;margin-bottom:.5rem}
+.card-value{font-size:1.8rem;font-weight:800;margin-bottom:.25rem}
+.card-label{color:#64748b;font-size:.9rem;font-weight:500}
+.recommendations{background:#fff;border-radius:16px;padding:1.5rem;margin-bottom:2rem;box-shadow:0 4px 6px rgba(0,0,0,.05);border:1px solid #e2e8f0;max-width:1400px;margin-left:auto;margin-right:auto}
+.rec-title{font-size:1.5rem;font-weight:700;margin-bottom:1rem;color:#1e293b;display:flex;align-items:center;gap:.5rem}
+.rec-item{padding:1rem;border-radius:12px;margin-bottom:1rem;border-left:4px solid}
+.rec-item.critico{background:#fef2f2;border-color:#ef4444;color:#991b1b}
+.rec-item.urgente{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+.rec-item.advertencia{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+.rec-item.info{background:#eff6ff;border-color:#3b82f6;color:#1e40af}
+.rec-item h4{margin:0 0 .5rem 0;font-weight:600;font-size:1rem}
+.rec-item p{margin:0;font-size:.9rem;opacity:.8}
+.analysis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:1.5rem;max-width:1400px;margin-left:auto;margin-right:auto}
+.analysis-card{background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 4px 6px rgba(0,0,0,.05);border:1px solid #e2e8f0}
+.card-header{font-size:1.25rem;font-weight:700;margin-bottom:1rem;color:#1e293b;display:flex;align-items:center;gap:.5rem}
+.product-item{padding:.75rem;border-radius:8px;margin-bottom:.75rem;background:#f8fafc;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+.product-name{font-weight:600;color:#1e293b}
+.product-value{font-weight:700}
+.positive{color:#059669}
+.negative{color:#dc2626}
+.warning{color:#d97706}
+.empty-state{text-align:center;color:#64748b;font-style:italic;padding:2rem}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.summary-cards,.recommendations,.analysis-grid{animation:fadeInUp .6s ease forwards}
+@media(max-width:768px){.a-c{padding:1rem}.summary-cards{grid-template-columns:1fr}.analysis-grid{grid-template-columns:1fr}}
+</style>
+
+<div class="a-c">
+  <div class="a-h">
+    <h1 class="a-t">📊 Análisis de Productos</h1>
+    <p class="a-s">Recomendaciones inteligentes para optimizar tu negocio</p>
+  </div>
+
+  <!-- RESUMEN GENERAL -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-icon">💰</div>
+      <div class="card-value positive">${{ ganancia_total_inventario|floatformat:2 }}</div>
+      <div class="card-label">Ganancia Potencial</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon">💸</div>
+      <div class="card-value">${{ inversion_total|floatformat:2 }}</div>
+      <div class="card-label">Inversión Total</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon">📈</div>
+      <div class="card-value {% if roi_potencial >= 30 %}positive{% else %}warning{% endif %}">{{ roi_potencial|floatformat:1 }}%</div>
+      <div class="card-label">ROI Potencial</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon">📦</div>
+      <div class="card-value">{{ total_productos }}</div>
+      <div class="card-label">Total Productos</div>
+    </div>
+  </div>
+
+  <!-- RECOMENDACIONES -->
+  <div class="recommendations">
+    <h3 class="rec-title">🎯 Recomendaciones</h3>
+    {% for rec in recomendaciones %}
+      <div class="rec-item {{ rec.tipo }}">
+        <h4>{{ rec.titulo }}</h4>
+        <p><strong>{{ rec.descripcion }}</strong> - {{ rec.accion }}</p>
+      </div>
+    {% empty %}
+      <div class="rec-item info">
+        <h4>¡Excelente!</h4>
+        <p>No hay problemas críticos detectados en tu inventario.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- ANÁLISIS DETALLADO -->
+  <div class="analysis-grid">
+    <!-- PRODUCTOS MÁS RENTABLES -->
+    <div class="analysis-card">
+      <h3 class="card-header">🏆 Top Rentables</h3>
+      {% for item in productos_rentables %}
+        <div class="product-item">
+          <span class="product-name">{{ item.producto.nombre }}</span>
+          <span class="product-value positive">{{ item.porcentaje|floatformat:1 }}%</span>
+        </div>
+      {% empty %}
+        <div class="empty-state">No hay productos rentables</div>
+      {% endfor %}
+    </div>
+
+    <!-- PRODUCTOS CON PÉRDIDA -->
+    <div class="analysis-card">
+      <h3 class="card-header">⚠️ Con Pérdidas</h3>
+      {% for item in productos_perdida %}
+        <div class="product-item">
+          <span class="product-name">{{ item.producto.nombre }}</span>
+          <span class="product-value negative">${{ item.ganancia|floatformat:2 }}</span>
+        </div>
+      {% empty %}
+        <div class="empty-state">🎉 No hay productos con pérdidas</div>
+      {% endfor %}
+    </div>
+
+    <!-- STOCK CRÍTICO -->
+    <div class="analysis-card">
+      <h3 class="card-header">📉 Stock Crítico</h3>
+      {% for producto in productos_sin_stock %}
+        <div class="product-item">
+          <span class="product-name">{{ producto.nombre }}</span>
+          <span class="product-value negative">AGOTADO</span>
+        </div>
+      {% endfor %}
+      {% for producto in productos_bajo_stock %}
+        <div class="product-item">
+          <span class="product-name">{{ producto.nombre }}</span>
+          <span class="product-value warning">{{ producto.cantidad }} unidades</span>
+        </div>
+      {% endfor %}
+      {% if not productos_sin_stock and not productos_bajo_stock %}
+        <div class="empty-state">✅ Stock saludable</div>
+      {% endif %}
+    </div>
+
+    <!-- TOP VENTAS -->
+    <div class="analysis-card">
+      <h3 class="card-header">🔥 Más Vendidos</h3>
+      {% for item in productos_top_ventas %}
+        <div class="product-item">
+          <span class="product-name">{{ item.producto__nombre }}</span>
+          <span class="product-value positive">{{ item.total_vendido }} vendidos</span>
+        </div>
+      {% empty %}
+        <div class="empty-state">No hay datos de ventas</div>
+      {% endfor %}
+    </div>
+
+    <!-- SIN MOVIMIENTO -->
+    <div class="analysis-card">
+      <h3 class="card-header">😴 Sin Movimiento</h3>
+      {% for producto in productos_sin_ventas %}
+        <div class="product-item">
+          <span class="product-name">{{ producto.nombre }}</span>
+          <span class="product-value warning">{{ producto.cantidad }} en stock</span>
+        </div>
+      {% empty %}
+        <div class="empty-state">🎉 Todos los productos tienen ventas</div>
+      {% endfor %}
+    </div>
+
+    <!-- SOBRESTOCK -->
+    <div class="analysis-card">
+      <h3 class="card-header">📦 Sobrestock</h3>
+      {% for producto in productos_sobrestock %}
+        <div class="product-item">
+          <span class="product-name">{{ producto.nombre }}</span>
+          <span class="product-value warning">{{ producto.cantidad }} unidades</span>
+        </div>
+      {% empty %}
+        <div class="empty-state">✅ Inventario equilibrado</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const elements=['.summary-cards','.recommendations','.analysis-grid'];
+elements.forEach((selector,index)=>{
+const el=document.querySelector(selector);
+if(el){
+el.style.opacity='0';
+el.style.transform='translateY(30px)';
+setTimeout(()=>{
+el.style.transition='all .6s ease';
+el.style.opacity='1';
+el.style.transform='translateY(0)'
+},100*index)
+}})
+});
+</script>
+{% endblock %}

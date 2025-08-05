@@ -1,0 +1,233 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+  <!-- Header simple y elegante -->
+  <div class="mb-5">
+    <h2 class="text-dark mb-2">Bienvenido, {{ request.user.username }}</h2>
+    <p class="text-muted fs-5">Panel de control principal</p>
+  </div>
+
+  <!-- Acciones principales -->
+  <div class="row g-4">
+    <!-- Ver productos -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card border-0 h-100" style="background-color: #f8f9fa; border-radius: 12px;">
+        <div class="card-body p-4 text-center">
+          <div class="mb-3">
+            <i class="bi bi-box-seam text-primary" style="font-size: 2.5rem;"></i>
+          </div>
+          <h5 class="card-title text-dark mb-3">Productos</h5>
+          <p class="card-text text-muted mb-4">Consultar inventario disponible</p>
+          <a href="{% url 'productos_bartender' %}" class="btn btn-primary w-100">
+            Ver productos
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gestionar mesas -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card border-0 h-100" style="background-color: #f8f9fa; border-radius: 12px;">
+        <div class="card-body p-4 text-center">
+          <div class="mb-3">
+            <i class="bi bi-table text-success" style="font-size: 2.5rem;"></i>
+          </div>
+          <h5 class="card-title text-dark mb-3">Mesas</h5>
+          <p class="card-text text-muted mb-4">Administrar mesas del local</p>
+          <a href="{% url 'mesas_listar' %}" class="btn btn-success w-100">
+            Gestionar mesas
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Solicitar devolución -->
+    <div class="col-lg-4 col-md-6">
+      <div class="card border-0 h-100" style="background-color: #fff5f5; border-radius: 12px; border-left: 4px solid #f97316;">
+        <div class="card-body p-4 text-center">
+          <div class="mb-3">
+            <i class="bi bi-arrow-counterclockwise text-warning" style="font-size: 2.5rem;"></i>
+          </div>
+          <h5 class="card-title text-dark mb-3">Devoluciones</h5>
+          <p class="card-text text-muted mb-4">Solicitar devolución de productos</p>
+          <a href="{% url 'solicitar_devolucion' %}" class="btn btn-warning w-100">
+            Solicitar devolución
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segunda fila de acciones -->
+  <div class="row g-4 mt-2">
+    <!-- Cerrar caja -->
+    <div class="col-lg-6 col-md-6">
+      <div class="card border-0 h-100" style="background-color: #fff5f5; border-radius: 12px; border-left: 4px solid #dc3545;">
+        <div class="card-body p-4 text-center">
+          <div class="mb-3">
+            <i class="bi bi-cash-coin text-danger" style="font-size: 2.5rem;"></i>
+          </div>
+          <h5 class="card-title text-dark mb-3">Cerrar Caja</h5>
+          <p class="card-text text-muted mb-4">Finalizar operaciones del día</p>
+          <a href="{% url 'cerrar_caja_dia' %}" class="btn btn-outline-danger w-100">
+            Cerrar caja
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mis devoluciones -->
+    <div class="col-lg-6 col-md-6">
+      <div class="card border-0 h-100" style="background-color: #fef3c7; border-radius: 12px; border-left: 4px solid #f59e0b;">
+        <div class="card-body p-4 text-center">
+          <div class="mb-3">
+            <i class="bi bi-clock-history text-warning" style="font-size: 2.5rem;"></i>
+          </div>
+          <h5 class="card-title text-dark mb-3">Mis Solicitudes</h5>
+          <p class="card-text text-muted mb-4">Ver estado de mis devoluciones</p>
+          <a href="{% url 'mis_devoluciones' %}" class="btn btn-warning w-100">
+            <i class="bi bi-list-ul me-2"></i>Ver solicitudes
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel administrativo (solo para admins) -->
+  {% if request.user.perfil.rol == 'admin' %}
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card border-0" style="background-color: #f1f3f4; border-radius: 12px;">
+        <div class="card-body p-4">
+          <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+              <i class="bi bi-shield-lock text-secondary" style="font-size: 2.5rem;"></i>
+            </div>
+            <div class="col-md-7">
+              <h5 class="text-dark mb-1">Panel de Administración</h5>
+              <p class="text-muted mb-0">Acceso completo al sistema de gestión</p>
+            </div>
+            <div class="col-md-3 text-end">
+              <a href="{% url 'admin_dashboard' %}" class="btn btn-dark">
+                <i class="bi bi-gear me-2"></i>Administrar
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.text-primary {
+  color: #0d6efd !important;
+}
+
+.text-success {
+  color: #198754 !important;
+}
+
+.text-danger {
+  color: #dc3545 !important;
+}
+
+.text-warning {
+  color: #f59e0b !important;
+}
+
+.text-secondary {
+  color: #6c757d !important;
+}
+
+.icon-hover {
+  transition: transform 0.2s ease;
+}
+
+.card:hover .icon-hover {
+  transform: scale(1.1);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animación suave de entrada para todos los elementos
+  const elements = document.querySelectorAll('.mb-5, .card, .mt-5');
+  
+  elements.forEach((element, index) => {
+    element.style.animationDelay = `${index * 0.1}s`;
+    element.classList.add('fade-in');
+  });
+  
+  // Agregar clase de hover a los iconos
+  const icons = document.querySelectorAll('.bi');
+  icons.forEach(icon => {
+    icon.classList.add('icon-hover');
+  });
+  
+  // Efecto suave en los botones al hacer clic
+  const buttons = document.querySelectorAll('.btn');
+  buttons.forEach(button => {
+    button.addEventListener('mousedown', function() {
+      this.style.transform = 'translateY(1px)';
+    });
+    
+    button.addEventListener('mouseup', function() {
+      this.style.transform = 'translateY(-1px)';
+    });
+    
+    button.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(0)';
+    });
+  });
+  
+  // Pequeña animación de bienvenida
+  setTimeout(() => {
+    const welcomeText = document.querySelector('h2');
+    if (welcomeText) {
+      welcomeText.style.color = '#0d6efd';
+      setTimeout(() => {
+        welcomeText.style.color = '';
+      }, 1000);
+    }
+  }, 800);
+});
+</script>
+{% endblock %}

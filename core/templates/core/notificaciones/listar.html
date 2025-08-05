@@ -1,0 +1,74 @@
+{% extends 'core/base.html' %}
+{% block title %}Notificaciones{% endblock %}
+{% block content %}
+<style>
+.n-c{background:#f8fafc;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;padding:1.5rem;min-height:calc(100vh - 70px)}
+.n-h{text-align:center;margin-bottom:2.5rem}
+.n-t{color:#1e293b;font-size:2.5rem;font-weight:800;margin-bottom:.5rem;background:linear-gradient(135deg,#007bff 0%,#0056b3 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.n-s{color:#64748b;font-size:1.1rem;font-weight:400}
+.n-table{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,.05);border:1px solid #e2e8f0;max-width:1400px;margin:0 auto}
+.n-table table{width:100%;border-collapse:collapse;margin:0}
+.n-table th{background:linear-gradient(135deg,#007bff 0%,#0056b3 100%);color:#fff;padding:1rem;font-weight:600;text-align:left;border:none;font-size:.9rem}
+.n-table td{padding:1rem;border-bottom:1px solid #f1f5f9;color:#1e293b;font-weight:500}
+.n-table tr:hover{background:#e3f2fd;transition:all .2s ease}
+.n-table tr:last-child td{border-bottom:none}
+.n-prod{font-weight:700;color:#1e293b;font-size:1rem}
+.n-msg{color:#0d47a1;background:#e3f2fd;padding:.5rem .75rem;border-radius:8px;font-size:.9rem;border-left:3px solid #007bff}
+.n-user{color:#fff;background:#007bff;padding:.25rem .75rem;border-radius:20px;font-size:.85rem;font-weight:600;display:inline-block}
+.n-date{color:#64748b;font-size:.9rem}
+.empty-state{text-align:center;padding:3rem;color:#64748b}
+.empty-icon{font-size:3rem;margin-bottom:1rem;opacity:.5}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.n-table{animation:fadeInUp .6s ease forwards}
+@media(max-width:768px){.n-c{padding:1rem}.n-t{font-size:2rem}.n-table th,.n-table td{padding:.75rem .5rem}.n-msg{font-size:.8rem}}
+</style>
+
+<div class="n-c">
+  <div class="n-h">
+    <h1 class="n-t">🔔 Notificaciones de Bartenders</h1>
+    <p class="n-s">Mensajes importantes del equipo de trabajo</p>
+  </div>
+ 
+  <div class="n-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Mensaje</th>
+          <th>Usuario</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for noti in notificaciones %}
+        <tr>
+          <td class="n-prod">{{ noti.producto.nombre }}</td>
+          <td>
+            <div class="n-msg">{{ noti.mensaje }}</div>
+          </td>
+          <td>
+            <span class="n-user">{{ noti.creado_por.username }}</span>
+          </td>
+          <td class="n-date">{{ noti.fecha_creacion|date:"d M Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="empty-state">
+            <div class="empty-icon">📋</div>
+            <strong>No hay notificaciones</strong><br>
+            <small>Todo está bajo control</small>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+const t=document.querySelector('.n-table');
+if(t){t.style.opacity='0';t.style.transform='translateY(30px)';setTimeout(()=>{t.style.transition='all .6s ease';t.style.opacity='1';t.style.transform='translateY(0)'},200)}
+});
+</script>
+{% endblock %}

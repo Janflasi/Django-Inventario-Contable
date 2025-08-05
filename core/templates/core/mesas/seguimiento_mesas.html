@@ -1,0 +1,461 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<style>
+.mesas-container {
+    background: #f8fafc;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 1.5rem;
+    min-height: calc(100vh - 70px);
+}
+
+.mesas-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.mesas-title {
+    color: #1e293b;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.mesas-subtitle {
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+.mesas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.mesa-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.mesa-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--mesa-color, #667eea);
+    border-radius: 16px 16px 0 0;
+}
+
+.mesa-card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+    border-color: var(--mesa-color, #667eea);
+}
+
+.mesa-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.mesa-numero {
+    background: linear-gradient(135deg, var(--mesa-color, #667eea) 0%, var(--mesa-color-dark, #764ba2) 100%);
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.mesa-status {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-activa {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    animation: pulse-green 2s infinite;
+}
+
+.status-inactiva {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.status-venta-abierta {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+    animation: glow-orange 3s infinite;
+}
+
+.status-venta-cerrada {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.mesa-info {
+    margin-top: 1rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-value {
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.total-venta {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+/* Colores dinámicos para diferentes estados */
+.mesa-activa {
+    --mesa-color: #10b981;
+    --mesa-color-dark: #059669;
+}
+
+.mesa-venta-abierta {
+    --mesa-color: #f59e0b;
+    --mesa-color-dark: #d97706;
+}
+
+.mesa-inactiva {
+    --mesa-color: #64748b;
+    --mesa-color-dark: #475569;
+}
+
+/* Animaciones */
+@keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+}
+
+@keyframes glow-orange {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+    50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mesa-card {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+/* Vista de tabla alternativa (toggle) */
+.view-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+    gap: 0.5rem;
+}
+
+.toggle-btn {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.toggle-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-color: #667eea;
+}
+
+.toggle-btn:hover {
+    color: #fff;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+
+/* Tabla moderna (oculta por defecto) */
+.modern-table {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    display: none;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.modern-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.modern-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    padding: 1rem;
+    font-weight: 600;
+    text-align: left;
+    border: none;
+}
+
+.modern-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+.modern-table tr:hover {
+    background: #f8fafc;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mesas-container {
+        padding: 1rem;
+    }
+    
+    .mesas-title {
+        font-size: 2rem;
+    }
+    
+    .mesas-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .mesa-card {
+        padding: 1rem;
+    }
+    
+    .view-toggle {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+
+<div class="mesas-container">
+    <div class="mesas-header">
+        <h1 class="mesas-title">🍽️ Seguimiento de Mesas</h1>
+        <p class="mesas-subtitle">Monitorea el estado y actividad de todas las mesas en tiempo real</p>
+    </div>
+
+    <!-- Toggle de vista -->
+    <div class="view-toggle">
+        <button class="toggle-btn active" onclick="toggleView('cards')">
+            <i class="bi bi-grid-3x3-gap"></i> Vista Tarjetas
+        </button>
+        <button class="toggle-btn" onclick="toggleView('table')">
+            <i class="bi bi-table"></i> Vista Tabla
+        </button>
+    </div>
+
+    <!-- Vista de tarjetas -->
+    <div class="mesas-grid" id="cards-view">
+        {% for mesa in mesas %}
+            {% with venta=mesa.ventas.last %}
+            <div class="mesa-card {% if mesa.activa %}mesa-activa{% else %}mesa-inactiva{% endif %} {% if venta and not venta.cerrada %}mesa-venta-abierta{% endif %}">
+                <div class="mesa-header">
+                    <div class="mesa-numero">{{ mesa.numero }}</div>
+                    <div class="mesa-status">
+                        <span class="status-badge {% if mesa.activa %}status-activa{% else %}status-inactiva{% endif %}">
+                            {% if mesa.activa %}● Activa{% else %}○ Inactiva{% endif %}
+                        </span>
+                        <span class="status-badge {% if venta and not venta.cerrada %}status-venta-abierta{% else %}status-venta-cerrada{% endif %}">
+                            {% if venta and not venta.cerrada %}🔥 Venta{% else %}✓ Libre{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mesa-info">
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-geo-alt"></i> Ubicación
+                        </span>
+                        <span class="info-value">{{ mesa.ubicacion }}</span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-receipt"></i> Estado Venta
+                        </span>
+                        <span class="info-value">
+                            {% if venta and not venta.cerrada %}
+                                En Progreso
+                            {% else %}
+                                Sin Venta
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-currency-dollar"></i> Total
+                        </span>
+                        <span class="info-value total-venta">
+                            {% if venta %}
+                                ${{ venta.total|floatformat:2 }}
+                            {% else %}
+                                $0.00
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+        {% endfor %}
+    </div>
+
+    <!-- Vista de tabla -->
+    <div class="modern-table" id="table-view">
+        <table>
+            <thead>
+                <tr>
+                    <th><i class="bi bi-hash"></i> Mesa</th>
+                    <th><i class="bi bi-geo-alt"></i> Ubicación</th>
+                    <th><i class="bi bi-power"></i> Activa</th>
+                    <th><i class="bi bi-receipt"></i> Venta Abierta</th>
+                    <th><i class="bi bi-currency-dollar"></i> Total Venta</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mesa in mesas %}
+                    <tr>
+                        <td><strong>{{ mesa.numero }}</strong></td>
+                        <td>{{ mesa.ubicacion }}</td>
+                        <td>
+                            <span class="status-badge {% if mesa.activa %}status-activa{% else %}status-inactiva{% endif %}">
+                                {{ mesa.activa|yesno:"Sí,No" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% with venta=mesa.ventas.last %}
+                                <span class="status-badge {% if venta and not venta.cerrada %}status-venta-abierta{% else %}status-venta-cerrada{% endif %}">
+                                    {% if venta and not venta.cerrada %}Sí{% else %}No{% endif %}
+                                </span>
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <span class="total-venta">
+                                {% with venta=mesa.ventas.last %}
+                                    {% if venta %}
+                                        ${{ venta.total|floatformat:2 }}
+                                    {% else %}
+                                        $0.00
+                                    {% endif %}
+                                {% endwith %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animación de entrada para las tarjetas
+    const cards = document.querySelectorAll('.mesa-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+
+function toggleView(view) {
+    const cardsView = document.getElementById('cards-view');
+    const tableView = document.getElementById('table-view');
+    const buttons = document.querySelectorAll('.toggle-btn');
+    
+    // Remover clase active de todos los botones
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    if (view === 'cards') {
+        cardsView.style.display = 'grid';
+        tableView.style.display = 'none';
+        buttons[0].classList.add('active');
+    } else {
+        cardsView.style.display = 'none';
+        tableView.style.display = 'block';
+        buttons[1].classList.add('active');
+    }
+}
+</script>
+{% endblock %}

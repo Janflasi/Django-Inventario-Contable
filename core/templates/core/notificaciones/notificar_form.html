@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+{% block title %}Notificar al administrador{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Notificar sobre {{ producto.nombre }}</h3>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label>Motivo de la notificación:</label>
+      <textarea name="mensaje" class="form-control" rows="4" required title="Escribe el motivo de la notificación" placeholder="Escribe el motivo de la notificación aquí"></textarea>
+    </div>
+    <button type="submit" class="btn btn-warning mt-3">Enviar Notificación</button>
+    <a href="{% url 'productos_bartender' %}" class="btn btn-secondary mt-3">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

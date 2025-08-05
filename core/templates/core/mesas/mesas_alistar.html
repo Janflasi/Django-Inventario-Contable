@@ -1,0 +1,144 @@
+{% extends 'core/base.html' %}
+{% block title %}Gestión de Mesas{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">
+        <i class="fas fa-cocktail text-primary me-2"></i>
+        Gestión de Mesas
+      </h2>
+      <p class="text-muted mb-0">Administra las mesas de tu container bar</p>
+    </div>
+    <a href="{% url 'mesa_crear' %}" class="btn btn-primary shadow-sm">
+      <i class="fas fa-plus me-2"></i>Nueva Mesa
+    </a>
+  </div>
+
+  <!-- Mesas Grid -->
+  <div class="row g-4">
+    {% for mesa in mesas %}
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <div class="card h-100 border-0 shadow-sm hover-shadow position-relative overflow-hidden">
+          <!-- Status Indicator -->
+          <div class="position-absolute top-0 end-0 m-3">
+            {% if mesa.activa %}
+              <span class="badge bg-success rounded-pill px-3 py-2">
+                <i class="fas fa-check-circle me-1"></i>Activa
+              </span>
+            {% else %}
+              <span class="badge bg-secondary rounded-pill px-3 py-2">
+                <i class="fas fa-times-circle me-1"></i>Inactiva
+              </span>
+            {% endif %}
+          </div>
+
+          <div class="card-body p-4">
+            <!-- Mesa Number -->
+            <div class="text-center mb-3">
+              <div class="mesa-icon mx-auto mb-3 {% if mesa.activa %}bg-primary{% else %}bg-secondary{% endif %} bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                <i class="fas fa-cocktail {% if mesa.activa %}text-primary{% else %}text-secondary{% endif %} fs-3"></i>
+              </div>
+              <h5 class="fw-bold text-dark mb-1">Mesa {{ mesa.numero }}</h5>
+              <p class="text-muted mb-0 small">
+                <i class="fas fa-map-marker-alt me-1"></i>{{ mesa.ubicacion }}
+              </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+              {% if mesa.activa %}
+                <a href="{% url 'venta_mesa' mesa.pk %}" class="btn btn-success">
+                  <i class="fas fa-cash-register me-2"></i>Llevar Cuenta
+                </a>
+              {% endif %}
+              
+              <div class="row g-2">
+                <div class="col-6">
+                  <a href="{% url 'mesa_editar' mesa.pk %}" class="btn btn-outline-primary w-100 btn-sm">
+                    <i class="fas fa-edit me-1"></i>Editar
+                  </a>
+                </div>
+                <div class="col-6">
+                  <a href="{% url 'mesa_eliminar' mesa.pk %}" class="btn btn-outline-danger w-100 btn-sm">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Footer with Additional Info -->
+          <div class="card-footer bg-light border-0 text-center py-3">
+            <small class="text-muted">
+              <i class="fas fa-calendar me-1"></i>Creada: Hoy
+            </small>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <!-- Empty State -->
+      <div class="col-12">
+        <div class="card border-0 bg-light text-center py-5">
+          <div class="card-body">
+            <i class="fas fa-cocktail text-muted mb-4" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mb-3">No hay mesas registradas</h4>
+            <p class="text-muted mb-4">Comienza agregando tu primera mesa para gestionar tu container bar</p>
+            <a href="{% url 'mesa_crear' %}" class="btn btn-primary">
+              <i class="fas fa-plus me-2"></i>Crear Primera Mesa
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+  .hover-shadow {
+    transition: all 0.3s ease;
+  }
+  
+  .hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+  }
+  
+  .mesa-icon {
+    transition: all 0.3s ease;
+  }
+  
+  .card:hover .mesa-icon {
+    transform: scale(1.1);
+  }
+  
+  .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  
+  .card {
+    border-radius: 12px;
+  }
+  
+  .bg-opacity-10 {
+    background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+  }
+</style>
+
+<!-- Font Awesome (if not already included) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

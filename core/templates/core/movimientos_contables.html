@@ -1,0 +1,593 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Contabilidad - Movimientos{% endblock %}
+
+{% block content %}
+<style>
+/* Variables CSS */
+:root {
+  --primary-blue: #3b82f6;
+  --success-green: #10b981;
+  --danger-red: #ef4444;
+  --warning-orange: #f59e0b;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-light: #475569;
+  --bg-main: #f8fafc;
+  --bg-white: #ffffff;
+  --bg-light: #f8fafc;
+  --border-light: #e2e8f0;
+  --shadow-sm: 0 4px 15px rgba(0,0,0,.1);
+  --radius-lg: 12px;
+  --radius-md: 8px;
+}
+
+/* Layout principal */
+.contabilidad-container {
+  padding: 1rem;
+  background: var(--bg-main);
+  min-height: calc(100vh - 70px);
+}
+
+/* Header */
+.contabilidad-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.contabilidad-title {
+  color: var(--text-primary);
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.contabilidad-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Botón estadísticas */
+.btn-estadisticas {
+  background: var(--primary-blue);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.btn-estadisticas:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+/* Grid de estadísticas - Mobile first */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--bg-white);
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--card-color);
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-card.ingresos { --card-color: var(--success-green); }
+.stat-card.gastos { --card-color: var(--danger-red); }
+.stat-card.ganancia { --card-color: var(--primary-blue); }
+.stat-card.deudas { --card-color: var(--warning-orange); }
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--card-color);
+  margin: 0;
+}
+
+/* Grid de resumen - Mobile first */
+.resumen-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.resumen-card {
+  background: var(--bg-white);
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.resumen-title {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.resumen-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.resumen-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.resumen-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.resumen-value {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+/* Sección de movimientos */
+.movimientos-section {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.movimientos-title {
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Tabla desktop - oculta en móvil */
+.movimientos-table-desktop {
+  display: none;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.movimientos-table-desktop th {
+  background: var(--bg-light);
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-light);
+  border-bottom: 2px solid var(--border-light);
+  font-size: 0.85rem;
+}
+
+.movimientos-table-desktop td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.9rem;
+}
+
+/* Cards móviles - visible por defecto */
+.movimientos-cards-mobile {
+  display: block;
+}
+
+.movimiento-card {
+  background: var(--bg-light);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-left: 4px solid var(--movimiento-color);
+  transition: all 0.3s ease;
+}
+
+.movimiento-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.movimiento-card.ingreso { --movimiento-color: var(--success-green); }
+.movimiento-card.gasto { --movimiento-color: var(--danger-red); }
+
+.movimiento-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.movimiento-concepto {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+.movimiento-monto {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.movimiento-monto.ingreso {
+  color: var(--success-green);
+}
+
+.movimiento-monto.gasto {
+  color: var(--danger-red);
+}
+
+.movimiento-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.movimiento-tipo {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Estado vacío */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Alerta */
+.alert-perdidas {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.alert-text {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.alert-detail {
+  color: #7f1d1d;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+/* Colores de estado */
+.text-success { color: var(--success-green); }
+.text-danger { color: var(--danger-red); }
+.text-warning { color: var(--warning-orange); }
+
+/* Responsive breakpoints */
+@media (min-width: 480px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .contabilidad-container {
+    padding: 1.5rem;
+  }
+  
+  .contabilidad-title {
+    font-size: 2.2rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .resumen-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+  }
+  
+  .stat-value {
+    font-size: 2rem;
+  }
+  
+  .movimientos-cards-mobile {
+    display: none;
+  }
+  
+  .movimientos-table-desktop {
+    display: table;
+  }
+  
+  .resumen-item {
+    padding: 0.75rem 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .contabilidad-container {
+    padding: 2rem;
+  }
+  
+  .movimientos-table-desktop th,
+  .movimientos-table-desktop td {
+    padding: 1rem;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-card,
+.resumen-card,
+.movimiento-card,
+.movimientos-section {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+/* Estilos para tabla desktop */
+.mov-fecha { color: var(--text-secondary); font-size: 0.9rem; }
+.mov-concepto { font-weight: 600; color: var(--text-primary); }
+.mov-ingreso { color: var(--success-green); font-weight: 700; }
+.mov-gasto { color: var(--danger-red); font-weight: 700; }
+</style>
+
+<div class="contabilidad-container">
+  <!-- Botón estadísticas -->
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <a href="{% url 'estadisticas' %}" class="btn-estadisticas">
+      📊 Ver Estadísticas Detalladas
+    </a>
+  </div>
+
+  <!-- Header -->
+  <div class="contabilidad-header">
+    <h1 class="contabilidad-title">📊 Contabilidad del Bar</h1>
+    <p class="contabilidad-subtitle">Resumen financiero completo</p>
+  </div>
+
+  <!-- Estadísticas principales -->
+  <div class="stats-grid">
+    <div class="stat-card ingresos">
+      <div class="stat-label">Total Ingresos</div>
+      <div class="stat-value">${{ total_ingresos|floatformat:0 }}</div>
+    </div>
+    <div class="stat-card gastos">
+      <div class="stat-label">Total Gastos</div>
+      <div class="stat-value">${{ total_gastos|floatformat:0 }}</div>
+    </div>
+    <div class="stat-card ganancia" style="--card-color: {% if ganancia_total >= 0 %}var(--success-green){% else %}var(--danger-red){% endif %}">
+      <div class="stat-label">Ganancia Total</div>
+      <div class="stat-value">${{ ganancia_total|floatformat:0 }}</div>
+    </div>
+    <div class="stat-card deudas">
+      <div class="stat-label">Por Cobrar ({{ cantidad_deudores }} clientes)</div>
+      <div class="stat-value">${{ total_por_cobrar|floatformat:0 }}</div>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div class="resumen-grid">
+    <div class="resumen-card">
+      <h3 class="resumen-title"><i class="bi bi-calendar-day"></i>Movimientos Hoy</h3>
+      <div class="resumen-item">
+        <span class="resumen-label">Ingresos:</span>
+        <span class="resumen-value text-success">${{ ingresos_hoy|floatformat:0 }}</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-label">Gastos:</span>
+        <span class="resumen-value text-danger">${{ gastos_hoy|floatformat:0 }}</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-label">Balance:</span>
+        {% with balance=ingresos_hoy|add:gastos_hoy %}
+          <span class="resumen-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+            ${{ balance|floatformat:0 }}
+          </span>
+        {% endwith %}
+      </div>
+    </div>
+    
+    <div class="resumen-card">
+      <h3 class="resumen-title"><i class="bi bi-graph-up"></i>Estado General</h3>
+      <div class="resumen-item">
+        <span class="resumen-label">Ventas Totales:</span>
+        <span class="resumen-value">${{ ventas_totales|floatformat:0 }}</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-label">Efectivo Real:</span>
+        <span class="resumen-value">${{ ganancia_total|add:total_por_cobrar|floatformat:0 }}</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-label">Estado:</span>
+        {% if ganancia_total >= 0 %}
+          <span class="resumen-value text-success">✅ RENTABLE</span>
+        {% else %}
+          <span class="resumen-value text-danger">⚠️ PÉRDIDAS</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Movimientos -->
+  <div class="movimientos-section">
+    <h2 class="movimientos-title"><i class="bi bi-list-ul"></i>Últimos Movimientos</h2>
+    
+    {% if not movimientos %}
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p><strong>No hay movimientos registrados aún</strong></p>
+        <p style="font-size: 0.9rem;">Los movimientos se registran automáticamente al finalizar ventas</p>
+      </div>
+    {% else %}
+      <!-- Vista Desktop - Tabla -->
+      <table class="movimientos-table-desktop">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Concepto</th>
+            <th>Tipo</th>
+            <th>Monto</th>
+            <th>Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mov in movimientos %}
+          <tr>
+            <td class="mov-fecha">{{ mov.fecha|date:"d/m/Y" }}</td>
+            <td class="mov-concepto">{{ mov.concepto }}</td>
+            <td>
+              {% if mov.tipo == 'ingreso' %}
+                <span class="mov-ingreso">📈 INGRESO</span>
+              {% else %}
+                <span class="mov-gasto">📉 GASTO</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if mov.tipo == 'ingreso' %}
+                <span class="mov-ingreso">+${{ mov.monto|floatformat:0 }}</span>
+              {% else %}
+                <span class="mov-gasto">-${{ mov.monto|floatformat:0 }}</span>
+              {% endif %}
+            </td>
+            <td class="mov-fecha">{{ mov.usuario.username|default:"Sistema" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Vista Móvil - Cards -->
+      <div class="movimientos-cards-mobile">
+        {% for mov in movimientos %}
+        <div class="movimiento-card {{ mov.tipo }}">
+          <div class="movimiento-header">
+            <div class="movimiento-concepto">{{ mov.concepto }}</div>
+            <div class="movimiento-monto {{ mov.tipo }}">
+              {% if mov.tipo == 'ingreso' %}
+                +${{ mov.monto|floatformat:0 }}
+              {% else %}
+                -${{ mov.monto|floatformat:0 }}
+              {% endif %}
+            </div>
+          </div>
+          <div class="movimiento-footer">
+            <div class="movimiento-tipo">
+              {% if mov.tipo == 'ingreso' %}
+                📈 Ingreso
+              {% else %}
+                📉 Gasto
+              {% endif %}
+            </div>
+            <div>{{ mov.fecha|date:"d/m/Y" }} • {{ mov.usuario.username|default:"Sistema" }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Alerta de pérdidas -->
+  {% if ganancia_total < 0 %}
+  <div class="alert-perdidas">
+    <div class="alert-text">⚠️ ALERTA: Tu bar está en pérdidas</div>
+    <div class="alert-detail">Revisa los gastos y aumenta las ventas para mejorar la rentabilidad</div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animación de contadores
+  const values = document.querySelectorAll('.stat-value');
+  values.forEach((value, index) => {
+    const target = parseInt(value.textContent.replace(/[$,]/g, ''));
+    if (isNaN(target)) return;
+    
+    let count = 0;
+    const increment = Math.abs(target) / 50;
+    
+    const updateValue = () => {
+      if (Math.abs(count) < Math.abs(target)) {
+        count += target >= 0 ? increment : -increment;
+        value.textContent = (target >= 0 ? '$' : '-$') + Math.abs(Math.floor(count)).toLocaleString();
+        setTimeout(updateValue, 20);
+      } else {
+        value.textContent = (target >= 0 ? '$' : '-$') + Math.abs(target).toLocaleString();
+      }
+    };
+    
+    // Delay progresivo para cada tarjeta
+    setTimeout(updateValue, 300 + (index * 100));
+  });
+
+  // Animación de entrada para cards móviles
+  if (window.innerWidth < 768) {
+    const cards = document.querySelectorAll('.movimiento-card');
+    cards.forEach((card, index) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(-20px)';
+      setTimeout(() => {
+        card.style.transition = 'all 0.5s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateX(0)';
+      }, index * 100);
+    });
+  }
+});
+</script>
+{% endblock %}

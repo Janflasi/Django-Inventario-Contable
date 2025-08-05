@@ -1,0 +1,112 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Pago Mixto - Mesa {{ venta.mesa.numero }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Pago Mixto - Mesa {{ venta.mesa.numero }}</h3>
+  
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>Resumen de la Cuenta</h5>
+        </div>
+        <div class="card-body">
+          <h4>Total a pagar: <span class="text-primary">${{ venta.total }}</span></h4>
+          <p class="text-muted">El cliente pagará con efectivo y transferencia</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5>Configurar Pago Mixto</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" id="pagoMixtoForm">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label class="form-label">Monto en Efectivo:</label>
+              <input type="number" name="monto_efectivo" id="efectivo" class="form-control" step="0.01" min="0" max="{{ venta.total }}" required>
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">Monto por Transferencia:</label>
+              <input type="number" name="monto_transferencia" id="transferencia" class="form-control" step="0.01" min="0" max="{{ venta.total }}" required>
+            </div>
+            
+            <div class="alert alert-info">
+              <div class="row">
+                <div class="col-6">
+                  <small><strong>Total pagado:</strong></small><br>
+                  <span id="totalPagado" class="fw-bold">$0.00</span>
+                </div>
+                <div class="col-6">
+                  <small><strong>Vuelto:</strong></small><br>
+                  <span id="vuelto" class="fw-bold">$0.00</span>
+                </div>
+              </div>
+            </div>
+            
+            <div id="alertError" class="alert alert-danger d-none">
+              El total pagado debe ser mayor o igual al monto de la venta.
+            </div>
+            
+            <button type="submit" id="btnFinalizar" class="btn btn-success w-100">
+              Finalizar Pago Mixto
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-md-12 text-center">
+      <a href="{% url 'venta_mesa' venta.mesa.id %}" class="btn btn-outline-secondary">Volver a la Venta</a>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const efectivoInput = document.getElementById('efectivo');
+    const transferenciaInput = document.getElementById('transferencia');
+    const totalPagadoSpan = document.getElementById('totalPagado');
+    const vueltoSpan = document.getElementById('vuelto');
+    const alertError = document.getElementById('alertError');
+    const btnFinalizar = document.getElementById('btnFinalizar');
+    const totalVenta = parseFloat("{{ venta.total|floatformat:2 }}");
+
+    function calcular() {
+        const efectivo = parseFloat(efectivoInput.value) || 0;
+        const transferencia = parseFloat(transferenciaInput.value) || 0;
+        const totalPagado = efectivo + transferencia;
+        const vuelto = Math.max(0, totalPagado - totalVenta);
+
+        totalPagadoSpan.textContent = `$${totalPagado.toFixed(2)}`;
+        vueltoSpan.textContent = `$${vuelto.toFixed(2)}`;
+
+        if (totalPagado < totalVenta) {
+            alertError.classList.remove('d-none');
+            btnFinalizar.disabled = true;
+            totalPagadoSpan.className = 'fw-bold text-danger';
+        } else {
+            alertError.classList.add('d-none');
+            btnFinalizar.disabled = false;
+            totalPagadoSpan.className = 'fw-bold text-success';
+        }
+    }
+
+    efectivoInput.addEventListener('input', calcular);
+    transferenciaInput.addEventListener('input', calcular);
+    
+    // Calcular inicial
+    calcular();
+});
+</script>
+
+{% endblock %}

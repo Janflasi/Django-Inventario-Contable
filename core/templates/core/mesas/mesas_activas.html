@@ -1,0 +1,21 @@
+{% extends 'core/base.html' %}
+{% block title %}Mesas Activas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-3 text-success">Selecciona una mesa</h3>
+  <div class="row">
+    {% for mesa in mesas %}
+      <div class="col-md-3 mb-3">
+        <div class="card shadow border-success">
+          <div class="card-body text-center">
+            <h5 class="card-title">Mesa {{ mesa.numero }}</h5>
+            <p class="text-muted">{{ mesa.ubicacion }}</p>
+            <a href="{% url 'cuenta_mesa' mesa.id %}" class="btn btn-outline-success btn-sm">Llevar cuenta</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
