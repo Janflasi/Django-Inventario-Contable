@@ -1,34 +1,370 @@
 {% extends 'core/base.html' %}
-{% block title %}Cerrar caja del día{% endblock %}
+{% block title %}Cierre de Caja - {{ fecha|date:"d/m/Y" }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 720px;">
-  <div class="card shadow-sm rounded-4">
-    <div class="card-body">
-      <h4 class="text-primary mb-3">Cerrar caja - {{ fecha }}</h4>
+<style>
+:root {
+  --primary-green: #10b981;
+  --primary-green-dark: #059669;
+  --warning-orange: #f59e0b;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --radius-xl: 16px;
+}
 
-      {% if ventas %}
-        <ul class="list-group mb-3">
-          {% for venta in ventas %}
-            <li class="list-group-item d-flex justify-content-between">
-              Mesa {{ venta.mesa.numero }} - ${{ venta.total }}
-              <span class="badge bg-success">#{{ venta.id }}</span>
-            </li>
-          {% endfor %}
-        </ul>
+.cierre-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
 
-        <div class="mb-3">
-          <strong>Total del día:</strong> ${{ total }}
-        </div>
+.cierre-header {
+  background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+  color: white;
+  padding: 2rem;
+  border-radius: var(--radius-xl);
+  margin-bottom: 2rem;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
 
-        <form method="post">
-          {% csrf_token %}
-          <button class="btn btn-danger" type="submit">Cerrar caja</button>
-        </form>
-      {% else %}
-        <div class="alert alert-info">No hay ventas pendientes por cerrar hoy.</div>
-      {% endif %}
+.cierre-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  border-left: 4px solid var(--primary-green);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--primary-green);
+}
+
+.stat-label {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.ventas-section, .productos-section {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--gray-800);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.venta-item {
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background: var(--gray-50);
+}
+
+.venta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.venta-info {
+  font-weight: bold;
+  color: var(--gray-800);
+}
+
+.venta-total {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--primary-green);
+}
+
+.productos-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.productos-table th {
+  background: var(--gray-100);
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--gray-700);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.productos-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.productos-table tr:hover {
+  background: var(--gray-50);
+}
+
+.acciones-factura {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-generar-factura {
+  background: linear-gradient(135deg, var(--warning-orange), #d97706);
+  color: white;
+}
+
+.btn-generar-factura:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-imprimir {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.btn-imprimir:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--gray-600);
+}
+
+@media (max-width: 768px) {
+  .cierre-container {
+    padding: 1rem;
+  }
+  
+  .venta-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  
+  .productos-table {
+    font-size: 0.875rem;
+  }
+  
+  .productos-table th,
+  .productos-table td {
+    padding: 0.5rem;
+  }
+  
+  .acciones-factura {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+</style>
+
+<div class="cierre-container">
+  <!-- Header -->
+  <div class="cierre-header">
+    <h1>📊 Cierre de Caja</h1>
+    <p>{{ bartender|title }} - {{ fecha|date:"d/m/Y" }}</p>
+  </div>
+
+  <!-- Estadísticas Generales -->
+  <div class="cierre-stats">
+    <div class="stat-card">
+      <div class="stat-number">{{ total_ventas }}</div>
+      <div class="stat-label">Ventas Realizadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">{{ total_productos }}</div>
+      <div class="stat-label">Productos Vendidos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">${{ total|floatformat:0 }}</div>
+      <div class="stat-label">Total del Día (COP)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">${{ promedio_venta|floatformat:0 }}</div>
+      <div class="stat-label">Promedio por Venta</div>
     </div>
   </div>
+
+  <!-- Acciones principales -->
+  <div class="acciones-factura">
+    <a href="{% url 'generar_factura_html' %}" class="btn btn-generar-factura" target="_blank">
+      📄 Ver Factura Completa
+    </a>
+    <button onclick="window.print()" class="btn btn-imprimir">
+      🖨️ Imprimir Esta Página
+    </button>
+  </div>
+
+  {% if ventas %}
+    <!-- Resumen de Ventas -->
+    <div class="ventas-section">
+      <h2 class="section-title">🧾 Resumen de Ventas</h2>
+      {% for venta in ventas %}
+        <div class="venta-item">
+          <div class="venta-header">
+            <div class="venta-info">
+              <strong>Venta #{{ venta.id }}</strong> - 
+              {% if venta.mesa %}Mesa {{ venta.mesa.numero }}{% else %}Sin Mesa{% endif %} - 
+              {{ venta.hora }} - {{ venta.metodo_pago }}
+            </div>
+            <div class="venta-total">${{ venta.total|floatformat:0 }} COP</div>
+          </div>
+          
+          {% if venta.detalles %}
+            <table class="productos-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Cantidad</th>
+                  <th>Precio Unit.</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for detalle in venta.detalles %}
+                  <tr>
+                    <td>{{ detalle.nombre }}</td>
+                    <td>{{ detalle.cantidad }}</td>
+                    <td>${{ detalle.precio_unitario|floatformat:0 }}</td>
+                    <td>${{ detalle.subtotal|floatformat:0 }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Detalle Completo de Productos -->
+    <div class="productos-section">
+      <h2 class="section-title">📦 Detalle de Todos los Productos Vendidos</h2>
+      {% if productos_vendidos %}
+        <table class="productos-table">
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Mesa</th>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Precio Unit.</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos_vendidos %}
+              <tr>
+                <td><strong>{{ producto.hora }}</strong></td>
+                <td>{{ producto.mesa_numero }}</td>
+                <td>{{ producto.producto }}</td>
+                <td>{{ producto.cantidad }}</td>
+                <td>${{ producto.precio_unitario|floatformat:0 }}</td>
+                <td>${{ producto.subtotal|floatformat:0 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <p>No se encontraron productos vendidos</p>
+        </div>
+      {% endif %}
+    </div>
+
+  {% else %}
+    <!-- Estado Vacío -->
+    <div class="ventas-section">
+      <div class="empty-state">
+        <h3>🤷‍♂️ No hay ventas registradas</h3>
+        <p>No se encontraron ventas para el día {{ fecha|date:"d/m/Y" }}</p>
+        <p>Verifica que hayas realizado ventas como bartender hoy.</p>
+      </div>
+    </div>
+  {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animar las estadísticas
+  const statNumbers = document.querySelectorAll('.stat-number');
+  statNumbers.forEach(stat => {
+    const target = parseInt(stat.textContent.replace(/[^0-9]/g, ''));
+    if (target > 0) {
+      let current = 0;
+      const increment = target / 30;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        if (stat.textContent.includes('COP')) {
+          stat.textContent = `${Math.floor(current)} COP`;
+        } else {
+          stat.textContent = Math.floor(current);
+        }
+      }, 50);
+    }
+  });
+
+  // Resaltar filas al hacer hover
+  const tableRows = document.querySelectorAll('.productos-table tbody tr');
+  tableRows.forEach(row => {
+    row.addEventListener('mouseenter', function() {
+      this.style.backgroundColor = '#f3f4f6';
+      this.style.transform = 'scale(1.01)';
+      this.style.transition = 'all 0.2s ease';
+    });
+    
+    row.addEventListener('mouseleave', function() {
+      this.style.backgroundColor = '';
+      this.style.transform = 'scale(1)';
+    });
+  });
+});
+</script>
 {% endblock %}

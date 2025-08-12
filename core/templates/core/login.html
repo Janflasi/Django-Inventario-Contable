@@ -3,17 +3,22 @@
 
 {% block content %}
 <style>
+  * {
+    box-sizing: border-box;
+  }
+  
   .login-container {
     min-height: calc(100vh - 70px);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem 1rem;
+    padding: 1rem;
     position: relative;
     overflow: hidden;
   }
   
+  /* Partículas flotantes animadas */
   .login-container::before {
     content: '';
     position: absolute;
@@ -21,170 +26,521 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+    animation: particleFloat 20s ease-in-out infinite;
+  }
+  
+  @keyframes particleFloat {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-20px) rotate(120deg); }
+    66% { transform: translateY(10px) rotate(240deg); }
   }
   
   .login-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 3rem;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+    backdrop-filter: blur(30px);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 
+      0 25px 50px rgba(0, 0, 0, 0.1),
+      0 0 0 1px rgba(255, 255, 255, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
     width: 100%;
-    max-width: 450px;
+    max-width: 420px;
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: cardEntrance 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  @keyframes cardEntrance {
+    0% {
+      opacity: 0;
+      transform: translateY(50px) scale(0.9) rotateX(10deg);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1) rotateX(0deg);
+    }
   }
   
   .login-header {
     text-align: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
+    animation: headerSlide 1s ease-out 0.3s both;
+  }
+  
+  @keyframes headerSlide {
+    0% {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   .login-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    border-radius: 20px;
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(145deg, #667eea, #764ba2);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 1.5rem;
-    box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+    box-shadow: 
+      0 20px 40px rgba(102, 126, 234, 0.4),
+      inset 0 -2px 10px rgba(0, 0, 0, 0.1),
+      inset 0 2px 10px rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+    animation: iconPulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  
+  .login-icon::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: iconShine 3s ease-in-out infinite;
+  }
+  
+  @keyframes iconShine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
   }
   
   .login-title {
-    color: #2c3e50;
-    font-size: 2rem;
-    font-weight: 700;
+    background: linear-gradient(145deg, #2c3e50, #4a6741);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.2rem;
+    font-weight: 800;
     margin-bottom: 0.5rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
   
   .login-subtitle {
     color: #7f8c8d;
     font-size: 1rem;
     font-weight: 400;
+    opacity: 0.8;
+  }
+  
+  /* Animación de Bienvenida LA BESTIA */
+  .welcome-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: welcomeExit 1s ease-in-out 3.5s forwards;
+  }
+  
+  @keyframes welcomeExit {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.1); pointer-events: none; }
+  }
+  
+  .welcome-content {
+    text-align: center;
+    color: white;
+    animation: welcomeContent 3.5s ease-in-out;
+  }
+  
+  @keyframes welcomeContent {
+    0% { opacity: 0; transform: translateY(50px) scale(0.8); }
+    15% { opacity: 1; transform: translateY(0) scale(1); }
+    85% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+  }
+  
+  .welcome-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    font-family: 'Inter', sans-serif;
+    animation: titleGlow 0.8s ease-in-out 0.5s infinite alternate;
+  }
+  
+  @keyframes titleGlow {
+    0% { text-shadow: 0 4px 20px rgba(255, 255, 255, 0.3), 0 0 30px rgba(255, 255, 255, 0.2); }
+    100% { text-shadow: 0 4px 20px rgba(255, 255, 255, 0.6), 0 0 50px rgba(255, 255, 255, 0.4); }
+  }
+  
+  .welcome-subtitle {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    animation: subtitleSlide 1s ease-out 1s both;
+  }
+  
+  @keyframes subtitleSlide {
+    0% { opacity: 0; transform: translateX(-30px); }
+    100% { opacity: 0.9; transform: translateX(0); }
+  }
+  
+  .bestia-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    padding: 15px 30px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: bestiaGlow 2s ease-in-out 1.5s infinite;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+  
+  @keyframes bestiaGlow {
+    0%, 100% { 
+      transform: scale(1); 
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); 
+    }
+    50% { 
+      transform: scale(1.05); 
+      box-shadow: 0 15px 40px rgba(255, 255, 255, 0.3), 0 0 60px rgba(255, 255, 255, 0.2); 
+    }
+  }
+  
+  .money-rain {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  
+  .money-symbol {
+    position: absolute;
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.6);
+    animation: moneyFall linear infinite;
+  }
+  
+  @keyframes moneyFall {
+    0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(calc(100vh + 100px)) rotate(360deg); opacity: 0; }
+  }
+  
+  /* Responsivo para la animación */
+  @media (max-width: 480px) {
+    .welcome-title {
+      font-size: 2.5rem;
+    }
+    
+    .welcome-subtitle {
+      font-size: 1.3rem;
+    }
+    
+    .bestia-badge {
+      font-size: 1.1rem;
+      padding: 12px 25px;
+      letter-spacing: 1px;
+    }
+    
+    .money-symbol {
+      font-size: 1.5rem;
+    }
+  }
+  
+  @media (max-width: 360px) {
+    .welcome-title {
+      font-size: 2.2rem;
+    }
+    
+    .welcome-subtitle {
+      font-size: 1.1rem;
+    }
+    
+    .bestia-badge {
+      font-size: 1rem;
+      padding: 10px 20px;
+    }
   }
   
   .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.8rem;
+    animation: fieldSlideIn 0.6s ease-out both;
+  }
+  
+  .form-group:nth-child(1) { animation-delay: 0.5s; }
+  .form-group:nth-child(2) { animation-delay: 0.7s; }
+  
+  @keyframes fieldSlideIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
   
   .form-label {
-    color: #34495e;
+    color: #2c3e50;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.8rem;
     display: block;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .input-wrapper {
+    position: relative;
+    transform-style: preserve-3d;
   }
   
   .form-control-modern {
     width: 100%;
-    padding: 15px 20px;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
+    padding: 18px 25px 18px 55px;
+    border: 2px solid #e3f2fd;
+    border-radius: 16px;
     font-size: 1rem;
-    background: #f8f9fa;
-    transition: all 0.3s ease;
+    background: linear-gradient(145deg, #f8f9fa, #ffffff);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     font-family: 'Inter', sans-serif;
+    position: relative;
+    z-index: 1;
   }
   
   .form-control-modern:focus {
     outline: none;
-    border-color: #3498db;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-    transform: translateY(-2px);
+    border-color: #667eea;
+    background: #ffffff;
+    box-shadow: 
+      0 0 0 4px rgba(102, 126, 234, 0.15),
+      0 10px 30px rgba(102, 126, 234, 0.2);
+    transform: translateY(-3px) scale(1.02);
+  }
+  
+  .input-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #667eea;
+    z-index: 2;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+  }
+  
+  .input-wrapper:focus-within .input-icon {
+    color: #764ba2;
+    transform: translateY(-50%) scale(1.1);
   }
   
   .btn-login {
     width: 100%;
-    padding: 15px;
-    background: linear-gradient(135deg, #3498db, #2980b9);
+    padding: 18px;
+    background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: 16px;
     font-size: 1.1rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 1rem;
-    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin-top: 1.5rem;
+    box-shadow: 
+      0 8px 25px rgba(102, 126, 234, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.5px;
+    animation: buttonSlideIn 0.6s ease-out 0.9s both;
+  }
+  
+  @keyframes buttonSlideIn {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .btn-login::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+  
+  .btn-login:hover::before {
+    left: 100%;
   }
   
   .btn-login:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
-    background: linear-gradient(135deg, #2980b9, #3498db);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+      0 15px 35px rgba(102, 126, 234, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: linear-gradient(145deg, #764ba2 0%, #667eea 100%);
   }
   
   .btn-login:active {
-    transform: translateY(-1px);
+    transform: translateY(-2px) scale(0.98);
   }
   
   .login-footer {
     text-align: center;
     margin-top: 2rem;
     padding-top: 2rem;
-    border-top: 1px solid #e9ecef;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    animation: footerFadeIn 0.6s ease-out 1.1s both;
+  }
+  
+  @keyframes footerFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   .login-footer p {
     color: #7f8c8d;
     margin-bottom: 0;
+    font-size: 0.95rem;
   }
   
   .login-footer a {
-    color: #3498db;
+    color: #667eea;
     text-decoration: none;
     font-weight: 600;
     transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .login-footer a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 50%;
+    background: linear-gradient(145deg, #667eea, #764ba2);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+  }
+  
+  .login-footer a:hover::after {
+    width: 100%;
   }
   
   .login-footer a:hover {
-    color: #2980b9;
-    text-decoration: underline;
+    color: #764ba2;
+    transform: translateY(-1px);
+  }
+  
+  .error-messages, .success-messages {
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+    animation: messageSlideIn 0.5s ease-out;
+  }
+  
+  @keyframes messageSlideIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
   
   .error-messages {
-    background: rgba(231, 76, 60, 0.1);
+    background: linear-gradient(145deg, rgba(231, 76, 60, 0.1), rgba(231, 76, 60, 0.05));
     border: 1px solid rgba(231, 76, 60, 0.3);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
     color: #e74c3c;
   }
   
   .success-messages {
-    background: rgba(46, 204, 113, 0.1);
+    background: linear-gradient(145deg, rgba(46, 204, 113, 0.1), rgba(46, 204, 113, 0.05));
     border: 1px solid rgba(46, 204, 113, 0.3);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
     color: #27ae60;
   }
   
-  .input-icon {
-    position: relative;
-  }
-  
-  .input-icon i {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #7f8c8d;
-    z-index: 2;
-  }
-  
-  .input-icon .form-control-modern {
-    padding-left: 50px;
-  }
-  
-  @media (max-width: 768px) {
+  /* Responsivo para móviles */
+  @media (max-width: 480px) {
+    .login-container {
+      padding: 0.5rem;
+      min-height: 100vh;
+    }
+    
     .login-card {
       padding: 2rem 1.5rem;
-      margin: 1rem;
+      margin: 0;
+      border-radius: 20px;
+      max-width: 100%;
+    }
+    
+    .login-title {
+      font-size: 1.8rem;
+    }
+    
+    .login-icon {
+      width: 70px;
+      height: 70px;
+    }
+    
+    .form-control-modern {
+      padding: 16px 20px 16px 50px;
+      font-size: 16px; /* Previene zoom en iOS */
+    }
+    
+    .btn-login {
+      padding: 16px;
+      font-size: 1rem;
+    }
+  }
+  
+  @media (max-width: 360px) {
+    .login-card {
+      padding: 1.5rem 1rem;
     }
     
     .login-title {
@@ -197,28 +553,83 @@
     }
   }
   
-  /* Animaciones */
-  @keyframes slideInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
+  /* Landscape móvil */
+  @media (max-height: 600px) and (orientation: landscape) {
+    .login-container {
+      padding: 1rem 2rem;
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+    
+    .login-card {
+      padding: 1.5rem;
+    }
+    
+    .login-header {
+      margin-bottom: 1rem;
+    }
+    
+    .login-icon {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 1rem;
+    }
+    
+    .login-title {
+      font-size: 1.6rem;
+      margin-bottom: 0.3rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.2rem;
     }
   }
   
-  .login-card {
-    animation: slideInUp 0.6s ease-out;
+  /* Tablets */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .login-card {
+      max-width: 450px;
+      padding: 2.5rem;
+    }
+  }
+  
+  /* Tablets grandes y escritorio */
+  @media (min-width: 769px) {
+    .login-card {
+      max-width: 420px;
+    }
+  }
+  
+  /* Muy grandes pantallas */
+  @media (min-width: 1200px) {
+    .login-card {
+      max-width: 460px;
+      padding: 3rem;
+    }
+    
+    .login-title {
+      font-size: 2.4rem;
+    }
+    
+    .login-icon {
+      width: 100px;
+      height: 100px;
+    }
   }
 </style>
+
+<div class="welcome-overlay" id="welcomeOverlay">
+  <div class="welcome-content">
+    <div class="money-rain" id="moneyRain"></div>
+    <h1 class="welcome-title">¡BIENVENIDO!</h1>
+    <p class="welcome-subtitle">AL MEJOR SISTEMA CONTABLE</p>
+    <div class="bestia-badge">🦁 LA BESTIA 🦁</div>
+  </div>
+</div>
 
 <div class="login-container">
   <div class="login-card">
     <div class="login-header">
       <div class="login-icon">
-        <i class="bi bi-person-lock text-white" style="font-size: 2rem;"></i>
+        <i class="bi bi-person-lock text-white" style="font-size: 2.2rem; z-index: 2; position: relative;"></i>
       </div>
       <h1 class="login-title">¡Bienvenido!</h1>
       <p class="login-subtitle">Inicia sesión para acceder al panel</p>
@@ -236,7 +647,7 @@
       </div>
     {% endif %}
     
-    <!-- Mensajes de éxito (si los hay) -->
+    <!-- Mensajes de éxito -->
     {% if messages %}
       {% for message in messages %}
         <div class="success-messages">
@@ -253,15 +664,16 @@
         <label class="form-label" for="{{ form.username.id_for_label }}">
           <i class="bi bi-person me-2"></i>Usuario
         </label>
-        <div class="input-icon">
-          <i class="bi bi-person"></i>
+        <div class="input-wrapper">
+          <i class="bi bi-person input-icon"></i>
           <input type="text" 
                  class="form-control-modern" 
                  name="{{ form.username.name }}"
                  id="{{ form.username.id_for_label }}"
                  placeholder="Ingresa tu usuario"
                  value="{{ form.username.value|default:'' }}"
-                 required>
+                 required
+                 autocomplete="username">
         </div>
       </div>
       
@@ -269,14 +681,15 @@
         <label class="form-label" for="{{ form.password.id_for_label }}">
           <i class="bi bi-lock me-2"></i>Contraseña
         </label>
-        <div class="input-icon">
-          <i class="bi bi-lock"></i>
+        <div class="input-wrapper">
+          <i class="bi bi-lock input-icon"></i>
           <input type="password" 
                  class="form-control-modern" 
                  name="{{ form.password.name }}"
                  id="{{ form.password.id_for_label }}"
                  placeholder="Ingresa tu contraseña"
-                 required>
+                 required
+                 autocomplete="current-password">
         </div>
       </div>
       
@@ -294,36 +707,222 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Animación de entrada de los campos
-  const inputs = document.querySelectorAll('.form-control-modern');
-  inputs.forEach((input, index) => {
-    input.style.opacity = '0';
-    input.style.transform = 'translateX(-20px)';
-    
-    setTimeout(() => {
-      input.style.transition = 'all 0.4s ease';
-      input.style.opacity = '1';
-      input.style.transform = 'translateX(0)';
-    }, 200 + (index * 100));
-  });
   
-  // Efectos de focus mejorados
-  inputs.forEach(input => {
+  // ¡ANIMACIÓN DE LA BESTIA! 🦁💰
+  function initWelcomeAnimation() {
+    const overlay = document.getElementById('welcomeOverlay');
+    const moneyRain = document.getElementById('moneyRain');
+    
+    // Crear lluvia de dinero 💸
+    const moneySymbols = ['💰', '💵', '💴', '💶', '💷', '🪙', '💎', '🤑'];
+    
+    function createMoneyDrop() {
+      const symbol = document.createElement('div');
+      symbol.className = 'money-symbol';
+      symbol.innerHTML = moneySymbols[Math.floor(Math.random() * moneySymbols.length)];
+      symbol.style.left = Math.random() * 100 + '%';
+      symbol.style.animationDuration = (Math.random() * 3 + 2) + 's';
+      symbol.style.animationDelay = Math.random() * 2 + 's';
+      moneyRain.appendChild(symbol);
+      
+      // Remover después de la animación
+      setTimeout(() => {
+        if (symbol.parentNode) {
+          symbol.remove();
+        }
+      }, 5000);
+    }
+    
+    // Crear múltiples drops de dinero
+    for (let i = 0; i < 15; i++) {
+      setTimeout(createMoneyDrop, i * 200);
+    }
+    
+    // Remover el overlay después de la animación
+    setTimeout(() => {
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
+    }, 4500);
+  }
+  
+  // Iniciar la animación de bienvenida
+  initWelcomeAnimation();
+  
+  // Función para crear partículas flotantes
+  function createFloatingParticles() {
+    const container = document.querySelector('.login-container');
+    const colors = ['rgba(102, 126, 234, 0.6)', 'rgba(118, 75, 162, 0.6)', 'rgba(255, 119, 198, 0.6)'];
+    
+    for (let i = 0; i < 6; i++) {
+      const particle = document.createElement('div');
+      particle.style.cssText = `
+        position: absolute;
+        width: ${Math.random() * 6 + 2}px;
+        height: ${Math.random() * 6 + 2}px;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        border-radius: 50%;
+        pointer-events: none;
+        animation: float ${Math.random() * 6 + 8}s ease-in-out infinite;
+        left: ${Math.random() * 100}%;
+        top: ${Math.random() * 100}%;
+        opacity: 0;
+      `;
+      
+      const keyframes = `
+        @keyframes float {
+          0%, 100% { 
+            transform: translateY(0px) translateX(0px); 
+            opacity: 0;
+          }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          50% { 
+            transform: translateY(${Math.random() * 40 - 20}px) translateX(${Math.random() * 40 - 20}px);
+            opacity: 0.8;
+          }
+        }
+      `;
+      
+      if (!document.querySelector('#particle-styles')) {
+        const style = document.createElement('style');
+        style.id = 'particle-styles';
+        style.textContent = keyframes;
+        document.head.appendChild(style);
+      }
+      
+      container.appendChild(particle);
+    }
+  }
+  
+  // Crear partículas después de que termine la animación de bienvenida
+  setTimeout(createFloatingParticles, 5000);
+  
+  // Efectos mejorados para los inputs
+  const inputs = document.querySelectorAll('.form-control-modern');
+  
+  inputs.forEach((input, index) => {
+    // Animación de ondas en focus
     input.addEventListener('focus', function() {
-      this.parentElement.style.transform = 'scale(1.02)';
+      const wrapper = this.closest('.input-wrapper');
+      wrapper.style.transform = 'scale(1.02)';
+      
+      // Crear efecto de onda
+      const ripple = document.createElement('div');
+      ripple.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(102, 126, 234, 0.2);
+        border-radius: 50%;
+        pointer-events: none;
+        animation: ripple 0.6s ease-out;
+        z-index: 0;
+      `;
+      
+      const rippleKeyframes = `
+        @keyframes ripple {
+          to {
+            width: 200px;
+            height: 200px;
+            margin-left: -100px;
+            margin-top: -100px;
+            opacity: 0;
+          }
+        }
+      `;
+      
+      if (!document.querySelector('#ripple-styles')) {
+        const style = document.createElement('style');
+        style.id = 'ripple-styles';
+        style.textContent = rippleKeyframes;
+        document.head.appendChild(style);
+      }
+      
+      wrapper.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
     });
     
     input.addEventListener('blur', function() {
-      this.parentElement.style.transform = 'scale(1)';
+      const wrapper = this.closest('.input-wrapper');
+      wrapper.style.transform = 'scale(1)';
+    });
+    
+    // Efecto de typing
+    input.addEventListener('input', function() {
+      const wrapper = this.closest('.input-wrapper');
+      if (this.value.length > 0) {
+        wrapper.style.transform = 'scale(1.01)';
+      } else {
+        wrapper.style.transform = 'scale(1)';
+      }
     });
   });
   
-  // Auto-focus en el primer campo
-  if (inputs.length > 0) {
-    setTimeout(() => {
+  // Auto-focus con delay (después de la animación de bienvenida)
+  setTimeout(() => {
+    if (inputs.length > 0) {
       inputs[0].focus();
-    }, 800);
+    }
+  }, 5200);
+  
+  // Efectos del botón
+  const button = document.querySelector('.btn-login');
+  if (button) {
+    button.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateY(-4px) scale(1.02)';
+    });
+    
+    button.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(0) scale(1)';
+    });
+    
+    button.addEventListener('mousedown', function() {
+      this.style.transform = 'translateY(-2px) scale(0.98)';
+    });
+    
+    button.addEventListener('mouseup', function() {
+      this.style.transform = 'translateY(-4px) scale(1.02)';
+    });
   }
+  
+  // Efecto parallax suave en scroll (si hay scroll)
+  let ticking = false;
+  function updateParallax() {
+    const scrolled = window.pageYOffset;
+    const rate = scrolled * -0.5;
+    const container = document.querySelector('.login-container');
+    if (container) {
+      container.style.transform = `translateY(${rate}px)`;
+    }
+    ticking = false;
+  }
+  
+  function requestTick() {
+    if (!ticking) {
+      requestAnimationFrame(updateParallax);
+      ticking = true;
+    }
+  }
+  
+  window.addEventListener('scroll', requestTick);
+  
+  // Prevenir zoom en iOS en inputs
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+    inputs.forEach(input => {
+      input.addEventListener('focus', function() {
+        this.style.fontSize = '16px';
+      });
+    });
+  }
+  
+  // Sonido épico de bienvenida (opcional - comentado para no molestar)
+  // setTimeout(() => {
+  //   const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmMZBDCH0/LPfSgEIXnL8N1+RQkPXrzopqIYCkeh5fGhSSEBHmnE7NZhIwA0eM3l1nYdByNn1+qvSBAMTaTg6kklAS5x0uqoPAYOUZbe6WsoPQYkftbg1nkbASNnzuuwRAwKSaXg6U4oAyx5z+m7QAgOUaHf5mQpAgAoeCvtjcHJFDcG4Kw8AAAAB4AAAAAAAAAAAAAAABA=');
+  //   audio.play().catch(() => {}); // Silenciar error si no se puede reproducir
+  // }, 500);
 });
 </script>
 {% endblock %}

@@ -2,143 +2,1012 @@
 {% block title %}Gestión de Mesas{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-4">
-  <!-- Header Section -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="fw-bold text-dark mb-1">
-        <i class="fas fa-cocktail text-primary me-2"></i>
-        Gestión de Mesas
-      </h2>
-      <p class="text-muted mb-0">Administra las mesas de tu container bar</p>
-    </div>
-    <a href="{% url 'mesa_crear' %}" class="btn btn-primary shadow-sm">
-      <i class="fas fa-plus me-2"></i>Nueva Mesa
-    </a>
-  </div>
-
-  <!-- Mesas Grid -->
-  <div class="row g-4">
-    {% for mesa in mesas %}
-      <div class="col-xl-3 col-lg-4 col-md-6">
-        <div class="card h-100 border-0 shadow-sm hover-shadow position-relative overflow-hidden">
-          <!-- Status Indicator -->
-          <div class="position-absolute top-0 end-0 m-3">
-            {% if mesa.activa %}
-              <span class="badge bg-success rounded-pill px-3 py-2">
-                <i class="fas fa-check-circle me-1"></i>Activa
-              </span>
-            {% else %}
-              <span class="badge bg-secondary rounded-pill px-3 py-2">
-                <i class="fas fa-times-circle me-1"></i>Inactiva
-              </span>
-            {% endif %}
-          </div>
-
-          <div class="card-body p-4">
-            <!-- Mesa Number -->
-            <div class="text-center mb-3">
-              <div class="mesa-icon mx-auto mb-3 {% if mesa.activa %}bg-primary{% else %}bg-secondary{% endif %} bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                <i class="fas fa-cocktail {% if mesa.activa %}text-primary{% else %}text-secondary{% endif %} fs-3"></i>
-              </div>
-              <h5 class="fw-bold text-dark mb-1">Mesa {{ mesa.numero }}</h5>
-              <p class="text-muted mb-0 small">
-                <i class="fas fa-map-marker-alt me-1"></i>{{ mesa.ubicacion }}
-              </p>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="d-grid gap-2">
-              {% if mesa.activa %}
-                <a href="{% url 'venta_mesa' mesa.pk %}" class="btn btn-success">
-                  <i class="fas fa-cash-register me-2"></i>Llevar Cuenta
-                </a>
-              {% endif %}
-              
-              <div class="row g-2">
-                <div class="col-6">
-                  <a href="{% url 'mesa_editar' mesa.pk %}" class="btn btn-outline-primary w-100 btn-sm">
-                    <i class="fas fa-edit me-1"></i>Editar
-                  </a>
-                </div>
-                <div class="col-6">
-                  <a href="{% url 'mesa_eliminar' mesa.pk %}" class="btn btn-outline-danger w-100 btn-sm">
-                    <i class="fas fa-trash me-1"></i>Eliminar
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card Footer with Additional Info -->
-          <div class="card-footer bg-light border-0 text-center py-3">
-            <small class="text-muted">
-              <i class="fas fa-calendar me-1"></i>Creada: Hoy
-            </small>
-          </div>
-        </div>
-      </div>
-    {% empty %}
-      <!-- Empty State -->
-      <div class="col-12">
-        <div class="card border-0 bg-light text-center py-5">
-          <div class="card-body">
-            <i class="fas fa-cocktail text-muted mb-4" style="font-size: 4rem;"></i>
-            <h4 class="text-muted mb-3">No hay mesas registradas</h4>
-            <p class="text-muted mb-4">Comienza agregando tu primera mesa para gestionar tu container bar</p>
-            <a href="{% url 'mesa_crear' %}" class="btn btn-primary">
-              <i class="fas fa-plus me-2"></i>Crear Primera Mesa
-            </a>
-          </div>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-</div>
-
-<!-- Custom Styles -->
 <style>
-  .hover-shadow {
-    transition: all 0.3s ease;
+/* Variables CSS - Misma paleta profesional */
+:root {
+  --primary-green: #10b981;
+  --primary-green-light: #34d399;
+  --primary-green-dark: #059669;
+  --secondary-purple: #8b5cf6;
+  --accent-blue: #3b82f6;
+  --accent-orange: #f59e0b;
+  --warning-orange: #f59e0b;
+  --danger-red: #ef4444;
+  --success-green: #22c55e;
+  
+  /* Colores neutros profesionales */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  
+  /* Sombras profesionales */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Transiciones */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+  
+  /* Bordes */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+}
+
+/* Reset y base */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-900);
+  line-height: 1.6;
+}
+
+/* Contenedor principal */
+.mesas-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-height: calc(100vh - 70px);
+}
+
+/* Header moderno */
+.mesas-header {
+  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--secondary-purple) 100%);
+  border-radius: var(--radius-2xl);
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.mesas-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+  opacity: 0.4;
+}
+
+.header-content {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.header-info h1 {
+  color: white;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header-info p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  margin: 0;
+  opacity: 0.95;
+}
+
+.btn-nueva-mesa {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all var(--transition-base);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-nueva-mesa::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.btn-nueva-mesa:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+  color: white;
+  text-decoration: none;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-nueva-mesa:hover::before {
+  opacity: 1;
+}
+
+/* Dashboard de estadísticas */
+.mesas-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-green), var(--accent-blue));
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-green-light);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.stat-icon.activas {
+  background: linear-gradient(135deg, var(--success-green), var(--primary-green));
+  color: white;
+}
+
+.stat-icon.inactivas {
+  background: linear-gradient(135deg, var(--gray-400), var(--gray-500));
+  color: white;
+}
+
+.stat-icon.total {
+  background: linear-gradient(135deg, var(--accent-blue), var(--secondary-purple));
+  color: white;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Grid de mesas */
+.mesas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Card de mesa */
+.mesa-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 0;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  height: fit-content;
+}
+
+.mesa-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--primary-green), var(--accent-blue));
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.mesa-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-green-light);
+}
+
+.mesa-card:hover::before {
+  opacity: 1;
+}
+
+.mesa-card.activa {
+  border-color: var(--success-green);
+}
+
+.mesa-card.inactiva {
+  border-color: var(--gray-300);
+  opacity: 0.85;
+}
+
+/* Header del card */
+.mesa-header {
+  padding: 1.5rem 1.5rem 1rem;
+  text-align: center;
+  position: relative;
+}
+
+.mesa-status {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.mesa-status.activa {
+  background: linear-gradient(135deg, var(--success-green), var(--primary-green));
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.mesa-status.inactiva {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border: 1px solid var(--gray-300);
+}
+
+.mesa-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1rem;
+  border-radius: var(--radius-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.mesa-icon.activa {
+  background: linear-gradient(135deg, var(--primary-green-light), var(--primary-green));
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.mesa-icon.inactiva {
+  background: var(--gray-100);
+  color: var(--gray-400);
+  border: 2px solid var(--gray-300);
+}
+
+.mesa-card:hover .mesa-icon {
+  transform: scale(1.05) rotate(5deg);
+}
+
+.mesa-numero {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.mesa-ubicacion {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+/* Cuerpo del card */
+.mesa-body {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.mesa-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.btn-accion-principal {
+  background: linear-gradient(135deg, var(--success-green), var(--primary-green));
+  color: white;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all var(--transition-base);
+  border: none;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-accion-principal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.btn-accion-principal:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-accion-principal:hover::before {
+  left: 100%;
+}
+
+.btn-accion-principal:disabled {
+  background: var(--gray-300);
+  color: var(--gray-500);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.acciones-secundarias {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.btn-secundario {
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: all var(--transition-base);
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-editar {
+  background: white;
+  color: var(--accent-orange);
+  border-color: var(--accent-orange);
+}
+
+.btn-editar:hover {
+  background: var(--accent-orange);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-eliminar {
+  background: white;
+  color: var(--danger-red);
+  border-color: var(--danger-red);
+}
+
+.btn-eliminar:hover {
+  background: var(--danger-red);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Footer del card */
+.mesa-footer {
+  background: var(--gray-50);
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--gray-200);
+  text-align: center;
+}
+
+.mesa-meta {
+  color: var(--gray-500);
+  font-size: 0.75rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+/* Estado vacío */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 2px dashed var(--gray-300);
+}
+
+.empty-icon {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.6;
+  background: linear-gradient(135deg, var(--primary-green), var(--accent-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.empty-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gray-700);
+  margin-bottom: 0.75rem;
+}
+
+.empty-description {
+  color: var(--gray-500);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-empty-action {
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+  font-size: 1.1rem;
+}
+
+.btn-empty-action:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  color: white;
+  text-decoration: none;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .mesas-container {
+    padding: 0.5rem;
   }
   
-  .hover-shadow:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+  .mesas-header {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .btn-nueva-mesa {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .mesas-dashboard {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .mesas-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .mesa-card {
+    margin-bottom: 0;
+  }
+  
+  .mesa-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+  
+  .mesa-body {
+    padding: 0 1.25rem 1.25rem;
   }
   
   .mesa-icon {
-    transition: all 0.3s ease;
+    width: 70px;
+    height: 70px;
+    font-size: 1.75rem;
   }
   
-  .card:hover .mesa-icon {
-    transform: scale(1.1);
+  .acciones-secundarias {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .mesas-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
   
-  .btn {
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.2s ease;
+  .mesas-dashboard {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .mesas-container {
+    padding: 2rem;
   }
   
-  .btn:hover {
-    transform: translateY(-1px);
+  .mesas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   }
-  
-  .badge {
-    font-size: 0.75rem;
-    font-weight: 600;
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  
-  .card {
-    border-radius: 12px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .bg-opacity-10 {
-    background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
   }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.mesa-card {
+  animation: fadeInUp var(--transition-slow) ease-out;
+}
+
+.stat-card {
+  animation: slideInLeft var(--transition-slow) ease-out;
+}
+
+.mesa-icon.activa {
+  animation: pulse 2s infinite;
+}
+
+/* Utilidades */
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 0.75rem; }
+.text-center { text-align: center; }
+.font-bold { font-weight: 700; }
+.text-sm { font-size: 0.875rem; }
 </style>
 
-<!-- Font Awesome (if not already included) -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<div class="mesas-container">
+  <!-- Header Profesional -->
+  <div class="mesas-header">
+    <div class="header-content">
+      <div class="header-info">
+        <h1>🍹 Gestión de Mesas</h1>
+        <p>Control inteligente de mesas para tu container bar</p>
+      </div>
+      <a href="{% url 'mesa_crear' %}" class="btn-nueva-mesa">
+        <i class="bi bi-plus-circle-fill"></i>
+        Nueva Mesa
+      </a>
+    </div>
+  </div>
+
+  <!-- Dashboard de Estadísticas -->
+  <div class="mesas-dashboard">
+    <div class="stat-card">
+      <div class="stat-header">
+        <div class="stat-icon activas">
+          {% with activas=0 %}
+            {% for mesa in mesas %}
+              {% if mesa.activa %}
+                {% widthratio activas|add:1 1 1 as activas %}
+              {% endif %}
+            {% endfor %}
+            {{ activas }}
+          {% endwith %}
+        </div>
+      </div>
+      <div class="stat-number">
+        {% with activas=0 %}
+          {% for mesa in mesas %}
+            {% if mesa.activa %}
+              {% widthratio activas|add:1 1 1 as activas %}
+            {% endif %}
+          {% endfor %}
+          {{ activas }}
+        {% endwith %}
+      </div>
+      <div class="stat-label">Mesas Activas</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <div class="stat-icon inactivas">
+          {% with inactivas=0 %}
+            {% for mesa in mesas %}
+              {% if not mesa.activa %}
+                {% widthratio inactivas|add:1 1 1 as inactivas %}
+              {% endif %}
+            {% endfor %}
+            {{ inactivas }}
+          {% endwith %}
+        </div>
+      </div>
+      <div class="stat-number">
+        {% with inactivas=0 %}
+          {% for mesa in mesas %}
+            {% if not mesa.activa %}
+              {% widthratio inactivas|add:1 1 1 as inactivas %}
+            {% endif %}
+          {% endfor %}
+          {{ inactivas }}
+        {% endwith %}
+      </div>
+      <div class="stat-label">Mesas Inactivas</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-header">
+        <div class="stat-icon total">{{ mesas|length }}</div>
+      </div>
+      <div class="stat-number">{{ mesas|length }}</div>
+      <div class="stat-label">Total Mesas</div>
+    </div>
+  </div>
+
+  {% if mesas %}
+    <!-- Grid de Mesas -->
+    <div class="mesas-grid">
+      {% for mesa in mesas %}
+      <div class="mesa-card {% if mesa.activa %}activa{% else %}inactiva{% endif %}">
+        <!-- Header -->
+        <div class="mesa-header">
+          <div class="mesa-status {% if mesa.activa %}activa{% else %}inactiva{% endif %}">
+            {% if mesa.activa %}
+              <i class="bi bi-check-circle-fill"></i>
+              Activa
+            {% else %}
+              <i class="bi bi-x-circle-fill"></i>
+              Inactiva
+            {% endif %}
+          </div>
+          
+          <div class="mesa-icon {% if mesa.activa %}activa{% else %}inactiva{% endif %}">
+            <i class="bi bi-cup-straw"></i>
+          </div>
+          
+          <h3 class="mesa-numero">Mesa {{ mesa.numero }}</h3>
+          <p class="mesa-ubicacion">
+            <i class="bi bi-geo-alt-fill"></i>
+            {{ mesa.ubicacion|default:"Sin ubicación" }}
+          </p>
+        </div>
+
+        <!-- Cuerpo -->
+        <div class="mesa-body">
+          <div class="mesa-acciones">
+            {% if mesa.activa %}
+              <a href="{% url 'venta_mesa' mesa.pk %}" class="btn-accion-principal">
+                <i class="bi bi-cash-coin"></i>
+                Llevar Cuenta
+              </a>
+            {% else %}
+              <button class="btn-accion-principal" disabled>
+                <i class="bi bi-slash-circle"></i>
+                Mesa Inactiva
+              </button>
+            {% endif %}
+            
+            <div class="acciones-secundarias">
+              <a href="{% url 'mesa_editar' mesa.pk %}" class="btn-secundario btn-editar">
+                <i class="bi bi-pencil-square"></i>
+                Editar
+              </a>
+              <a href="{% url 'mesa_eliminar' mesa.pk %}" class="btn-secundario btn-eliminar">
+                <i class="bi bi-trash3-fill"></i>
+                Eliminar
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mesa-footer">
+          <p class="mesa-meta">
+            <i class="bi bi-calendar3"></i>
+            Registrada recientemente
+          </p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Estado Vacío -->
+    <div class="mesas-grid">
+      <div class="empty-state">
+        <div class="empty-icon">🍹</div>
+        <div class="empty-title">No hay mesas registradas</div>
+        <div class="empty-description">
+          Comienza agregando tu primera mesa para gestionar las ventas de tu container bar
+        </div>
+        <a href="{% url 'mesa_crear' %}" class="btn-empty-action">
+          <i class="bi bi-plus-circle-fill"></i>
+          Crear Primera Mesa
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Animaciones progresivas
+  const cards = document.querySelectorAll('.mesa-card');
+  const statsCards = document.querySelectorAll('.stat-card');
+  const header = document.querySelector('.mesas-header');
+  
+  // Animar header
+  if (header) {
+    header.style.opacity = '0';
+    header.style.transform = 'translateY(-30px)';
+    setTimeout(() => {
+      header.style.transition = 'all 0.6s ease';
+      header.style.opacity = '1';
+      header.style.transform = 'translateY(0)';
+    }, 100);
+  }
+  
+  // Animar cards de estadísticas
+  statsCards.forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(-30px)';
+    setTimeout(() => {
+      card.style.transition = 'all 0.5s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateX(0)';
+    }, 200 + (index * 100));
+  });
+  
+  // Animar cards de mesas con delay escalonado
+  cards.forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px)';
+    setTimeout(() => {
+      card.style.transition = 'all 0.5s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, 400 + (index * 150));
+  });
+  
+  // Efecto de pulsación para mesas activas
+  const mesasActivas = document.querySelectorAll('.mesa-icon.activa');
+  mesasActivas.forEach(icon => {
+    setInterval(() => {
+      icon.style.transform = 'scale(1.1)';
+      setTimeout(() => {
+        icon.style.transform = 'scale(1)';
+      }, 200);
+    }, 3000);
+  });
+  
+  // Confirmación para eliminación
+  const botonesEliminar = document.querySelectorAll('.btn-eliminar');
+  botonesEliminar.forEach(boton => {
+    boton.addEventListener('click', function(e) {
+      e.preventDefault();
+      const mesa = this.closest('.mesa-card').querySelector('.mesa-numero').textContent;
+      
+      if (confirm(`¿Estás seguro de que deseas eliminar la ${mesa}? Esta acción no se puede deshacer.`)) {
+        window.location.href = this.href;
+      }
+    });
+  });
+  
+  // Contador dinámico en las estadísticas
+  function animateCounter(element, target) {
+    let current = 0;
+    const increment = target / 30;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      element.textContent = Math.floor(current);
+    }, 50);
+  }
+  
+  // Animar contadores después de que aparezcan
+  setTimeout(() => {
+    const counters = document.querySelectorAll('.stat-number');
+    counters.forEach(counter => {
+      const target = parseInt(counter.textContent);
+      if (target > 0) {
+        counter.textContent = '0';
+        animateCounter(counter, target);
+      }
+    });
+  }, 800);
+  
+  // Efecto parallax sutil en el header
+  if (window.innerWidth > 768) {
+    window.addEventListener('scroll', () => {
+      const scrolled = window.pageYOffset;
+      const rate = scrolled * -0.3;
+      if (header) {
+        header.style.transform = `translateY(${rate}px)`;
+      }
+    });
+  }
+  
+  // Mostrar tooltip de estado en hover
+  const statusBadges = document.querySelectorAll('.mesa-status');
+  statusBadges.forEach(badge => {
+    badge.addEventListener('mouseenter', function() {
+      const isActive = this.classList.contains('activa');
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tooltip-status';
+      tooltip.textContent = isActive ? 
+        'Mesa disponible para atender clientes' : 
+        'Mesa temporalmente deshabilitada';
+      tooltip.style.cssText = `
+        position: absolute;
+        top: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--gray-800);
+        color: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      `;
+      
+      this.style.position = 'relative';
+      this.appendChild(tooltip);
+      
+      setTimeout(() => {
+        tooltip.style.opacity = '1';
+      }, 100);
+    });
+    
+    badge.addEventListener('mouseleave', function() {
+      const tooltip = this.querySelector('.tooltip-status');
+      if (tooltip) {
+        tooltip.remove();
+      }
+    });
+  });
+});
+</script>
 {% endblock %}

@@ -1,6 +1,8 @@
+# 🔥 IMPORTS CORREGIDOS - Agregar al inicio de views.py
+
 import decimal
 from django import forms
-from django.db.models import Q
+from django.db.models import Q, F, Sum, Count, Avg  # ✅ Agregamos Count y Avg
 from decimal import Decimal, InvalidOperation
 from django.utils.timezone import now
 from django.views.decorators.cache import never_cache
@@ -11,21 +13,21 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import F, Sum
-from django.http import FileResponse, HttpResponseForbidden
+from django.http import FileResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import io
-from datetime import date
+from datetime import date, timedelta  # ✅ Agregamos timedelta
 from django.http import JsonResponse
-from .models import Gasto, PagoBartender  # Asegúrate de importar estos modelos
-from .forms import GastoForm, PagoBartenderForm, DevolucionForm
 
-from .forms import ProductoForm, CategoriaForm, RegistroForm, MesaForm
-from .models import (Perfil, Producto, MovimientoContable, Categoria,
-                     Mesa, Venta, DetalleVenta, Notificacion, Deuda,
+# Imports de modelos y formularios
+from .models import (Gasto, PagoBartender, Perfil, Producto, MovimientoContable, 
+                     Categoria, Mesa, Venta, DetalleVenta, Notificacion, Deuda,
                      PagoCompartido, PagoMixto, Devolucion)
 
+from .forms import (GastoForm, PagoBartenderForm, DevolucionForm, ProductoForm, 
+                    CategoriaForm, RegistroForm, MesaForm)
 
 
 # ========================================================================================
@@ -112,13 +114,120 @@ def cuenta_eliminar(request):
 @never_cache
 @login_required
 def seguimiento_mesas(request):
+    """Vista de seguimiento de mesas con manejo seguro de datos corruptos"""
     perfil = request.user.perfil
     if perfil.rol != 'admin':
         return HttpResponseForbidden("Acceso denegado")
 
-    mesas = Mesa.objects.all().prefetch_related('ventas')
-    return render(request, 'core/mesas/seguimiento_mesas.html', {'mesas': mesas})
-
+    try:
+        from decimal import Decimal, InvalidOperation
+        
+        # 🔥 OBTENER MESAS CON MANEJO SEGURO DE VENTAS
+        mesas_data = []
+        mesas_base = Mesa.objects.all().order_by('numero')
+        
+        for mesa in mesas_base:
+            try:
+                # 🔥 OBTENER LA ÚLTIMA VENTA DE FORMA SEGURA
+                ultima_venta = None
+                venta_total_seguro = Decimal('0.00')
+                venta_cerrada = True
+                
+                try:
+                    # Buscar la última venta usando values() para evitar problemas de conversión
+                    venta_raw = Venta.objects.filter(mesa=mesa).values(
+                        'id', 'total', 'cerrada', 'fecha', 'metodo_pago'
+                    ).order_by('-fecha').first()
+                    
+                    if venta_raw:
+                        # 🔥 CONVERSIÓN ULTRA-SEGURA DEL TOTAL
+                        total_raw = venta_raw.get('total')
+                        try:
+                            if total_raw is not None:
+                                if isinstance(total_raw, Decimal):
+                                    venta_total_seguro = total_raw
+                                elif isinstance(total_raw, (int, float)):
+                                    venta_total_seguro = Decimal(str(total_raw))
+                                elif isinstance(total_raw, str):
+                                    # Limpiar string de caracteres no numéricos
+                                    total_clean = ''.join(c for c in total_raw if c.isdigit() or c in '.-')
+                                    if total_clean and total_clean not in ['-', '.', '-.']:
+                                        venta_total_seguro = Decimal(total_clean)
+                                else:
+                                    venta_total_seguro = Decimal(str(float(total_raw)))
+                        except (InvalidOperation, ValueError, TypeError, OverflowError):
+                            print(f"🔥 ERROR: Total corrupto en venta de mesa {mesa.numero}: {total_raw}")
+                            venta_total_seguro = Decimal('0.00')
+                        
+                        venta_cerrada = venta_raw.get('cerrada', True)
+                        
+                        # Crear objeto venta seguro
+                        ultima_venta = {
+                            'id': venta_raw['id'],
+                            'total': venta_total_seguro,
+                            'total_formateado': f"${int(venta_total_seguro):,}".replace(',', '.'),
+                            'cerrada': venta_cerrada,
+                            'fecha': venta_raw['fecha'],
+                            'metodo_pago': venta_raw['metodo_pago']
+                        }
+                        
+                except Exception as e:
+                    print(f"🔥 ERROR obteniendo venta para mesa {mesa.numero}: {e}")
+                    ultima_venta = None
+                
+                # 🔥 CREAR OBJETO MESA SEGURO
+                mesa_segura = {
+                    'id': mesa.id,
+                    'numero': mesa.numero,
+                    'ubicacion': mesa.ubicacion,
+                    'activa': mesa.activa,
+                    'venta_actual': ultima_venta
+                }
+                
+                mesas_data.append(mesa_segura)
+                
+            except Exception as e:
+                print(f"🔥 ERROR procesando mesa {mesa.numero}: {e}")
+                # Agregar mesa con datos mínimos seguros
+                mesa_segura = {
+                    'id': mesa.id,
+                    'numero': mesa.numero,
+                    'ubicacion': mesa.ubicacion if hasattr(mesa, 'ubicacion') else 'N/A',
+                    'activa': mesa.activa if hasattr(mesa, 'activa') else False,
+                    'venta_actual': None
+                }
+                mesas_data.append(mesa_segura)
+                continue
+        
+        print(f"🔥 DEBUG: Se procesaron {len(mesas_data)} mesas correctamente")
+        
+        context = {
+            'mesas_seguras': mesas_data,
+            'total_mesas': len(mesas_data),
+            'mesas_activas': len([m for m in mesas_data if m['activa']]),
+            'mesas_con_venta': len([m for m in mesas_data if m['venta_actual'] and not m['venta_actual']['cerrada']])
+        }
+        
+        return render(request, 'core/mesas/seguimiento_mesas.html', context)
+        
+    except Exception as e:
+        print(f"🔥 ERROR CRÍTICO EN SEGUIMIENTO_MESAS: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        from django.contrib import messages
+        messages.error(request, f"Error al cargar el seguimiento de mesas: {str(e)}")
+        
+        # 🔥 CONTEXTO DE EMERGENCIA
+        context = {
+            'mesas_seguras': [],
+            'total_mesas': 0,
+            'mesas_activas': 0,
+            'mesas_con_venta': 0,
+            'error_message': f'Error al cargar los datos: {str(e)}'
+        }
+        
+        return render(request, 'core/mesas/seguimiento_mesas.html', context)
 
 @never_cache
 @login_required
@@ -324,12 +433,39 @@ def producto_crear(request):
 @login_required
 def producto_editar(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
+    
+    # 🔥 GUARDAR CANTIDAD ORIGINAL ANTES DE EDITAR
+    cantidad_original = producto.cantidad
+    
     form = ProductoForm(request.POST or None, instance=producto)
     if form.is_valid():
-        form.save()
+        producto_editado = form.save()
+        
+        # ✅ NUEVA FUNCIONALIDAD: Detectar si se aumentó la cantidad (surtir inventario)
+        cantidad_nueva = producto_editado.cantidad
+        if cantidad_nueva > cantidad_original:
+            diferencia = cantidad_nueva - cantidad_original
+            
+            # Calcular la inversión adicional
+            if producto_editado.precio_costo > 0:
+                inversion_adicional = producto_editado.precio_costo * diferencia
+                
+                # Registrar como gasto/egreso
+                MovimientoContable.objects.create(
+                    tipo='gasto',
+                    concepto=f'Surtir inventario: {producto_editado.nombre} (+{diferencia} unidades)',
+                    monto=inversion_adicional,
+                    usuario=request.user
+                )
+                
+                messages.success(request, f'Producto "{producto_editado.nombre}" actualizado. Inversión adicional de ${inversion_adicional:,.0f} COP registrada como gasto (surtir +{diferencia} unidades).')
+            else:
+                messages.success(request, f'Producto "{producto_editado.nombre}" actualizado correctamente.')
+        else:
+            messages.success(request, f'Producto "{producto_editado.nombre}" actualizado correctamente.')
+        
         return redirect('productos_listar')
     return render(request, 'core/productos/formulario.html', {'form': form})
-
 
 @never_cache
 @login_required
@@ -585,117 +721,372 @@ def pago_mixto(request, venta_id):
 @never_cache
 @login_required
 def cerrar_caja_dia(request):
-    """Versión simplificada que usa el método seguro del modelo"""
+    """Vista optimizada para mostrar el cierre de caja del día"""
     hoy = now().date()
     usuario = request.user
     
     try:
-        # 🔥 OBTENER VENTAS CON MÉTODO SEGURO
-        ventas_del_dia = []
-        total_del_dia = 0
+        # 🔥 QUERY OPTIMIZADA - Una sola consulta con select_related
+        ventas_del_dia = Venta.objects.filter(
+            fecha__date=hoy,
+            cerrada=True,
+            mesero=usuario
+        ).select_related('mesa').prefetch_related('detalles__producto').order_by('fecha')
         
-        # Usar SQL directa para obtener IDs
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT id FROM core_venta 
-                WHERE date(fecha) = %s AND cerrada = 1 AND mesero_id = %s
-                ORDER BY fecha DESC
-            """, [hoy.strftime('%Y-%m-%d'), usuario.id])
-            
-            venta_ids = [row[0] for row in cursor.fetchall()]
+        # 🔥 ESTADÍSTICAS BÁSICAS CON AGGREGATE
+        estadisticas = ventas_del_dia.aggregate(
+            total_ventas=Count('id'),
+            monto_total=Sum('total'),
+            promedio_venta=Avg('total')
+        )
         
-        # Procesar cada venta individualmente
-        for venta_id in venta_ids:
+        # 🔥 PRODUCTOS VENDIDOS CON QUERY OPTIMIZADA
+        productos_vendidos = DetalleVenta.objects.filter(
+            venta__fecha__date=hoy,
+            venta__cerrada=True,
+            venta__mesero=usuario
+        ).select_related('producto', 'venta__mesa').values(
+            'venta__id',
+            'venta__mesa__numero',
+            'venta__fecha',
+            'producto__nombre',
+            'cantidad',
+            'precio_unitario'
+        ).annotate(
+            subtotal=F('cantidad') * F('precio_unitario')
+        ).order_by('venta__fecha')
+        
+        # 🔥 PREPARAR DATOS PARA EL TEMPLATE
+        ventas_procesadas = []
+        total_del_dia = Decimal('0.00')
+        
+        for venta in ventas_del_dia:
             try:
-                venta = Venta.objects.get(id=venta_id)
-                total_seguro = float(venta.total) if venta.total else 0
+                # Convertir total de forma segura
+                total_venta = Decimal(str(venta.total)) if venta.total else Decimal('0.00')
                 
-                ventas_del_dia.append({
+                # Calcular hora en Colombia (UTC-5)
+                hora_colombia = (venta.fecha - timedelta(hours=5)).strftime('%H:%M')
+                
+                # Obtener detalles de la venta
+                detalles_venta = []
+                for detalle in venta.detalles.all():
+                    detalle_info = {
+                        'nombre': detalle.producto.nombre if detalle.producto else "Producto eliminado",
+                        'cantidad': detalle.cantidad,
+                        'precio_unitario': float(detalle.precio_unitario),
+                        'subtotal': float(detalle.cantidad * detalle.precio_unitario)
+                    }
+                    detalles_venta.append(detalle_info)
+                
+                # Información de la venta
+                venta_info = {
                     'id': venta.id,
                     'mesa': venta.mesa,
-                    'total': total_seguro,
-                    'fecha': venta.fecha
-                })
+                    'total': float(total_venta),
+                    'total_formateado': f"${int(total_venta):,}".replace(',', '.'),
+                    'fecha': venta.fecha,
+                    'hora': hora_colombia,
+                    'metodo_pago': venta.get_metodo_pago_display(),
+                    'detalles': detalles_venta
+                }
                 
-                total_del_dia += total_seguro
+                ventas_procesadas.append(venta_info)
+                total_del_dia += total_venta
                 
             except Exception as e:
-                print(f"Error procesando venta {venta_id}: {e}")
+                print(f"Error procesando venta {venta.id}: {e}")
                 continue
         
-        # Si es POST, generar PDF
-        if request.method == 'POST':
-            try:
-                buffer = io.BytesIO()
-                p = canvas.Canvas(buffer, pagesize=letter)
-                width, height = letter
-                
-                p.setFont("Helvetica-Bold", 14)
-                p.drawString(200, height - 40, f"Cierre de Caja - {usuario.username}")
-                p.setFont("Helvetica", 12)
-                p.drawString(40, height - 80, f"Fecha: {hoy.strftime('%d/%m/%Y')}")
-                p.drawString(40, height - 100, f"Total ventas del día: ${total_del_dia:,.0f} COP")
-                
-                y = height - 140
-                p.setFont("Helvetica-Bold", 11)
-                p.drawString(40, y, "Ventas realizadas:")
-                y -= 20
-                
-                p.setFont("Helvetica", 10)
-                for venta in ventas_del_dia:
-                    mesa_texto = f"Mesa {venta['mesa'].numero}" if venta['mesa'] else "Sin mesa"
-                    p.drawString(50, y, f"Venta #{venta['id']} - {mesa_texto} - ${venta['total']:,.0f} COP")
-                    y -= 15
-                    if y < 60:
-                        p.showPage()
-                        y = height - 60
-                
-                p.showPage()
-                p.save()
-                buffer.seek(0)
-                
-                return FileResponse(
-                    buffer, 
-                    as_attachment=True, 
-                    filename=f'cierre_caja_{usuario.username}_{hoy}.pdf'
-                )
-                
-            except Exception as e:
-                messages.error(request, f"Error generando PDF: {str(e)}")
-                return redirect('cerrar_caja_dia')
-        
-        # Renderizar template
+        # 🔥 FORMATEAR DATOS PARA EL TEMPLATE
         context = {
-            'ventas': ventas_del_dia,
+            'ventas': ventas_procesadas,
+            'productos_vendidos': list(productos_vendidos),
             'total': int(total_del_dia),
+            'total_formateado': f"${int(total_del_dia):,}".replace(',', '.'),
             'fecha': hoy,
+            'total_ventas': len(ventas_procesadas),
+            'total_productos': productos_vendidos.count(),
+            'bartender': usuario.username,
+            'promedio_venta': int(total_del_dia / len(ventas_procesadas)) if len(ventas_procesadas) > 0 else 0,
+            'hora_actual': now().strftime('%H:%M'),
+            'fecha_formateada': hoy.strftime('%d/%m/%Y'),
         }
         
         return render(request, 'core/caja/cerrar_caja_dia.html', context)
         
     except Exception as e:
-        print(f"ERROR GENERAL: {e}")
+        print(f"ERROR EN CERRAR_CAJA_DIA: {e}")
         import traceback
         traceback.print_exc()
         
-        # Contexto de error
-        messages.error(request, "Error al cargar las ventas. Algunos datos pueden estar corruptos.")
+        messages.error(request, f"Error al cargar el cierre de caja: {str(e)}")
+        
+        # Context de emergencia
         context = {
             'ventas': [],
+            'productos_vendidos': [],
             'total': 0,
+            'total_formateado': '$0',
             'fecha': hoy,
+            'total_ventas': 0,
+            'total_productos': 0,
+            'bartender': usuario.username,
+            'promedio_venta': 0,
+            'hora_actual': now().strftime('%H:%M'),
+            'fecha_formateada': hoy.strftime('%d/%m/%Y'),
+            'error_message': f'Error al cargar los datos: {str(e)}'
         }
         
         return render(request, 'core/caja/cerrar_caja_dia.html', context)
 
 
+@never_cache
+@login_required
+def generar_factura_html(request):
+    """Generar factura HTML optimizada para cierre de caja"""
+    hoy = now().date()
+    usuario = request.user
+    
+    try:
+        # 🔥 REUTILIZAR LA LÓGICA OPTIMIZADA
+        ventas_del_dia = Venta.objects.filter(
+            fecha__date=hoy,
+            cerrada=True,
+            mesero=usuario
+        ).select_related('mesa').prefetch_related('detalles__producto')
+        
+        # 🔥 ESTADÍSTICAS RÁPIDAS
+        estadisticas = ventas_del_dia.aggregate(
+            total_ventas=Count('id'),
+            monto_total=Sum('total')
+        )
+        
+        # 🔥 PRODUCTOS VENDIDOS SIMPLIFICADO
+        productos_vendidos = DetalleVenta.objects.filter(
+            venta__fecha__date=hoy,
+            venta__cerrada=True,
+            venta__mesero=usuario
+        ).select_related('producto', 'venta__mesa').annotate(
+            subtotal=F('cantidad') * F('precio_unitario'),
+            hora_venta=F('venta__fecha')
+        ).order_by('venta__fecha')
+        
+        # 🔥 PREPARAR DATOS SIMPLIFICADOS
+        ventas_resumen = []
+        total_del_dia = estadisticas['monto_total'] or Decimal('0.00')
+        
+        for venta in ventas_del_dia:
+            try:
+                hora_colombia = (venta.fecha - timedelta(hours=5)).strftime('%H:%M')
+                
+                venta_resumen = {
+                    'id': venta.id,
+                    'mesa_numero': venta.mesa.numero if venta.mesa else 'N/A',
+                    'total': float(venta.total) if venta.total else 0,
+                    'hora': hora_colombia,
+                    'metodo_pago': venta.get_metodo_pago_display()
+                }
+                ventas_resumen.append(venta_resumen)
+                
+            except Exception as e:
+                print(f"Error en factura para venta {venta.id}: {e}")
+                continue
+        
+        # 🔥 CONTEXT SIMPLIFICADO PARA FACTURA
+        context = {
+            'ventas': ventas_resumen,
+            'productos_vendidos': productos_vendidos,
+            'total': int(total_del_dia),
+            'total_formateado': f"${int(total_del_dia):,}".replace(',', '.'),
+            'fecha': hoy,
+            'fecha_formateada': hoy.strftime('%d/%m/%Y'),
+            'total_ventas': estadisticas['total_ventas'] or 0,
+            'total_productos': productos_vendidos.count(),
+            'bartender': usuario.username,
+            'promedio_venta': int(total_del_dia / estadisticas['total_ventas']) if estadisticas['total_ventas'] > 0 else 0,
+            'numero_factura': f"{hoy.strftime('%Y%m%d')}-{usuario.id:03d}",
+            'hora_generacion': now().strftime('%H:%M:%S'),
+            'empresa_nombre': 'Mi Bar & Restaurant',  # Cambiar por tu nombre
+            'empresa_direccion': 'Tu dirección aquí',
+            'empresa_telefono': 'Tu teléfono aquí',
+        }
+        
+        return render(request, 'core/caja/factura_imprimible.html', context)
+        
+    except Exception as e:
+        print(f"ERROR EN GENERAR_FACTURA_HTML: {e}")
+        messages.error(request, f"Error al generar la factura: {str(e)}")
+        return redirect('cerrar_caja_dia')
 
 
+# 🔥 FUNCIÓN ADICIONAL: RESUMEN RÁPIDO DEL DÍA (AJAX)
+@never_cache
+@login_required
+def resumen_dia_ajax(request):
+    """API AJAX para obtener resumen rápido del día"""
+    if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Solo peticiones AJAX'}, status=400)
+    
+    try:
+        hoy = now().date()
+        usuario = request.user
+        
+        # 🔥 QUERY SÚPER OPTIMIZADA
+        resumen = Venta.objects.filter(
+            fecha__date=hoy,
+            cerrada=True,
+            mesero=usuario
+        ).aggregate(
+            total_ventas=Count('id'),
+            monto_total=Sum('total'),
+            promedio_venta=Avg('total')
+        )
+        
+        # 🔥 VENTAS POR MÉTODO DE PAGO
+        ventas_por_metodo = Venta.objects.filter(
+            fecha__date=hoy,
+            cerrada=True,
+            mesero=usuario
+        ).values('metodo_pago').annotate(
+            cantidad=Count('id'),
+            total=Sum('total')
+        ).order_by('metodo_pago')
+        
+        return JsonResponse({
+            'success': True,
+            'total_ventas': resumen['total_ventas'] or 0,
+            'monto_total': float(resumen['monto_total'] or 0),
+            'monto_total_formateado': f"${int(resumen['monto_total'] or 0):,}".replace(',', '.'),
+            'promedio_venta': float(resumen['promedio_venta'] or 0),
+            'ventas_por_metodo': list(ventas_por_metodo),
+            'fecha': hoy.strftime('%d/%m/%Y'),
+            'hora': now().strftime('%H:%M')
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
+# 🔥 FUNCIÓN ADICIONAL: COMPARACIÓN CON DÍAS ANTERIORES
+@never_cache
+@login_required
+def comparacion_dias(request):
+    """Comparar ventas del día actual con días anteriores"""
+    try:
+        hoy = now().date()
+        usuario = request.user
+        
+        # 🔥 VENTAS DE LOS ÚLTIMOS 7 DÍAS
+        hace_7_dias = hoy - timedelta(days=7)
+        
+        ventas_por_dia = Venta.objects.filter(
+            fecha__date__gte=hace_7_dias,
+            fecha__date__lte=hoy,
+            cerrada=True,
+            mesero=usuario
+        ).extra(
+            select={'dia': 'date(fecha)'}
+        ).values('dia').annotate(
+            total_ventas=Count('id'),
+            monto_total=Sum('total')
+        ).order_by('dia')
+        
+        return JsonResponse({
+            'success': True,
+            'ventas_por_dia': list(ventas_por_dia)
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
+@never_cache
+@login_required
+def generar_factura_html(request):
+    """Generar una factura HTML descargable para cierre de caja"""
+    hoy = now().date()
+    usuario = request.user
+    
+    try:
+        # Obtener los mismos datos que cerrar_caja_dia
+        ventas_del_dia = []
+        total_del_dia = 0
+        productos_vendidos = []
+        
+        ventas = Venta.objects.filter(
+            fecha__date=hoy,
+            cerrada=True,
+            mesero=usuario
+        ).select_related('mesa').prefetch_related('detalles__producto').order_by('fecha')
+        
+        for venta in ventas:
+            try:
+                total_seguro = float(venta.total) if venta.total else 0
+                from datetime import timedelta
+                hora_colombia = venta.fecha - timedelta(hours=5)
+                
+                venta_info = {
+                    'id': venta.id,
+                    'mesa': venta.mesa,
+                    'total': total_seguro,
+                    'fecha': venta.fecha,
+                    'hora': hora_colombia.strftime('%H:%M'),
+                    'metodo_pago': venta.get_metodo_pago_display(),
+                    'detalles': []
+                }
+                
+                for detalle in venta.detalles.all():
+                    producto_detalle = {
+                        'nombre': detalle.producto.nombre if detalle.producto else "Producto eliminado",
+                        'cantidad': detalle.cantidad,
+                        'precio_unitario': float(detalle.precio_unitario),
+                        'subtotal': float(detalle.cantidad * detalle.precio_unitario),
+                    }
+                    venta_info['detalles'].append(producto_detalle)
+                    
+                    productos_vendidos.append({
+                        'venta_id': venta.id,
+                        'mesa_numero': venta.mesa.numero if venta.mesa else 'N/A',
+                        'hora': hora_colombia.strftime('%H:%M'),
+                        'producto': detalle.producto.nombre if detalle.producto else "Producto eliminado",
+                        'cantidad': detalle.cantidad,
+                        'precio_unitario': float(detalle.precio_unitario),
+                        'subtotal': float(detalle.cantidad * detalle.precio_unitario),
+                    })
+                
+                ventas_del_dia.append(venta_info)
+                total_del_dia += total_seguro
+                
+            except Exception as e:
+                print(f"Error procesando venta {venta.id}: {e}")
+                continue
+        
+        context = {
+            'ventas': ventas_del_dia,
+            'productos_vendidos': productos_vendidos,
+            'total': int(total_del_dia),
+            'fecha': hoy,
+            'total_ventas': len(ventas_del_dia),
+            'total_productos': len(productos_vendidos),
+            'bartender': usuario.username,
+            'promedio_venta': int(total_del_dia / len(ventas_del_dia)) if len(ventas_del_dia) > 0 else 0,
+            'numero_factura': f"{hoy.strftime('%Y%m%d')}-{usuario.id:03d}",
+        }
+        
+        # Render del template de factura
+        return render(request, 'core/caja/factura_imprimible.html', context)
+        
+    except Exception as e:
+        print(f"ERROR EN FACTURA: {e}")
+        messages.error(request, "Error al generar la factura.")
+        return redirect('cerrar_caja_dia')
 
 
 
@@ -1237,13 +1628,31 @@ def procesar_devolucion(request, devolucion_id):
 @never_cache
 @login_required
 def devoluciones_api_pendientes(request):
-    """API para obtener cantidad de devoluciones pendientes"""
-    if request.user.perfil.rol != 'admin':
-        return JsonResponse({'error': 'Acceso denegado'}, status=403)
-    
-    pendientes = Devolucion.objects.filter(estado='pendiente').count()
-    return JsonResponse({'pendientes': pendientes})
-
+    """API para obtener cantidad de devoluciones pendientes - CORREGIDA"""
+    try:
+        # 🔥 VERIFICAR QUE EL USUARIO TENGA PERFIL
+        if not hasattr(request.user, 'perfil'):
+            return JsonResponse({'error': 'Usuario sin perfil'}, status=403)
+        
+        # 🔥 SOLO ADMIN PUEDE VER DEVOLUCIONES PENDIENTES
+        if request.user.perfil.rol != 'admin':
+            return JsonResponse({'error': 'Acceso denegado - Solo administradores'}, status=403)
+        
+        # 🔥 CONTAR DEVOLUCIONES PENDIENTES
+        pendientes = Devolucion.objects.filter(estado='pendiente').count()
+        
+        return JsonResponse({
+            'success': True,
+            'pendientes': pendientes
+        })
+        
+    except Exception as e:
+        print(f"Error en devoluciones_api_pendientes: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'pendientes': 0
+        }, status=500)
 
 
 # AGREGAR ESTA FUNCIÓN AL INICIO DE TU views.py (después de los imports)
@@ -1289,13 +1698,19 @@ def formatear_numero_puntos(valor):
 @never_cache
 @login_required
 def admin_ventas(request):
-    """Vista ultra-segura de ventas para administradores"""
+    """Vista ultra-robusta de ventas para administradores - Maneja datos corruptos"""
     perfil = request.user.perfil
     if perfil.rol != 'admin':
         return HttpResponseForbidden("Acceso denegado")
 
     try:
-        # Obtener parámetros de filtro
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        from django.core.paginator import Paginator
+        from decimal import Decimal, InvalidOperation
+        from django.db import connection
+        
+        # 🔥 OBTENER PARÁMETROS DE FILTRO DE FORMA SEGURA
         filtro_fecha = request.GET.get('filtro_fecha', 'hoy')
         filtro_metodo = request.GET.get('filtro_metodo', 'todos')
         fecha_inicio = request.GET.get('fecha_inicio')
@@ -1303,152 +1718,264 @@ def admin_ventas(request):
         buscar_mesa = request.GET.get('buscar_mesa')
         buscar_mesero = request.GET.get('buscar_mesero')
 
-        # Query MUY básica - evitamos problemas de decimales
-        from django.db import connection
+        # 🔥 APLICAR FILTROS DE FECHA SEGUROS Y CORREGIDOS
+        hoy = timezone.now().date()
+        print(f"DEBUG: Filtro fecha seleccionado: {filtro_fecha}")
         
-        # Usamos SQL cruda para evitar el problema de decimales
-        with connection.cursor() as cursor:
-            sql = """
-                SELECT id, fecha, total, metodo_pago, cerrada, mesa_id, mesero_id
-                FROM core_venta 
-                WHERE cerrada = 1 
-                AND total IS NOT NULL 
-                AND CAST(total AS TEXT) != '' 
-                AND CAST(total AS TEXT) != 'None'
-                ORDER BY fecha DESC 
-                LIMIT 100
-            """
-            cursor.execute(sql)
-            ventas_raw = cursor.fetchall()
-
-        # Convertir a objetos más seguros
-        ventas_seguras = []
-        total_efectivo = 0
-        total_transferencia = 0
-        total_credito = 0
-        total_mixto = 0
-        total_compartido = 0
+        # 🔥 CONSTRUIR FILTROS USANDO VALUES() PARA EVITAR PROBLEMAS DE DECIMAL
+        ventas_base = Venta.objects.filter(cerrada=True).values(
+            'id', 'fecha', 'total', 'metodo_pago', 'cerrada', 
+            'mesa__numero', 'mesero__username', 'mesero__first_name', 
+            'mesero__last_name', 'mesero__id'
+        )
         
-        for venta_data in ventas_raw:
-            try:
-                # Obtener objetos relacionados de forma segura
-                try:
-                    mesa = Mesa.objects.get(id=venta_data[5]) if venta_data[5] else None
-                except:
-                    mesa = None
+        try:
+            if filtro_fecha == 'hoy':
+                ventas_base = ventas_base.filter(fecha__date=hoy)
+                print(f"DEBUG: Filtrando por hoy: {hoy}")
                 
-                try:
-                    mesero = User.objects.get(id=venta_data[6]) if venta_data[6] else None
-                except:
-                    mesero = None
-
-                # Obtener total de forma segura
-                total_venta = 0
-                try:
-                    total_venta = float(venta_data[2]) if venta_data[2] else 0
-                except:
-                    total_venta = 0
-
-                # Crear objeto seguro
-                venta_segura = {
-                    'id': venta_data[0],
-                    'fecha': venta_data[1],
-                    'total': total_venta,
-                    'metodo_pago': venta_data[3] or 'efectivo',
-                    'cerrada': venta_data[4],
-                    'mesa': mesa,
-                    'mesero': mesero,
-                    'get_metodo_pago_display': dict(Venta.METODO_PAGO_CHOICES).get(venta_data[3], venta_data[3])
-                }
-                ventas_seguras.append(venta_segura)
+            elif filtro_fecha == 'ayer':
+                ayer = hoy - timedelta(days=1)
+                ventas_base = ventas_base.filter(fecha__date=ayer)
+                print(f"DEBUG: Filtrando por ayer: {ayer}")
                 
-                # Sumar por método de pago
-                metodo = venta_data[3] or 'efectivo'
-                if metodo == 'efectivo':
-                    total_efectivo += total_venta
-                elif metodo == 'transferencia':
-                    total_transferencia += total_venta
-                elif metodo == 'credito':
-                    total_credito += total_venta
-                elif metodo == 'mixto':
-                    total_mixto += total_venta
-                elif metodo == 'compartido':
-                    total_compartido += total_venta
-                    
-            except Exception as e:
-                print(f"Error procesando venta {venta_data[0]}: {e}")
-                continue
+            elif filtro_fecha == 'ultima_semana':
+                hace_7_dias = hoy - timedelta(days=7)
+                ventas_base = ventas_base.filter(fecha__date__gte=hace_7_dias, fecha__date__lte=hoy)
+                print(f"DEBUG: Filtrando última semana: {hace_7_dias} a {hoy}")
+                
+            elif filtro_fecha == 'este_mes':
+                primer_dia_mes = hoy.replace(day=1)
+                ventas_base = ventas_base.filter(fecha__date__gte=primer_dia_mes, fecha__date__lte=hoy)
+                print(f"DEBUG: Filtrando este mes: {primer_dia_mes} a {hoy}")
+                
+            elif filtro_fecha == 'ultimo_mes':
+                hace_30_dias = hoy - timedelta(days=30)
+                ventas_base = ventas_base.filter(fecha__date__gte=hace_30_dias, fecha__date__lte=hoy)
+                print(f"DEBUG: Filtrando último mes: {hace_30_dias} a {hoy}")
+                
+            elif filtro_fecha == 'este_trimestre':
+                mes_actual = hoy.month
+                if mes_actual <= 3:
+                    primer_dia_trimestre = hoy.replace(month=1, day=1)
+                elif mes_actual <= 6:
+                    primer_dia_trimestre = hoy.replace(month=4, day=1)
+                elif mes_actual <= 9:
+                    primer_dia_trimestre = hoy.replace(month=7, day=1)
+                else:
+                    primer_dia_trimestre = hoy.replace(month=10, day=1)
+                
+                ventas_base = ventas_base.filter(fecha__date__gte=primer_dia_trimestre, fecha__date__lte=hoy)
+                print(f"DEBUG: Filtrando este trimestre: {primer_dia_trimestre} a {hoy}")
+                
+            elif filtro_fecha == 'este_año':
+                primer_dia_año = hoy.replace(month=1, day=1)
+                ventas_base = ventas_base.filter(fecha__date__gte=primer_dia_año, fecha__date__lte=hoy)
+                print(f"DEBUG: Filtrando este año: {primer_dia_año} a {hoy}")
+                
+            elif filtro_fecha == 'todas':
+                print("DEBUG: Mostrando todas las ventas")
+                pass
+                
+            elif filtro_fecha == 'personalizado' and fecha_inicio and fecha_fin:
+                try:
+                    inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                    fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+                    ventas_base = ventas_base.filter(fecha__date__gte=inicio, fecha__date__lte=fin)
+                    print(f"DEBUG: Filtrando rango personalizado: {inicio} a {fin}")
+                except ValueError as e:
+                    print(f"DEBUG: Error en fechas personalizadas: {e}")
+                    ventas_base = ventas_base.filter(fecha__date=hoy)
+            else:
+                ventas_base = ventas_base.filter(fecha__date=hoy)
+                print(f"DEBUG: Filtro por defecto - hoy: {hoy}")
+                
+        except Exception as e:
+            print(f"DEBUG: Error en filtros de fecha: {e}")
+            ventas_base = ventas_base.filter(fecha__date=hoy)
 
-        # Aplicar filtros básicos en Python (más seguro)
+        # 🔥 FILTRO POR MÉTODO DE PAGO SEGURO
         if filtro_metodo != 'todos':
-            ventas_filtradas = []
-            total_efectivo = 0
-            total_transferencia = 0
-            total_credito = 0
-            total_mixto = 0
-            total_compartido = 0
-            
-            for v in ventas_seguras:
-                if v['metodo_pago'] == filtro_metodo:
-                    ventas_filtradas.append(v)
-                    # Recalcular totales con filtro
-                    if v['metodo_pago'] == 'efectivo':
-                        total_efectivo += v['total']
-                    elif v['metodo_pago'] == 'transferencia':
-                        total_transferencia += v['total']
-                    elif v['metodo_pago'] == 'credito':
-                        total_credito += v['total']
-                    elif v['metodo_pago'] == 'mixto':
-                        total_mixto += v['total']
-                    elif v['metodo_pago'] == 'compartido':
-                        total_compartido += v['total']
-            
-            ventas_seguras = ventas_filtradas
-        
+            metodos_validos = [choice[0] for choice in Venta.METODO_PAGO_CHOICES]
+            if filtro_metodo in metodos_validos:
+                ventas_base = ventas_base.filter(metodo_pago=filtro_metodo)
+
+        # 🔥 FILTRO POR MESA SEGURO
         if buscar_mesa:
             try:
                 numero_mesa = int(buscar_mesa)
-                ventas_seguras = [v for v in ventas_seguras if v['mesa'] and v['mesa'].numero == numero_mesa]
-            except:
+                ventas_base = ventas_base.filter(mesa__numero=numero_mesa)
+            except (ValueError, TypeError):
                 pass
 
-        # Estadísticas básicas
-        total_ventas = len(ventas_seguras)
-        monto_total = sum(v['total'] for v in ventas_seguras)
+        # 🔥 FILTRO POR MESERO SEGURO
+        if buscar_mesero:
+            try:
+                mesero_id = int(buscar_mesero)
+                ventas_base = ventas_base.filter(mesero_id=mesero_id)
+            except (ValueError, TypeError):
+                pass
 
-        # Paginación simple
-        from django.core.paginator import Paginator
+        # 🔥 LIMITAR RESULTADOS Y ORDENAR
+        ventas_base = ventas_base.order_by('-fecha')[:1000]
+
+        # 🔥 OBTENER CONTEO ANTES DE PROCESAR
+        total_ventas_encontradas = len(ventas_base)
+        print(f"DEBUG: Total ventas encontradas con filtros: {total_ventas_encontradas}")
         
-        # Crear objetos mock para paginación
-        class VentaMock:
-            def __init__(self, data):
-                for key, value in data.items():
-                    setattr(self, key, value)
+        if total_ventas_encontradas == 0:
+            print("DEBUG: No se encontraron ventas con los filtros aplicados")
         
-        ventas_mock = [VentaMock(v) for v in ventas_seguras]
-        paginator = Paginator(ventas_mock, 20)
+        # 🔥 PROCESAR VENTAS DE FORMA ULTRA-SEGURA
+        ventas_procesadas = []
+        totales_por_metodo = {
+            'efectivo': Decimal('0.00'),
+            'transferencia': Decimal('0.00'),
+            'credito': Decimal('0.00'),
+            'mixto': Decimal('0.00'),
+            'compartido': Decimal('0.00'),
+        }
+        
+        ventas_evaluadas = 0
+        ventas_con_errores = 0
+        
+        for venta_data in ventas_base:
+            ventas_evaluadas += 1
+            try:
+                # 🔥 CONVERSIÓN ULTRA-SEGURA DEL TOTAL
+                total_seguro = Decimal('0.00')
+                total_raw = venta_data.get('total')
+                
+                try:
+                    if total_raw is not None:
+                        # Intentar conversión directa
+                        if isinstance(total_raw, Decimal):
+                            total_seguro = total_raw
+                        elif isinstance(total_raw, (int, float)):
+                            total_seguro = Decimal(str(total_raw))
+                        elif isinstance(total_raw, str):
+                            # Limpiar string de caracteres no numéricos
+                            total_clean = ''.join(c for c in total_raw if c.isdigit() or c in '.-')
+                            if total_clean and total_clean not in ['-', '.', '-.']:
+                                total_seguro = Decimal(total_clean)
+                        else:
+                            # Intentar conversión forzada
+                            total_seguro = Decimal(str(float(total_raw)))
+                            
+                except (InvalidOperation, ValueError, TypeError, OverflowError) as e:
+                    print(f"DEBUG: Error convirtiendo total de venta {venta_data['id']}: {total_raw} -> {e}")
+                    total_seguro = Decimal('0.00')
+                    ventas_con_errores += 1
+
+                # 🔥 HORA SEGURA (UTC-5 para Colombia)
+                hora_colombia = "N/A"
+                try:
+                    if venta_data.get('fecha'):
+                        fecha_colombia = venta_data['fecha'] - timedelta(hours=5)
+                        hora_colombia = fecha_colombia.strftime('%H:%M')
+                except:
+                    hora_colombia = "N/A"
+
+                # 🔥 FORMATEO SEGURO DEL TOTAL
+                total_formateado = "$0"
+                try:
+                    if total_seguro > 0:
+                        total_int = int(total_seguro)
+                        total_formateado = f"${total_int:,}".replace(',', '.')
+                except:
+                    total_formateado = "$0"
+
+                # 🔥 CREAR OBJETO VENTA SEGURO
+                venta_segura = {
+                    'id': venta_data['id'],
+                    'fecha': venta_data['fecha'],
+                    'hora': hora_colombia,
+                    'total': total_seguro,
+                    'total_formateado': total_formateado,
+                    'metodo_pago': venta_data['metodo_pago'] or 'efectivo',
+                    'metodo_pago_display': dict(Venta.METODO_PAGO_CHOICES).get(
+                        venta_data['metodo_pago'], venta_data['metodo_pago']
+                    ),
+                    'mesa': {
+                        'numero': venta_data['mesa__numero']
+                    } if venta_data['mesa__numero'] else None,
+                    'mesero': {
+                        'id': venta_data['mesero__id'],
+                        'username': venta_data['mesero__username'],
+                        'first_name': venta_data['mesero__first_name'],
+                        'last_name': venta_data['mesero__last_name']
+                    } if venta_data['mesero__id'] else None,
+                    'cerrada': venta_data['cerrada'],
+                }
+                
+                ventas_procesadas.append(venta_segura)
+                
+                # 🔥 SUMAR TOTALES POR MÉTODO DE FORMA SEGURA
+                metodo = venta_data['metodo_pago'] or 'efectivo'
+                if metodo in totales_por_metodo:
+                    totales_por_metodo[metodo] += total_seguro
+                
+            except Exception as e:
+                print(f"DEBUG: Error general procesando venta {venta_data.get('id', 'N/A')}: {e}")
+                ventas_con_errores += 1
+                continue
+        
+        print(f"DEBUG: Ventas evaluadas: {ventas_evaluadas}, Ventas procesadas: {len(ventas_procesadas)}, Errores: {ventas_con_errores}")
+
+        # 🔥 CALCULAR ESTADÍSTICAS SEGURAS
+        total_ventas = len(ventas_procesadas)
+        monto_total = sum(v['total'] for v in ventas_procesadas)
+        
+        print(f"DEBUG: Total final de ventas: {total_ventas}, Monto total: {monto_total}")
+
+        # 🔥 PAGINACIÓN SEGURA
+        paginator = Paginator(ventas_procesadas, 20)
         page_number = request.GET.get('page', 1)
+        
+        try:
+            page_number = int(page_number)
+        except (ValueError, TypeError):
+            page_number = 1
+            
         ventas_paginadas = paginator.get_page(page_number)
 
-        # Meseros disponibles (de forma segura)
+        # 🔥 OBTENER MESEROS DISPONIBLES DE FORMA SEGURA
         try:
-            meseros_disponibles = User.objects.filter(perfil__rol='bartender').order_by('username')[:10]
+            meseros_disponibles = User.objects.filter(
+                perfil__rol='bartender'
+            ).select_related('perfil').order_by('username')[:20]
         except:
             meseros_disponibles = []
 
-        # 🔥 ENVIAR NÚMEROS COMO ENTEROS PARA QUE EL TEMPLATE LOS FORMATEE
+        # 🔥 CONVERTIR DECIMALES A ENTEROS PARA TEMPLATES
+        try:
+            monto_total_entero = int(monto_total) if monto_total else 0
+            total_efectivo_entero = int(totales_por_metodo['efectivo'])
+            total_transferencia_entero = int(totales_por_metodo['transferencia'])
+            total_credito_entero = int(totales_por_metodo['credito'])
+            total_mixto_entero = int(totales_por_metodo['mixto'])
+            total_compartido_entero = int(totales_por_metodo['compartido'])
+        except (ValueError, TypeError):
+            monto_total_entero = 0
+            total_efectivo_entero = 0
+            total_transferencia_entero = 0
+            total_credito_entero = 0
+            total_mixto_entero = 0
+            total_compartido_entero = 0
+
+        # 🔥 CONTEXTO FINAL SEGURO
         context = {
             'ventas': ventas_paginadas,
             'total_ventas': total_ventas,
-            'monto_total': int(monto_total) if monto_total else 0,  # 🔥 COMO ENTERO
+            'monto_total': monto_total_entero,
             'meseros_disponibles': meseros_disponibles,
             
-            # Totales por método de pago - COMO ENTEROS 🔥
-            'total_efectivo': int(total_efectivo) if total_efectivo else 0,
-            'total_transferencia': int(total_transferencia) if total_transferencia else 0,
-            'total_credito': int(total_credito) if total_credito else 0,
-            'total_mixto': int(total_mixto) if total_mixto else 0,
-            'total_compartido': int(total_compartido) if total_compartido else 0,
+            # Totales por método de pago
+            'total_efectivo': total_efectivo_entero,
+            'total_transferencia': total_transferencia_entero,
+            'total_credito': total_credito_entero,
+            'total_mixto': total_mixto_entero,
+            'total_compartido': total_compartido_entero,
             
             # Filtros aplicados
             'filtro_fecha': filtro_fecha,
@@ -1460,16 +1987,32 @@ def admin_ventas(request):
             
             # Opciones para filtros
             'metodos_pago': Venta.METODO_PAGO_CHOICES,
+            
+            # Información adicional
+            'fecha_actual': hoy,
+            'total_paginas': paginator.num_pages,
         }
+        
+        # 🔥 ADVERTENCIA SI HAY VENTAS CON ERRORES
+        if ventas_con_errores > 0:
+            from django.contrib import messages
+            messages.warning(
+                request, 
+                f"⚠️ Se encontraron {ventas_con_errores} ventas con datos corruptos que fueron omitidas. "
+                f"Se recomienda revisar la integridad de los datos."
+            )
         
         return render(request, 'core/ventas/admin_ventas.html', context)
         
     except Exception as e:
-        print(f"ERROR EN ADMIN_VENTAS: {e}")
+        print(f"ERROR CRÍTICO EN ADMIN_VENTAS: {e}")
         import traceback
         traceback.print_exc()
         
-        # Si todo falla, contexto completamente vacío pero funcional
+        # 🔥 CONTEXTO DE EMERGENCIA COMPLETAMENTE SEGURO
+        from django.contrib import messages
+        messages.error(request, f"Error al cargar las ventas: {str(e)}. Filtro aplicado: {request.GET.get('filtro_fecha', 'N/A')}")
+        
         context = {
             'ventas': [],
             'total_ventas': 0,
@@ -1480,13 +2023,16 @@ def admin_ventas(request):
             'total_credito': 0,
             'total_mixto': 0,
             'total_compartido': 0,
-            'filtro_fecha': 'hoy',
-            'filtro_metodo': 'todos',
-            'fecha_inicio': None,
-            'fecha_fin': None,
-            'buscar_mesa': None,
-            'buscar_mesero': None,
+            'filtro_fecha': request.GET.get('filtro_fecha', 'hoy'),
+            'filtro_metodo': request.GET.get('filtro_metodo', 'todos'),
+            'fecha_inicio': request.GET.get('fecha_inicio'),
+            'fecha_fin': request.GET.get('fecha_fin'),
+            'buscar_mesa': request.GET.get('buscar_mesa'),
+            'buscar_mesero': request.GET.get('buscar_mesero'),
             'metodos_pago': Venta.METODO_PAGO_CHOICES,
+            'fecha_actual': timezone.now().date(),
+            'total_paginas': 0,
+            'error_message': f'Error al cargar los datos de ventas: {str(e)}',
         }
         
         return render(request, 'core/ventas/admin_ventas.html', context)

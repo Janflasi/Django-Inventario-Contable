@@ -31,6 +31,34 @@
     font-weight: 400;
 }
 
+.mesas-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    background: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #667eea;
+}
+
+.stat-label {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
 .mesas-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -91,6 +119,7 @@
 .mesa-status {
     display: flex;
     gap: 0.5rem;
+    flex-direction: column;
 }
 
 .status-badge {
@@ -100,6 +129,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    text-align: center;
 }
 
 .status-activa {
@@ -279,6 +309,15 @@
     background: #f8fafc;
 }
 
+.error-message {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .mesas-container {
@@ -302,6 +341,10 @@
         flex-direction: column;
         align-items: center;
     }
+    
+    .mesas-stats {
+        gap: 1rem;
+    }
 }
 </style>
 
@@ -310,6 +353,29 @@
         <h1 class="mesas-title">🍽️ Seguimiento de Mesas</h1>
         <p class="mesas-subtitle">Monitorea el estado y actividad de todas las mesas en tiempo real</p>
     </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="mesas-stats">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_mesas|default:0 }}</div>
+            <div class="stat-label">Total Mesas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ mesas_activas|default:0 }}</div>
+            <div class="stat-label">Mesas Activas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ mesas_con_venta|default:0 }}</div>
+            <div class="stat-label">Con Venta Abierta</div>
+        </div>
+    </div>
+
+    <!-- Mensaje de error si existe -->
+    {% if error_message %}
+    <div class="error-message">
+        ⚠️ {{ error_message }}
+    </div>
+    {% endif %}
 
     <!-- Toggle de vista -->
     <div class="view-toggle">
@@ -323,17 +389,16 @@
 
     <!-- Vista de tarjetas -->
     <div class="mesas-grid" id="cards-view">
-        {% for mesa in mesas %}
-            {% with venta=mesa.ventas.last %}
-            <div class="mesa-card {% if mesa.activa %}mesa-activa{% else %}mesa-inactiva{% endif %} {% if venta and not venta.cerrada %}mesa-venta-abierta{% endif %}">
+        {% for mesa in mesas_seguras %}
+            <div class="mesa-card {% if mesa.activa %}mesa-activa{% else %}mesa-inactiva{% endif %} {% if mesa.venta_actual and not mesa.venta_actual.cerrada %}mesa-venta-abierta{% endif %}">
                 <div class="mesa-header">
                     <div class="mesa-numero">{{ mesa.numero }}</div>
                     <div class="mesa-status">
                         <span class="status-badge {% if mesa.activa %}status-activa{% else %}status-inactiva{% endif %}">
                             {% if mesa.activa %}● Activa{% else %}○ Inactiva{% endif %}
                         </span>
-                        <span class="status-badge {% if venta and not venta.cerrada %}status-venta-abierta{% else %}status-venta-cerrada{% endif %}">
-                            {% if venta and not venta.cerrada %}🔥 Venta{% else %}✓ Libre{% endif %}
+                        <span class="status-badge {% if mesa.venta_actual and not mesa.venta_actual.cerrada %}status-venta-abierta{% else %}status-venta-cerrada{% endif %}">
+                            {% if mesa.venta_actual and not mesa.venta_actual.cerrada %}🔥 Venta{% else %}✓ Libre{% endif %}
                         </span>
                     </div>
                 </div>
@@ -343,7 +408,7 @@
                         <span class="info-label">
                             <i class="bi bi-geo-alt"></i> Ubicación
                         </span>
-                        <span class="info-value">{{ mesa.ubicacion }}</span>
+                        <span class="info-value">{{ mesa.ubicacion|default:"N/A" }}</span>
                     </div>
                     
                     <div class="info-row">
@@ -351,7 +416,7 @@
                             <i class="bi bi-receipt"></i> Estado Venta
                         </span>
                         <span class="info-value">
-                            {% if venta and not venta.cerrada %}
+                            {% if mesa.venta_actual and not mesa.venta_actual.cerrada %}
                                 En Progreso
                             {% else %}
                                 Sin Venta
@@ -364,16 +429,28 @@
                             <i class="bi bi-currency-dollar"></i> Total
                         </span>
                         <span class="info-value total-venta">
-                            {% if venta %}
-                                ${{ venta.total|floatformat:2 }}
+                            {% if mesa.venta_actual %}
+                                {{ mesa.venta_actual.total_formateado }}
                             {% else %}
-                                $0.00
+                                $0
                             {% endif %}
                         </span>
                     </div>
+
+                    {% if mesa.venta_actual and not mesa.venta_actual.cerrada %}
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-credit-card"></i> Método Pago
+                        </span>
+                        <span class="info-value">{{ mesa.venta_actual.metodo_pago|default:"Efectivo" }}</span>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
-            {% endwith %}
+        {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                <p style="color: #64748b; font-size: 1.1rem;">No hay mesas registradas</p>
+            </div>
         {% endfor %}
     </div>
 
@@ -390,32 +467,34 @@
                 </tr>
             </thead>
             <tbody>
-                {% for mesa in mesas %}
+                {% for mesa in mesas_seguras %}
                     <tr>
                         <td><strong>{{ mesa.numero }}</strong></td>
-                        <td>{{ mesa.ubicacion }}</td>
+                        <td>{{ mesa.ubicacion|default:"N/A" }}</td>
                         <td>
                             <span class="status-badge {% if mesa.activa %}status-activa{% else %}status-inactiva{% endif %}">
-                                {{ mesa.activa|yesno:"Sí,No" }}
+                                {% if mesa.activa %}Sí{% else %}No{% endif %}
                             </span>
                         </td>
                         <td>
-                            {% with venta=mesa.ventas.last %}
-                                <span class="status-badge {% if venta and not venta.cerrada %}status-venta-abierta{% else %}status-venta-cerrada{% endif %}">
-                                    {% if venta and not venta.cerrada %}Sí{% else %}No{% endif %}
-                                </span>
-                            {% endwith %}
+                            <span class="status-badge {% if mesa.venta_actual and not mesa.venta_actual.cerrada %}status-venta-abierta{% else %}status-venta-cerrada{% endif %}">
+                                {% if mesa.venta_actual and not mesa.venta_actual.cerrada %}Sí{% else %}No{% endif %}
+                            </span>
                         </td>
                         <td>
                             <span class="total-venta">
-                                {% with venta=mesa.ventas.last %}
-                                    {% if venta %}
-                                        ${{ venta.total|floatformat:2 }}
-                                    {% else %}
-                                        $0.00
-                                    {% endif %}
-                                {% endwith %}
+                                {% if mesa.venta_actual %}
+                                    {{ mesa.venta_actual.total_formateado }}
+                                {% else %}
+                                    $0
+                                {% endif %}
                             </span>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #64748b; padding: 2rem;">
+                            No hay mesas registradas
                         </td>
                     </tr>
                 {% endfor %}
@@ -437,6 +516,13 @@ document.addEventListener('DOMContentLoaded', function() {
             card.style.transform = 'translateY(0)';
         }, index * 100);
     });
+
+    // Auto-refresh cada 30 segundos
+    setInterval(() => {
+        if (!document.hidden) {
+            location.reload();
+        }
+    }, 30000);
 });
 
 function toggleView(view) {

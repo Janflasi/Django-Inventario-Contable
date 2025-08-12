@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import seguimiento_mesas
+from .views import seguimiento_mesas, generar_factura_html
 
 urlpatterns = [
     # Autenticación
@@ -19,7 +19,7 @@ urlpatterns = [
     path('panel/asignar_roles/', views.asignar_roles, name='asignar_roles'),
     path('usuarios/notificar/<int:user_id>/', views.enviar_notificacion_usuario, name='enviar_notificacion_usuario'),
     path('seguimiento/mesas/', views.seguimiento_mesas, name='seguimiento_mesas'),
-   path('panel/ventas/', views.admin_ventas, name='admin_ventas'),
+    path('panel/ventas/', views.admin_ventas, name='admin_ventas'),
 
     path('inicio/', views.inicio, name='inicio'),
 
@@ -59,14 +59,22 @@ urlpatterns = [
     path('notificar/<int:producto_id>/', views.notificar_admin, name='notificar_admin'),
     path('notificaciones/', views.ver_notificaciones, name='ver_notificaciones'),
 
+    # 🔥 CIERRE DE CAJA Y FACTURAS
     path('cerrar-caja/', views.cerrar_caja_dia, name='cerrar_caja_dia'),
+    path('caja/factura-html/', generar_factura_html, name='generar_factura_html'),
     
+    # 🔥 NUEVAS APIs OPTIMIZADAS
+    path('api/resumen-dia/', views.resumen_dia_ajax, name='resumen_dia_ajax'),
+    path('api/comparacion-dias/', views.comparacion_dias, name='comparacion_dias'),
+    
+    # Deudores
     path('panel/deudores/', views.ver_deudores, name='ver_deudores'),
- 
     path('panel/deudores/marcar/<int:deuda_id>/', views.marcar_deuda_pagada, name='marcar_deuda_pagada'),
+    
+    # Estadísticas
     path('estadisticas/', views.estadisticas, name='estadisticas'),
 
-    # Agrega esta línea a tu urls.py:
+    # Recomendaciones de precios
     path('productos/recomendaciones/', views.recomendaciones_precio, name='recomendaciones_precio'),
 
     # Gestión de gastos
@@ -76,7 +84,7 @@ urlpatterns = [
     path('pagos-bartender/crear/', views.crear_pago_bartender, name='crear_pago_bartender'),
     path('pagos-bartender/eliminar/<int:pago_id>/', views.eliminar_pago_bartender, name='eliminar_pago_bartender'),
 
-   # Sistema de devoluciones
+    # Sistema de devoluciones
     path('devoluciones/solicitar/', views.solicitar_devolucion, name='solicitar_devolucion'),
     path('devoluciones/mis-solicitudes/', views.mis_devoluciones, name='mis_devoluciones'),
     path('panel/devoluciones/', views.gestionar_devoluciones, name='gestionar_devoluciones'),

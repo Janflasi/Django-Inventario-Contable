@@ -34,7 +34,7 @@ class Mesa(models.Model):
     def __str__(self):
         return f"Mesa {self.numero}"
 
-# ✅ PRODUCTO
+# ✅ PRODUCTO CON VALIDACIONES
 class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, related_name='productos')
@@ -53,8 +53,92 @@ class Producto(models.Model):
             return ((self.precio - self.precio_costo) / self.precio_costo) * 100
         return 0
 
+    # 🔥 NUEVO MÉTODO: Validaciones del modelo
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        from decimal import Decimal
+        
+        errors = {}
+        
+        # Validar que el precio de venta sea mayor a 0
+        if self.precio is not None and self.precio <= 0:
+            errors['precio'] = 'El precio de venta debe ser mayor a cero ($0).'
+        
+        # Validar que precio_costo sea mayor o igual a 0
+        if self.precio_costo is not None and self.precio_costo < 0:
+            errors['precio_costo'] = 'El precio de costo no puede ser negativo.'
+        
+        # Validar que precio_costo < precio_venta (cuando ambos están definidos)
+        if (self.precio_costo is not None and self.precio is not None and 
+            self.precio_costo > 0 and self.precio > 0):
+            
+            if self.precio_costo >= self.precio:
+                errors['precio_costo'] = f'El precio de costo (${self.precio_costo:,.0f}) debe ser menor al precio de venta (${self.precio:,.0f}).'
+                errors['precio'] = 'El precio de venta debe ser mayor al precio de costo para generar ganancia.'
+        
+        # Validar cantidad no negativa (aunque sea PositiveIntegerField, doble validación)
+        if self.cantidad is not None and self.cantidad < 0:
+            errors['cantidad'] = 'La cantidad no puede ser negativa.'
+        
+        # Validar que el nombre no esté vacío
+        if not self.nombre or self.nombre.strip() == '':
+            errors['nombre'] = 'El nombre del producto es obligatorio.'
+        
+        if errors:
+            raise ValidationError(errors)
+
+    # 🔥 NUEVO MÉTODO: Detectar stock bajo
+    def stock_bajo(self):
+        """
+        Retorna True si el stock está bajo (cantidad <= 5)
+        Útil para alertas de inventario
+        """
+        return self.cantidad <= 5
+
+    # 🔥 NUEVO MÉTODO: Estado del stock como texto
+    def estado_stock(self):
+        """
+        Retorna el estado del stock como texto descriptivo
+        """
+        if self.cantidad == 0:
+            return "Sin stock"
+        elif self.stock_bajo():
+            return "Stock bajo"
+        elif self.cantidad <= 10:
+            return "Stock moderado"
+        else:
+            return "Stock disponible"
+
+    # 🔥 NUEVO MÉTODO: Clase CSS para alertas en templates
+    def clase_stock_css(self):
+        """
+        Retorna clase CSS para colorear según el stock
+        """
+        if self.cantidad == 0:
+            return "text-danger fw-bold"  # Rojo fuerte
+        elif self.stock_bajo():
+            return "text-warning fw-bold"  # Amarillo/naranja
+        elif self.cantidad <= 10:
+            return "text-info"  # Azul claro
+        else:
+            return "text-success"  # Verde
+
+    # 🔥 NUEVO MÉTODO: Validar antes de guardar
+    def save(self, *args, **kwargs):
+        # Ejecutar validaciones antes de guardar
+        self.clean()
+        super().save(*args, **kwargs)
+
+    # 🔥 MÉTODO MEJORADO: __str__ con información de stock
     def __str__(self):
-        return self.nombre
+        stock_info = f" (Stock: {self.cantidad})"
+        if self.stock_bajo():
+            stock_info += " ⚠️"
+        elif self.cantidad == 0:
+            stock_info += " ❌"
+        
+        return f"{self.nombre}{stock_info}"
+
 # ✅ MOVIMIENTO CONTABLE - MOVIDO ANTES DE VENTA
 class MovimientoContable(models.Model):
     TIPO = [
@@ -73,6 +157,7 @@ class MovimientoContable(models.Model):
     def __str__(self):
         return f"{self.tipo.upper()} - {self.concepto} - {self.monto}"
 
+# 🔥 MODELO VENTA CON CORRECCIONES CRÍTICAS
 class Venta(models.Model):
     METODO_PAGO_CHOICES = [
         ('efectivo', 'Efectivo'),
@@ -85,14 +170,19 @@ class Venta(models.Model):
     mesa = models.ForeignKey(Mesa, on_delete=models.SET_NULL, null=True, related_name='ventas')
     mesero = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='ventas')
     fecha = models.DateTimeField(auto_now_add=True)
-    # 🔥 CAMPO CORREGIDO - Más restrictivo con decimales
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    
+    # 🔥 CORRECCIÓN 1: Campo total más estable (max_digits=10)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
     cerrada = models.BooleanField(default=False)
     metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO_CHOICES, default='efectivo')
-    monto_pagado = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    vuelto = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    monto_pagado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    vuelto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    # 🔥 NUEVO CAMPO: Flag para evitar duplicar movimientos contables
+    movimiento_contable_creado = models.BooleanField(default=False)
 
-    # 🔥 MÉTODO PERSONALIZADO PARA OBTENER TOTAL SEGURO
+    # 🔥 CORRECCIÓN 2: Método para obtener total seguro
     def get_total_seguro(self):
         """Obtiene el total de forma segura, manejando errores de decimal"""
         try:
@@ -102,52 +192,108 @@ class Venta(models.Model):
         except (decimal.InvalidOperation, ValueError, TypeError):
             return 0.00
 
+    # 🔥 CORRECCIÓN 3: Método para formato colombiano
+    def get_total_formateado(self):
+        """Retorna el total en formato peso colombiano: $1.234.567"""
+        try:
+            total_safe = self.get_total_seguro()
+            if total_safe == 0:
+                return "$0"
+            
+            # Convertir a entero para formato colombiano
+            total_entero = int(total_safe)
+            
+            # Formatear con separadores de miles usando puntos
+            formatted = f"{total_entero:,}".replace(',', '.')
+            return f"${formatted}"
+            
+        except (ValueError, TypeError):
+            return "$0"
+
+    # 🔥 MÉTODO ADICIONAL: Total como entero para templates
+    def get_total_entero(self):
+        """Retorna el total como entero para usar en templates con filtros"""
+        try:
+            return int(self.get_total_seguro())
+        except (ValueError, TypeError):
+            return 0
+
+    # 🔥 CORRECCIÓN 4: Método save mejorado con mejor manejo de Decimal
     def save(self, *args, **kwargs):
-        # 🔥 VALIDAR Y LIMPIAR EL TOTAL ANTES DE GUARDAR
+        from decimal import Decimal, InvalidOperation
+        
+        # 🔥 MEJORAR VALIDACIÓN Y CONVERSIÓN DEL TOTAL
         try:
             if self.total is None:
-                self.total = 0.00
+                self.total = Decimal('0.00')
             else:
-                # Convertir a Decimal de forma segura
-                from decimal import Decimal, InvalidOperation
+                # Manejo más robusto de conversiones
                 if isinstance(self.total, str):
-                    self.total = Decimal(self.total)
+                    # Limpiar string: remover espacios, comas, y caracteres no numéricos excepto punto
+                    total_clean = str(self.total).strip().replace(',', '').replace(' ', '')
+                    if not total_clean or total_clean == '':
+                        total_clean = '0.00'
+                    self.total = Decimal(total_clean)
                 elif isinstance(self.total, (int, float)):
+                    # Convertir números a string primero para evitar problemas de precisión
+                    self.total = Decimal(str(float(self.total)))
+                elif not isinstance(self.total, Decimal):
+                    # Fallback para otros tipos
                     self.total = Decimal(str(self.total))
-        except (InvalidOperation, ValueError, TypeError):
-            self.total = 0.00
+                
+                # Asegurar que no sea negativo
+                if self.total < 0:
+                    self.total = Decimal('0.00')
+                    
+        except (InvalidOperation, ValueError, TypeError) as e:
+            print(f"Error convirtiendo total a Decimal: {e}")
+            self.total = Decimal('0.00')
 
-        # Verificar si la venta se está cerrando (de False a True)
+        # 🔥 VERIFICAR SI ES NUEVA VENTA CERRADA (sin duplicar movimientos)
         es_nueva_venta_cerrada = False
         if self.pk:
             try:
                 venta_anterior = Venta.objects.get(pk=self.pk)
-                if not venta_anterior.cerrada and self.cerrada:
+                # Solo si: no estaba cerrada antes, se está cerrando ahora, y no se ha creado el movimiento
+                if (not venta_anterior.cerrada and 
+                    self.cerrada and 
+                    not self.movimiento_contable_creado):
                     es_nueva_venta_cerrada = True
             except Venta.DoesNotExist:
                 pass
-        elif self.cerrada:
+        elif self.cerrada and not self.movimiento_contable_creado:
+            # Nueva venta que se crea ya cerrada
             es_nueva_venta_cerrada = True
 
+        # Guardar primero
         super().save(*args, **kwargs)
 
-        # Solo crear movimiento contable si se está cerrando la venta y no es crédito
+        # 🔥 CORRECCIÓN 5: Crear movimiento contable SIN DUPLICAR
         if es_nueva_venta_cerrada and self.metodo_pago != 'credito':
-            MovimientoContable.objects.get_or_create(
-                venta_relacionada=self,
-                defaults={
-                    'tipo': 'ingreso',
-                    'concepto': f'Venta Mesa {self.mesa.numero if self.mesa else "N/A"}',
-                    'monto': self.total,
-                    'usuario': self.mesero
-                }
-            )
+            try:
+                # Verificar que no exista ya un movimiento para esta venta
+                if not MovimientoContable.objects.filter(venta_relacionada=self).exists():
+                    MovimientoContable.objects.create(
+                        venta_relacionada=self,
+                        tipo='ingreso',
+                        concepto=f'Venta Mesa {self.mesa.numero if self.mesa else "N/A"}',
+                        monto=self.total,
+                        usuario=self.mesero
+                    )
+                    
+                    # Marcar que ya se creó el movimiento
+                    self.movimiento_contable_creado = True
+                    # Guardar sin disparar save() de nuevo
+                    super().save(update_fields=['movimiento_contable_creado'])
+                    
+            except Exception as e:
+                print(f"Error creando MovimientoContable para venta {self.id}: {e}")
 
     def __str__(self):
         mesa_str = f"Mesa {self.mesa.numero}" if self.mesa else "Mesa N/A"
-        return f"Venta #{self.id} - {mesa_str}"
-    
-# ✅ DETALLE DE VENTA
+        return f"Venta #{self.id} - {mesa_str} - {self.get_total_formateado()}"
+
+# ✅ DETALLE DE VENTA CON VALIDACIONES
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
     producto = models.ForeignKey(Producto, on_delete=models.SET_NULL, null=True)
@@ -157,8 +303,130 @@ class DetalleVenta(models.Model):
     def subtotal(self):
         return self.precio_unitario * self.cantidad
 
+    # 🔥 NUEVO MÉTODO: Subtotal con formato colombiano
+    def subtotal_formateado(self):
+        """
+        Retorna el subtotal en formato peso colombiano: $1.234.567
+        """
+        try:
+            subtotal_valor = float(self.subtotal())
+            if subtotal_valor == 0:
+                return "$0"
+            
+            # Convertir a entero para formato colombiano
+            subtotal_entero = int(subtotal_valor)
+            
+            # Formatear con separadores de miles usando puntos
+            formatted = f"{subtotal_entero:,}".replace(',', '.')
+            return f"${formatted}"
+            
+        except (ValueError, TypeError):
+            return "$0"
+
+    # 🔥 NUEVO MÉTODO: Subtotal como entero para templates
+    def subtotal_entero(self):
+        """
+        Retorna el subtotal como entero para usar en templates con filtros
+        """
+        try:
+            return int(float(self.subtotal()))
+        except (ValueError, TypeError):
+            return 0
+
+    # 🔥 NUEVO MÉTODO: Validaciones del modelo
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        errors = {}
+        
+        # Validar que el producto exista
+        if not self.producto:
+            errors['producto'] = 'Debe seleccionar un producto válido.'
+        
+        # Validar cantidad positiva
+        if self.cantidad is not None and self.cantidad <= 0:
+            errors['cantidad'] = 'La cantidad debe ser mayor a cero.'
+        
+        # Validar precio unitario positivo
+        if self.precio_unitario is not None and self.precio_unitario <= 0:
+            errors['precio_unitario'] = 'El precio unitario debe ser mayor a cero.'
+        
+        # 🔥 VALIDACIÓN CRÍTICA: Control de stock disponible
+        if self.producto and self.cantidad:
+            # Si es un detalle nuevo (no tiene ID)
+            if not self.pk:
+                stock_disponible = self.producto.cantidad
+                
+                if self.cantidad > stock_disponible:
+                    errors['cantidad'] = (
+                        f'Stock insuficiente. Disponible: {stock_disponible} unidades. '
+                        f'Solicitado: {self.cantidad} unidades.'
+                    )
+            
+            # Si es un detalle existente que se está modificando
+            else:
+                try:
+                    detalle_anterior = DetalleVenta.objects.get(pk=self.pk)
+                    # Calcular cuánto stock se liberaría del cambio
+                    diferencia_cantidad = self.cantidad - detalle_anterior.cantidad
+                    
+                    # Si se está aumentando la cantidad, verificar stock
+                    if diferencia_cantidad > 0:
+                        stock_disponible = self.producto.cantidad
+                        
+                        if diferencia_cantidad > stock_disponible:
+                            errors['cantidad'] = (
+                                f'Stock insuficiente para el aumento. '
+                                f'Disponible: {stock_disponible} unidades. '
+                                f'Aumento solicitado: {diferencia_cantidad} unidades.'
+                            )
+                except DetalleVenta.DoesNotExist:
+                    # Si no existe el detalle anterior, tratar como nuevo
+                    if self.cantidad > self.producto.cantidad:
+                        errors['cantidad'] = (
+                            f'Stock insuficiente. Disponible: {self.producto.cantidad} unidades.'
+                        )
+        
+        # 🔥 VALIDACIÓN ADICIONAL: Verificar que la venta no esté cerrada
+        if self.venta and self.venta.cerrada:
+            errors['venta'] = 'No se pueden modificar los detalles de una venta cerrada.'
+        
+        if errors:
+            raise ValidationError(errors)
+
+    # 🔥 NUEVO MÉTODO: Información del stock después de la venta
+    def stock_resultante(self):
+        """
+        Retorna el stock que quedaría después de esta venta
+        """
+        if self.producto:
+            return max(0, self.producto.cantidad - self.cantidad)
+        return 0
+
+    # 🔥 NUEVO MÉTODO: Verificar si generará stock bajo
+    def generara_stock_bajo(self):
+        """
+        Retorna True si esta venta dejará el producto con stock bajo
+        """
+        return self.stock_resultante() <= 5
+
+    # 🔥 MÉTODO MEJORADO: Validar antes de guardar
+    def save(self, *args, **kwargs):
+        # Ejecutar validaciones antes de guardar
+        self.clean()
+        super().save(*args, **kwargs)
+
+    # 🔥 MÉTODO MEJORADO: __str__ con información detallada
     def __str__(self):
-        return f"{self.cantidad} x {self.producto.nombre}"
+        if self.producto:
+            subtotal_str = self.subtotal_formateado()
+            return f"{self.cantidad} x {self.producto.nombre} = {subtotal_str}"
+        else:
+            return f"{self.cantidad} x Producto eliminado"
+
+    class Meta:
+        verbose_name = 'Detalle de Venta'
+        verbose_name_plural = 'Detalles de Venta'
 
 # ✅ FACTURA
 class Factura(models.Model):
@@ -185,6 +453,7 @@ class Notificacion(models.Model):
             return f"{self.producto.nombre} - {self.mensaje[:30]}"
         else:
             return f"Notificación general - {self.mensaje[:30]}"
+
 # ✅ DEUDA (CON MOVIMIENTOS AUTOMÁTICOS AL PAGAR)
 class Deuda(models.Model):
     venta = models.OneToOneField('Venta', on_delete=models.CASCADE, related_name='deuda')
@@ -277,8 +546,6 @@ class PagoMixto(models.Model):
 
     def __str__(self):
         return f"Pago mixto - Efectivo: ${self.monto_efectivo}, Transferencia: ${self.monto_transferencia}"
-    
-    # Agregar al final de tu models.py
 
 # ✅ SISTEMA DE DEVOLUCIONES
 class Devolucion(models.Model):

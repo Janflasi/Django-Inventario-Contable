@@ -16,11 +16,42 @@
       padding: 15px 0;
     }
     
+    /* 🔥 LOGO CLICKEABLE */
+    .header-logo {
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+    }
+    
+    .header-logo:hover {
+      color: #74b9ff;
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+    
+    .header-logo:focus {
+      color: #74b9ff;
+      text-decoration: none;
+      outline: 2px solid rgba(116, 185, 255, 0.3);
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+    
     .header-title {
       font-size: 1.5rem;
       font-weight: 600;
       margin: 0;
-      color: white;
+      transition: inherit;
+    }
+    
+    .header-logo i {
+      transition: transform 0.3s ease;
+    }
+    
+    .header-logo:hover i {
+      transform: scale(1.1) rotate(5deg);
     }
     
     .user-btn {
@@ -197,15 +228,17 @@
   </div>
   {% endif %}
 
-  <!-- HEADER CON CONDICIONAL DE AUTENTICACIÓN -->
+  <!-- HEADER CON LOGO CLICKEABLE -->
   <header class="header-fixed shadow-lg">
     <div class="container-fluid">
       <div class="d-flex justify-content-between align-items-center">
-        <!-- Título -->
-        <h3 class="header-title d-flex align-items-center">
+        <!-- 🔥 LOGO CLICKEABLE QUE VA AL INICIO -->
+        <a href="{% url 'inicio' %}" class="header-logo" title="Ir al inicio">
           <i class="bi bi-speedometer2 me-2"></i>
-          <span class="mobile-hide">Container </span> Bar
-        </h3>
+          <h3 class="header-title">
+            <span class="mobile-hide">Container </span> Bar
+          </h3>
+        </a>
         
         <!-- Menú Usuario o Botón Login -->
         {% if user.is_authenticated %}

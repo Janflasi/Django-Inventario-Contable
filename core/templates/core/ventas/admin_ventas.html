@@ -53,7 +53,7 @@
         {% endif %}
     </div>
 
-    <!-- Sección de filtros -->
+    <!-- Sección de filtros CORREGIDA -->
     <div class="filters-section">
         <h3 class="filters-title">
             <i class="bi bi-funnel"></i>
@@ -62,16 +62,18 @@
         
         <form method="get" id="filtros-form">
             <div class="filters-grid">
-                <!-- Filtro por período -->
+                <!-- 🔥 FILTRO POR PERÍODO CORREGIDO -->
                 <div class="filter-group">
                     <label class="filter-label">Período de Tiempo</label>
                     <select name="filtro_fecha" class="filter-select" onchange="toggleCustomDates()">
                         <option value="hoy" {% if filtro_fecha == 'hoy' %}selected{% endif %}>Hoy</option>
                         <option value="ayer" {% if filtro_fecha == 'ayer' %}selected{% endif %}>Ayer</option>
-                        <option value="semana" {% if filtro_fecha == 'semana' %}selected{% endif %}>Esta Semana</option>
-                        <option value="mes" {% if filtro_fecha == 'mes' %}selected{% endif %}>Este Mes</option>
-                        <option value="trimestre" {% if filtro_fecha == 'trimestre' %}selected{% endif %}>Este Trimestre</option>
-                        <option value="año" {% if filtro_fecha == 'año' %}selected{% endif %}>Este Año</option>
+                        <option value="ultima_semana" {% if filtro_fecha == 'ultima_semana' %}selected{% endif %}>Última Semana</option>
+                        <option value="este_mes" {% if filtro_fecha == 'este_mes' %}selected{% endif %}>Este Mes</option>
+                        <option value="ultimo_mes" {% if filtro_fecha == 'ultimo_mes' %}selected{% endif %}>Último Mes (30 días)</option>
+                        <option value="este_trimestre" {% if filtro_fecha == 'este_trimestre' %}selected{% endif %}>Este Trimestre</option>
+                        <option value="este_año" {% if filtro_fecha == 'este_año' %}selected{% endif %}>Este Año</option>
+                        <option value="todas" {% if filtro_fecha == 'todas' %}selected{% endif %}>Todas las Ventas</option>
                         <option value="personalizado" {% if filtro_fecha == 'personalizado' %}selected{% endif %}>Período Personalizado</option>
                     </select>
                 </div>
@@ -96,21 +98,25 @@
                            placeholder="Ej: 5" value="{{ buscar_mesa }}">
                 </div>
 
-                <!-- Filtro por mesero -->
+                <!-- 🔥 FILTRO POR MESERO CORREGIDO -->
                 <div class="filter-group">
                     <label class="filter-label">Mesero</label>
                     <select name="buscar_mesero" class="filter-select">
                         <option value="">Todos los Meseros</option>
                         {% for mesero in meseros_disponibles %}
-                            <option value="{{ mesero.username }}" {% if buscar_mesero == mesero.username %}selected{% endif %}>
-                                {{ mesero.first_name }} {{ mesero.last_name }} ({{ mesero.username }})
+                            <option value="{{ mesero.id }}" {% if buscar_mesero == mesero.id|stringformat:'s' %}selected{% endif %}>
+                                {% if mesero.first_name %}
+                                    {{ mesero.first_name }} {{ mesero.last_name }} ({{ mesero.username }})
+                                {% else %}
+                                    {{ mesero.username }}
+                                {% endif %}
                             </option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
 
-            <!-- Fechas personalizadas (ocultas por defecto) -->
+            <!-- 🔥 FECHAS PERSONALIZADAS CORREGIDAS -->
             <div id="custom-dates" class="filters-grid" style="display: {% if filtro_fecha == 'personalizado' %}grid{% else %}none{% endif %};">
                 <div class="filter-group">
                     <label class="filter-label">Fecha Inicio</label>
@@ -136,10 +142,25 @@
         </form>
     </div>
 
+    <!-- 🔥 MENSAJE DE ERROR SI EXISTE -->
+    {% if error_message %}
+        <div class="alert alert-danger" style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:1rem;border-radius:8px;margin-bottom:2rem;">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Error:</strong> {{ error_message }}
+        </div>
+    {% endif %}
+
     <!-- Tabla de ventas -->
     <div class="ventas-table-container">
         <div class="table-header">
             <h3><i class="bi bi-table"></i> Lista de Ventas ({{ total_ventas }} resultados)</h3>
+            {% if filtro_fecha != 'hoy' %}
+                <p style="margin:0.5rem 0 0 0;opacity:0.8;font-size:0.9rem;">
+                    Filtro aplicado: {{ filtro_fecha|title }}
+                    {% if filtro_metodo != 'todos' %} | Método: {{ filtro_metodo|title }}{% endif %}
+                    {% if buscar_mesa %} | Mesa: {{ buscar_mesa }}{% endif %}
+                </p>
+            {% endif %}
         </div>
         
         {% if ventas %}
@@ -158,40 +179,54 @@
                 <tbody>
                     {% for venta in ventas %}
                         <tr>
-                            <td><strong>#{{ venta.id }}</strong></td>
-                            <td>
+                            <td data-label="ID"><strong>#{{ venta.id }}</strong></td>
+                            <td data-label="Fecha">
                                 {% if venta.fecha %}
                                     {{ venta.fecha|date:"d/m/Y" }}<br>
-                                    <small>{{ venta.fecha|time:"H:i" }}</small>
+                                    <small>{{ venta.hora|default:venta.fecha|time:"H:i" }}</small>
                                 {% else %}
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-label="Mesa">
                                 {% if venta.mesa %}
                                     <i class="bi bi-table"></i> Mesa {{ venta.mesa.numero }}
                                 {% else %}
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-label="Mesero">
                                 {% if venta.mesero %}
                                     <i class="bi bi-person"></i>
-                                    {{ venta.mesero.first_name }} {{ venta.mesero.last_name }}
+                                    {% if venta.mesero.first_name %}
+                                        {{ venta.mesero.first_name }} {{ venta.mesero.last_name }}
+                                    {% else %}
+                                        {{ venta.mesero.username }}
+                                    {% endif %}
                                     <br><small>@{{ venta.mesero.username }}</small>
                                 {% else %}
                                     <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <strong class="total-venta" data-monto="{{ venta.total }}">{{ venta.total|default:0 }}</strong>
+                            <td data-label="Total">
+                                <strong class="total-venta" data-monto="{{ venta.total }}">
+                                    {% if venta.total_formateado %}
+                                        {{ venta.total_formateado }}
+                                    {% else %}
+                                        {{ venta.total|default:0 }}
+                                    {% endif %}
+                                </strong>
                             </td>
-                            <td>
+                            <td data-label="Método">
                                 <span class="badge {{ venta.metodo_pago }}">
-                                    {{ venta.get_metodo_pago_display|default:venta.metodo_pago }}
+                                    {% if venta.metodo_pago_display %}
+                                        {{ venta.metodo_pago_display }}
+                                    {% else %}
+                                        {{ venta.get_metodo_pago_display|default:venta.metodo_pago }}
+                                    {% endif %}
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Estado">
                                 {% if venta.cerrada %}
                                     <span style="color: #10b981;"><i class="bi bi-check-circle"></i> Cerrada</span>
                                 {% else %}
@@ -203,12 +238,12 @@
                 </tbody>
             </table>
 
-            <!-- Paginación -->
+            <!-- 🔥 PAGINACIÓN CORREGIDA -->
             {% if ventas.has_other_pages %}
                 <div class="pagination">
                     {% if ventas.has_previous %}
-                        <a href="?page=1&{{ request.GET.urlencode }}">« Primera</a>
-                        <a href="?page={{ ventas.previous_page_number }}&{{ request.GET.urlencode }}">‹ Anterior</a>
+                        <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">« Primera</a>
+                        <a href="?page={{ ventas.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">‹ Anterior</a>
                     {% endif %}
                     
                     <span class="current">
@@ -216,8 +251,8 @@
                     </span>
                     
                     {% if ventas.has_next %}
-                        <a href="?page={{ ventas.next_page_number }}&{{ request.GET.urlencode }}">Siguiente ›</a>
-                        <a href="?page={{ ventas.paginator.num_pages }}&{{ request.GET.urlencode }}">Última »</a>
+                        <a href="?page={{ ventas.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente ›</a>
+                        <a href="?page={{ ventas.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última »</a>
                     {% endif %}
                 </div>
             {% endif %}
@@ -226,6 +261,11 @@
                 <i class="bi bi-search"></i>
                 <h3>No se encontraron ventas</h3>
                 <p>No hay ventas que coincidan con los filtros seleccionados.</p>
+                {% if filtro_fecha != 'hoy' %}
+                    <a href="{% url 'admin_ventas' %}" class="btn-filter" style="margin-top:1rem;">
+                        Ver todas las ventas
+                    </a>
+                {% endif %}
             </div>
         {% endif %}
     </div>
@@ -283,25 +323,13 @@ function formatearNumeros() {
     // Formatear totales en tabla
     document.querySelectorAll('.total-venta[data-monto]').forEach(function(element) {
         let monto = element.getAttribute('data-monto');
-        if (monto && monto !== '0' && monto !== 'None') {
+        if (monto && monto !== '0' && monto !== 'None' && !element.textContent.includes('$')) {
             element.textContent = formatearPesosColombianos(monto);
-        } else {
-            element.textContent = '$0';
-        }
-    });
-    
-    // Formatear números sin data-monto pero que contengan solo números grandes
-    document.querySelectorAll('.stat-number:not([data-monto])').forEach(function(element) {
-        let texto = element.textContent.trim();
-        if (!isNaN(texto) && texto !== '' && parseInt(texto) > 100) {
-            let numeroEntero = parseInt(texto);
-            if (numeroEntero > 1000) {
-                element.textContent = formatearPesosColombianos(numeroEntero);
-            }
         }
     });
 }
 
+// 🔥 FUNCIÓN CORREGIDA PARA FECHAS PERSONALIZADAS
 function toggleCustomDates() {
     const select = document.querySelector('select[name="filtro_fecha"]');
     const customDates = document.getElementById('custom-dates');
@@ -309,14 +337,23 @@ function toggleCustomDates() {
     if (select && customDates) {
         if (select.value === 'personalizado') {
             customDates.style.display = 'grid';
+            // Hacer los campos de fecha requeridos
+            document.querySelector('input[name="fecha_inicio"]').required = true;
+            document.querySelector('input[name="fecha_fin"]').required = true;
         } else {
             customDates.style.display = 'none';
+            // Quitar el requerido
+            document.querySelector('input[name="fecha_inicio"]').required = false;
+            document.querySelector('input[name="fecha_fin"]').required = false;
         }
     }
 }
 
 // Animación de entrada para las tarjetas de estadísticas
 document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar toggle de fechas
+    toggleCustomDates();
+    
     const statCards = document.querySelectorAll('.stat-card');
     statCards.forEach((card, index) => {
         card.style.opacity = '0';
@@ -332,7 +369,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(formatearNumeros, 100);
     setTimeout(formatearNumeros, 300);
     setTimeout(formatearNumeros, 800);
-    setTimeout(formatearNumeros, 1500);
     
     // Debug: mostrar valores en consola
     console.log('🔍 Valores detectados:');
@@ -344,6 +380,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // Formatear cuando se actualice dinámicamente
 window.addEventListener('load', function() {
     setTimeout(formatearNumeros, 200);
+});
+
+// 🔥 VALIDACIÓN DE FORMULARIO
+document.getElementById('filtros-form').addEventListener('submit', function(e) {
+    const filtroFecha = document.querySelector('select[name="filtro_fecha"]').value;
+    const fechaInicio = document.querySelector('input[name="fecha_inicio"]').value;
+    const fechaFin = document.querySelector('input[name="fecha_fin"]').value;
+    
+    // Si es personalizado, validar que se hayan seleccionado ambas fechas
+    if (filtroFecha === 'personalizado') {
+        if (!fechaInicio || !fechaFin) {
+            e.preventDefault();
+            alert('Por favor selecciona una fecha de inicio y una fecha de fin para el período personalizado.');
+            return false;
+        }
+        
+        // Validar que la fecha de inicio no sea posterior a la fecha de fin
+        if (new Date(fechaInicio) > new Date(fechaFin)) {
+            e.preventDefault();
+            alert('La fecha de inicio no puede ser posterior a la fecha de fin.');
+            return false;
+        }
+    }
 });
 </script>
 
