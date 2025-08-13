@@ -3,7 +3,7 @@
 {% block title %}Mis Devoluciones{% endblock %}
 
 {% block content %}
-<div class="container mt-4" style="max-width: 1000px;">
+<div class="container mt-4" style="max-width: 1200px;">
   <div class="row">
     <div class="col-12">
       <!-- Header -->
@@ -33,50 +33,109 @@
             <div class="card border-0 shadow-sm">
               <div class="card-body p-4">
                 <div class="row align-items-center">
-                  <div class="col-md-2">
+                  <!-- Estado y tipo -->
+                  <div class="col-md-2 col-6">
                     <div class="text-center">
                       {% if devolucion.estado == 'pendiente' %}
-                        <span class="badge bg-warning fs-6 px-3 py-2">
+                        <span class="badge bg-warning fs-6 px-3 py-2 mb-2">
                           <i class="bi bi-clock me-1"></i>Pendiente
                         </span>
                       {% elif devolucion.estado == 'autorizada' %}
-                        <span class="badge bg-success fs-6 px-3 py-2">
+                        <span class="badge bg-success fs-6 px-3 py-2 mb-2">
                           <i class="bi bi-check-circle me-1"></i>Autorizada
                         </span>
                       {% elif devolucion.estado == 'rechazada' %}
-                        <span class="badge bg-danger fs-6 px-3 py-2">
+                        <span class="badge bg-danger fs-6 px-3 py-2 mb-2">
                           <i class="bi bi-x-circle me-1"></i>Rechazada
                         </span>
                       {% elif devolucion.estado == 'procesada' %}
-                        <span class="badge bg-primary fs-6 px-3 py-2">
+                        <span class="badge bg-primary fs-6 px-3 py-2 mb-2">
                           <i class="bi bi-check-all me-1"></i>Procesada
                         </span>
                       {% endif %}
+                      
+                      <br>
+                      
+                      <span class="badge bg-{% if devolucion.tipo == 'cliente' %}info{% else %}warning{% endif %} px-2 py-1">
+                        <i class="bi bi-{% if devolucion.tipo == 'cliente' %}person-x{% else %}box-seam{% endif %} me-1"></i>
+                        {{ devolucion.get_tipo_display }}
+                      </span>
                     </div>
                   </div>
-                  <div class="col-md-7">
+                  
+                  <!-- Información principal -->
+                  <div class="col-md-6 col-12 mt-3 mt-md-0">
                     <h5 class="text-dark mb-2">{{ devolucion.producto.nombre }}</h5>
                     <div class="text-muted small">
-                      <p class="mb-1">
-                        <i class="bi bi-box me-1"></i>
-                        <strong>Cantidad:</strong> {{ devolucion.cantidad }} unidades
-                      </p>
-                      <p class="mb-1">
-                        <i class="bi bi-calendar me-1"></i>
-                        <strong>Solicitado:</strong> {{ devolucion.fecha_solicitud|date:"d/m/Y H:i" }}
-                      </p>
-                      <p class="mb-0">
-                        <i class="bi bi-chat-text me-1"></i>
-                        <strong>Motivo:</strong> {{ devolucion.observaciones|truncatewords:10 }}
-                      </p>
+                      <div class="row">
+                        <div class="col-sm-6">
+                          <p class="mb-1">
+                            <i class="bi bi-box me-1"></i>
+                            <strong>Cantidad:</strong> {{ devolucion.cantidad }} unidades
+                          </p>
+                          <p class="mb-1">
+                            <i class="bi bi-calendar me-1"></i>
+                            <strong>Solicitado:</strong> {{ devolucion.fecha_solicitud|date:"d/m/Y H:i" }}
+                          </p>
+                          <p class="mb-0">
+                            <i class="bi bi-tag me-1"></i>
+                            <strong>Razón:</strong> {{ devolucion.get_razon_display }}
+                          </p>
+                        </div>
+                        <div class="col-sm-6">
+                          <p class="mb-1">
+                            <i class="bi bi-currency-dollar me-1"></i>
+                            <strong>Valor:</strong> ${{ devolucion.valor_total|floatformat:0 }} COP
+                          </p>
+                          {% if devolucion.tipo == 'cliente' and devolucion.valor_venta_perdida %}
+                          <p class="mb-1">
+                            <i class="bi bi-arrow-down-circle text-danger me-1"></i>
+                            <strong>Pérdida venta:</strong> <span class="text-danger">${{ devolucion.valor_venta_perdida|floatformat:0 }} COP</span>
+                          </p>
+                          {% endif %}
+                          <p class="mb-0">
+                            <i class="bi bi-{% if devolucion.afecta_stock_positivo %}arrow-up-circle text-success{% else %}arrow-down-circle text-danger{% endif %} me-1"></i>
+                            <strong>Impacto:</strong> 
+                            {% if devolucion.afecta_stock_positivo %}
+                              <span class="text-success">Suma al inventario</span>
+                            {% else %}
+                              <span class="text-danger">Pérdida de inventario</span>
+                            {% endif %}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div class="col-md-3 text-end">
+                  
+                  <!-- Información adicional -->
+                  <div class="col-md-3 col-6 mt-3 mt-md-0">
                     <div class="text-muted small mb-2">
-                      <strong>Valor:</strong><br>
-                      ${{ devolucion.valor_total|floatformat:0 }} COP
+                      {% if devolucion.venta_origen %}
+                      <p class="mb-1">
+                        <i class="bi bi-receipt me-1"></i>
+                        <strong>Venta origen:</strong><br>
+                        Mesa {{ devolucion.venta_origen.mesa.numero }} - {{ devolucion.venta_origen.fecha|date:"d/m/Y" }}
+                      </p>
+                      {% endif %}
+                      
+                      {% if devolucion.fecha_autorizacion %}
+                      <p class="mb-1">
+                        <i class="bi bi-calendar-check me-1"></i>
+                        <strong>{% if devolucion.estado == 'rechazada' %}Rechazado{% else %}Autorizado{% endif %}:</strong><br>
+                        {{ devolucion.fecha_autorizacion|date:"d/m/Y H:i" }}
+                      </p>
+                      {% endif %}
+                      
+                      {% if devolucion.fecha_procesamiento %}
+                      <p class="mb-0">
+                        <i class="bi bi-gear me-1"></i>
+                        <strong>Procesado:</strong><br>
+                        {{ devolucion.fecha_procesamiento|date:"d/m/Y H:i" }}
+                      </p>
+                      {% endif %}
                     </div>
-                    <button class="btn btn-outline-info btn-sm" data-bs-toggle="collapse" data-bs-target="#detalle-{{ devolucion.id }}">
+                    
+                    <button class="btn btn-outline-info btn-sm w-100" data-bs-toggle="collapse" data-bs-target="#detalle-{{ devolucion.id }}">
                       <i class="bi bi-eye me-1"></i>Ver detalles
                     </button>
                   </div>
@@ -88,26 +147,51 @@
                   <div class="row">
                     <div class="col-md-6">
                       <h6 class="text-dark">Observaciones completas:</h6>
-                      <p class="text-muted">{{ devolucion.observaciones }}</p>
+                      <div class="bg-light rounded p-3 mb-3">
+                        <p class="text-muted mb-0">{{ devolucion.observaciones }}</p>
+                      </div>
+                      
+                      {% if devolucion.comentario_admin %}
+                      <h6 class="text-dark">Comentario del administrador:</h6>
+                      <div class="bg-{% if devolucion.estado == 'rechazada' %}danger{% else %}success{% endif %} bg-opacity-10 rounded p-3">
+                        <p class="text-muted mb-0">{{ devolucion.comentario_admin }}</p>
+                      </div>
+                      {% endif %}
                     </div>
                     <div class="col-md-6">
-                      <h6 class="text-dark">Estado y fechas:</h6>
-                      <ul class="list-unstyled text-muted small">
-                        <li><strong>Solicitado:</strong> {{ devolucion.fecha_solicitud|date:"d/m/Y H:i" }}</li>
+                      <h6 class="text-dark">Cronología:</h6>
+                      <div class="timeline">
+                        <div class="timeline-item">
+                          <i class="bi bi-circle-fill text-primary"></i>
+                          <div>
+                            <strong>Solicitado</strong><br>
+                            <small class="text-muted">{{ devolucion.fecha_solicitud|date:"d/m/Y H:i" }}</small>
+                          </div>
+                        </div>
+                        
                         {% if devolucion.fecha_autorizacion %}
-                          <li><strong>{% if devolucion.estado == 'rechazada' %}Rechazado{% else %}Autorizado{% endif %}:</strong> {{ devolucion.fecha_autorizacion|date:"d/m/Y H:i" }}</li>
+                        <div class="timeline-item">
+                          <i class="bi bi-circle-fill text-{% if devolucion.estado == 'rechazada' %}danger{% else %}success{% endif %}"></i>
+                          <div>
+                            <strong>{% if devolucion.estado == 'rechazada' %}Rechazado{% else %}Autorizado{% endif %}</strong><br>
+                            <small class="text-muted">{{ devolucion.fecha_autorizacion|date:"d/m/Y H:i" }}</small>
+                            {% if devolucion.autorizada_por %}
+                            <br><small class="text-muted">Por: {{ devolucion.autorizada_por.username }}</small>
+                            {% endif %}
+                          </div>
+                        </div>
                         {% endif %}
+                        
                         {% if devolucion.fecha_procesamiento %}
-                          <li><strong>Procesado:</strong> {{ devolucion.fecha_procesamiento|date:"d/m/Y H:i" }}</li>
+                        <div class="timeline-item">
+                          <i class="bi bi-circle-fill text-primary"></i>
+                          <div>
+                            <strong>Procesado</strong><br>
+                            <small class="text-muted">{{ devolucion.fecha_procesamiento|date:"d/m/Y H:i" }}</small>
+                          </div>
+                        </div>
                         {% endif %}
-                        {% if devolucion.autorizada_por %}
-                          <li><strong>Gestionado por:</strong> {{ devolucion.autorizada_por.username }}</li>
-                        {% endif %}
-                      </ul>
-                      {% if devolucion.comentario_admin %}
-                        <h6 class="text-dark">Comentario del administrador:</h6>
-                        <p class="text-muted small">{{ devolucion.comentario_admin }}</p>
-                      {% endif %}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -167,6 +251,14 @@
   background-color: #f59e0b !important;
 }
 
+.bg-info {
+  background-color: #0dcaf0 !important;
+}
+
+.text-info {
+  color: #0dcaf0 !important;
+}
+
 .collapse {
   transition: all 0.3s ease;
 }
@@ -174,6 +266,73 @@
 hr {
   border-color: #e9ecef;
   opacity: 0.5;
+}
+
+/* Timeline styles */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e9ecef;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-item i {
+  position: absolute;
+  left: -1.8rem;
+  top: 0.2rem;
+  font-size: 0.8rem;
+  background: white;
+  padding: 2px;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .badge {
+    font-size: 0.8rem !important;
+  }
+  
+  .btn-sm {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .card-body {
+    padding: 1.5rem !important;
+  }
+  
+  h5 {
+    font-size: 1.1rem;
+  }
+  
+  .timeline {
+    padding-left: 1.5rem;
+  }
+  
+  .timeline-item i {
+    left: -1.3rem;
+  }
 }
 </style>
 
@@ -196,6 +355,13 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(() => {
     location.reload();
   }, 30000);
+  
+  // Mejorar accesibilidad en móviles
+  if ('ontouchstart' in window) {
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.style.cursor = 'pointer';
+    });
+  }
 });
 </script>
 {% endblock %}

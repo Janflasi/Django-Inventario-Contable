@@ -23,7 +23,10 @@
         <table class="table table-hover mb-0" id="tabla-productos">
           <thead class="bg-light">
             <tr>
-              <th class="border-0 fw-semibold text-dark py-3 ps-4">Nombre</th>
+              <th class="border-0 fw-semibold text-dark py-3 ps-4">
+                <i class="fas fa-image me-1"></i>Imagen
+              </th>
+              <th class="border-0 fw-semibold text-dark py-3">Nombre</th>
               <th class="border-0 fw-semibold text-dark py-3">Categoría</th>
               <th class="border-0 fw-semibold text-dark py-3">Descripción</th>
               <th class="border-0 fw-semibold text-dark py-3">Precio</th>
@@ -35,6 +38,21 @@
             {% for producto in productos %}
               <tr class="{% if producto.cantidad <= 5 %}table-danger bg-danger bg-opacity-10{% endif %} border-0">
                 <td class="py-3 ps-4">
+                  <!-- 🔥 IMAGEN DEL PRODUCTO -->
+                  {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}" 
+                         alt="{{ producto.nombre }}" 
+                         class="producto-imagen-thumbnail"
+                         onclick="verImagenCompleta('{{ producto.imagen.url }}', '{{ producto.nombre }}')"
+                         title="Haz clic para ver en tamaño completo"
+                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid #e5e7eb;">
+                  {% else %}
+                    <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border: 2px dashed #9ca3af; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 20px;">
+                      📷
+                    </div>
+                  {% endif %}
+                </td>
+                <td class="py-3">
                   <div class="d-flex align-items-center">
                     <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
                       <i class="fas fa-cocktail text-primary"></i>
@@ -70,7 +88,7 @@
               </tr>
             {% empty %}
               <tr>
-                <td colspan="6" class="text-center py-5">
+                <td colspan="7" class="text-center py-5">
                   <div class="text-muted">
                     <i class="fas fa-box-open fs-1 mb-3 d-block"></i>
                     <h5>No hay productos registrados</h5>
@@ -151,6 +169,13 @@
   .badge {
     font-weight: 500;
   }
+
+  /* 🔥 ESTILOS PARA IMAGEN */
+  .producto-imagen-thumbnail:hover {
+    transform: scale(1.1);
+    border-color: #10b981 !important;
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  }
 </style>
 
 <script>
@@ -163,8 +188,8 @@ document.addEventListener("DOMContentLoaded", function () {
   filas.forEach((fila) => {
     // Verificar que la fila tenga contenido de producto (no sea la fila vacía)
     if (fila.children.length > 1) {
-      const cantidad = parseInt(fila.children[4].textContent.trim());
-      const nombre = fila.children[0].textContent.trim();
+      const cantidad = parseInt(fila.children[5].textContent.trim()); // Cambié índice de 4 a 5 por la nueva columna imagen
+      const nombre = fila.children[1].textContent.trim(); // Cambié índice de 0 a 1
       
       if (cantidad <= 5) {
         productosCriticos.push(`🧃 ${nombre} (Stock: ${cantidad})`);
@@ -197,5 +222,60 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+
+// 🔥 NUEVA FUNCIÓN PARA VER IMAGEN COMPLETA
+function verImagenCompleta(imagenUrl, nombreProducto) {
+  const modal = document.createElement('div');
+  modal.className = 'modal fade';
+  modal.tabIndex = -1;
+  modal.innerHTML = `
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-zoom-in"></i>
+            ${nombreProducto}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img src="${imagenUrl}" 
+               alt="${nombreProducto}" 
+               class="img-fluid rounded shadow"
+               style="max-height: 70vh; cursor: zoom-in;"
+               onclick="window.open('${imagenUrl}', '_blank')">
+          <p class="text-muted mt-2">
+            <small>Haz clic en la imagen para verla en tamaño original</small>
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cerrar
+          </button>
+          <a href="${imagenUrl}" target="_blank" class="btn btn-primary">
+            <i class="bi bi-download"></i>
+            Abrir en nueva pestaña
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Verificar si Bootstrap está disponible
+  if (typeof bootstrap !== 'undefined') {
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+  } else {
+    // Fallback si Bootstrap no está disponible
+    modal.style.display = 'block';
+    modal.classList.add('show');
+  }
+  
+  modal.addEventListener('hidden.bs.modal', function() {
+    document.body.removeChild(modal);
+  });
+}
 </script>
 {% endblock %}

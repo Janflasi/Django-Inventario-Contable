@@ -1,97 +1,49 @@
-# 🔥 FORMS.PY LIMPIO Y OPTIMIZADO - Basado en tu código existente
+# 🔥 FORMS.PY SIN REGISTRO PÚBLICO - Solo admin puede crear usuarios
 
+from datetime import timezone
 from django import forms
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from decimal import Decimal, InvalidOperation
 import re
+# Al inicio de forms.py, agregar:
+from datetime import timedelta
+from django.utils import timezone
 
-# Imports de modelos - Todo en una línea organizada
+# 🔥 IMPORTS DE MODELOS - AGREGAR LOS QUE FALTEN
 from .models import (
-    Perfil, Producto, Categoria, Mesa, Gasto, 
-    PagoBartender, Devolucion
+    Gasto, 
+    PagoBartender, 
+    Devolucion, 
+    Producto, 
+    Categoria, 
+    Mesa,
+    Venta,  # 🔥 ESTE ES EL QUE FALTA
+    # Agregar otros modelos que uses en forms.py
 )
-
-
 # ========================================================================================
-# FORMULARIO DE REGISTRO (Mejorado basado en tu código)
-# ========================================================================================
-
-class RegistroForm(UserCreationForm):
-    telefono = forms.CharField(
-        max_length=15, 
-        required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': '3001234567'
-        })
-    )
-    avatar = forms.ImageField(
-        required=False,
-        widget=forms.FileInput(attrs={
-            'class': 'form-control',
-            'accept': 'image/*'
-        })
-    )
-    
-    ROL_CHOICES = (
-        ('admin', 'Administrador'),
-        ('bartender', 'Bartender'),
-    )
-    
-    rol = forms.ChoiceField(
-        choices=ROL_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-
-    class Meta:
-        model = User
-        fields = ['username', 'password1', 'password2', 'telefono', 'avatar', 'rol']
-        widgets = {
-            'username': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nombre de usuario'
-            })
-        }
-
-    # 🔥 VALIDACIONES AGREGADAS
-    def clean_telefono(self):
-        telefono = self.cleaned_data.get('telefono')
-        
-        if not telefono:
-            raise ValidationError('El teléfono es obligatorio.')
-        
-        # Limpiar caracteres no numéricos
-        telefono_clean = re.sub(r'[^0-9]', '', telefono)
-        
-        if len(telefono_clean) < 7:
-            raise ValidationError('El teléfono debe tener al menos 7 dígitos.')
-        
-        if len(telefono_clean) > 15:
-            raise ValidationError('El teléfono no puede tener más de 15 dígitos.')
-        
-        return telefono_clean
-
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-        
-        if len(username) < 3:
-            raise ValidationError('El nombre de usuario debe tener al menos 3 caracteres.')
-        
-        return username
-
-
-# ========================================================================================
-# FORMULARIO DE PRODUCTOS (Mejorado con validaciones críticas)
+# FORMULARIO DE PRODUCTOS (Con validaciones críticas)
 # ========================================================================================
 
 class ProductoForm(forms.ModelForm):
+    # 🔥 NUEVO CAMPO: Previsualización de imagen actual
+    imagen_actual = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False
+    )
+    
+    # 🔥 NUEVO CAMPO: Checkbox para eliminar imagen
+    eliminar_imagen = forms.BooleanField(
+        required=False,
+        label="Eliminar imagen actual",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+
     class Meta:
         model = Producto
-        fields = ['nombre', 'categoria', 'descripcion', 'precio_costo', 'precio', 'cantidad']
+        fields = ['nombre', 'categoria', 'descripcion', 'precio_costo', 'precio', 'cantidad', 'imagen']
         widgets = {
             'nombre': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -122,14 +74,88 @@ class ProductoForm(forms.ModelForm):
                 'placeholder': 'Cantidad inicial',
                 'min': '0'
             }),
+            # 🔥 NUEVO WIDGET: Input de imagen con atributos personalizados
+            'imagen': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+                'id': 'id_imagen',
+                'onchange': 'previewImage(this)'
+            })
         }
         labels = {
             'precio_costo': 'Precio de Costo (COP)',
             'precio': 'Precio de Venta (COP)',
-            'cantidad': 'Cantidad en Stock'
+            'cantidad': 'Cantidad en Stock',
+            'imagen': 'Imagen del Producto'
+        }
+        help_texts = {
+            'imagen': 'Formatos permitidos: JPG, JPEG, PNG, WEBP. Tamaño máximo: 5MB. Se redimensionará automáticamente.'
         }
 
-    # 🔥 VALIDACIÓN CRÍTICA: Precios válidos
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # 🔥 CONFIGURAR CAMPO DE ELIMINACIÓN SOLO PARA EDICIÓN
+        if self.instance and self.instance.pk and self.instance.imagen:
+            self.fields['eliminar_imagen'].widget.attrs.update({
+                'id': 'id_eliminar_imagen',
+                'onchange': 'toggleImageInput(this)'
+            })
+        else:
+            # Si no hay imagen actual, ocultar el checkbox
+            self.fields['eliminar_imagen'].widget = forms.HiddenInput()
+
+    # 🔥 NUEVA VALIDACIÓN: Imagen
+    def clean_imagen(self):
+        imagen = self.cleaned_data.get('imagen')
+        eliminar_imagen = self.cleaned_data.get('eliminar_imagen', False)
+        
+        # Si se marcó eliminar imagen, no validar la nueva imagen
+        if eliminar_imagen:
+            return None
+        
+        if imagen:
+            # Validar tamaño (5MB máximo)
+            if imagen.size > 5 * 1024 * 1024:
+                raise ValidationError('La imagen es demasiado grande. Máximo permitido: 5MB.')
+            
+            # Validar tipo de archivo
+            import os
+            from PIL import Image
+            
+            # Verificar extensión
+            extensiones_validas = ['.jpg', '.jpeg', '.png', '.webp']
+            nombre_archivo = imagen.name.lower()
+            extension = os.path.splitext(nombre_archivo)[1]
+            
+            if extension not in extensiones_validas:
+                raise ValidationError(
+                    f'Formato de imagen no válido. Formatos permitidos: {", ".join(extensiones_validas)}'
+                )
+            
+            # 🔥 VALIDACIÓN AVANZADA: Verificar que realmente sea una imagen
+            try:
+                # Intentar abrir la imagen con PIL
+                img = Image.open(imagen)
+                img.verify()  # Verificar que no esté corrupta
+                
+                # Verificar dimensiones mínimas
+                if img.width < 50 or img.height < 50:
+                    raise ValidationError('La imagen es demasiado pequeña. Dimensiones mínimas: 50x50px.')
+                
+                # Verificar dimensiones máximas (antes de redimensionar)
+                if img.width > 4000 or img.height > 4000:
+                    raise ValidationError('La imagen es demasiado grande. Dimensiones máximas: 4000x4000px.')
+                
+            except Exception as e:
+                raise ValidationError('El archivo no es una imagen válida o está corrupto.')
+            
+            # Resetear el puntero del archivo después de verify()
+            imagen.seek(0)
+        
+        return imagen
+
+    # Validaciones existentes...
     def clean_precio(self):
         precio = self.cleaned_data.get('precio')
         
@@ -149,7 +175,6 @@ class ProductoForm(forms.ModelForm):
         
         return precio
 
-    # 🔥 VALIDACIÓN CRÍTICA: Precio de costo
     def clean_precio_costo(self):
         precio_costo = self.cleaned_data.get('precio_costo')
         
@@ -166,7 +191,6 @@ class ProductoForm(forms.ModelForm):
         
         return precio_costo
 
-    # 🔥 VALIDACIÓN CRÍTICA: Cantidad no negativa
     def clean_cantidad(self):
         cantidad = self.cleaned_data.get('cantidad')
         
@@ -181,12 +205,13 @@ class ProductoForm(forms.ModelForm):
         
         return cantidad
 
-    # 🔥 VALIDACIÓN GLOBAL: Precio costo < precio venta
     def clean(self):
         cleaned_data = super().clean()
         precio_costo = cleaned_data.get('precio_costo')
         precio_venta = cleaned_data.get('precio')
+        eliminar_imagen = cleaned_data.get('eliminar_imagen', False)
         
+        # Validaciones de precios existentes
         if precio_costo and precio_venta:
             if precio_costo > 0 and precio_venta > 0:
                 if precio_costo >= precio_venta:
@@ -195,18 +220,61 @@ class ProductoForm(forms.ModelForm):
                         'precio': 'El precio de venta debe ser mayor al precio de costo.'
                     })
                 
-                # Validar margen mínimo razonable (5%)
                 margen = ((precio_venta - precio_costo) / precio_costo) * 100
                 if margen < 5:
                     raise ValidationError({
                         'precio': f'El margen de ganancia es muy bajo ({margen:.1f}%). Se recomienda al menos 5%.'
                     })
         
+        # 🔥 MANEJO ESPECIAL: Si se marcó eliminar imagen
+        if eliminar_imagen:
+            cleaned_data['imagen'] = None
+        
         return cleaned_data
+
+    # 🔥 NUEVO MÉTODO: Guardar con manejo especial de imagen
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        eliminar_imagen = self.cleaned_data.get('eliminar_imagen', False)
+        
+        # 🔥 ELIMINAR IMAGEN SI SE MARCÓ LA OPCIÓN
+        if eliminar_imagen and instance.imagen:
+            # Guardar ruta de imagen anterior para eliminarla
+            imagen_anterior = instance.imagen.path if instance.imagen else None
+            
+            # Limpiar el campo imagen
+            instance.imagen.delete(save=False)
+            instance.imagen = None
+            
+            if commit:
+                instance.save()
+                # Eliminar archivo físico
+                if imagen_anterior:
+                    instance.delete_old_image(imagen_anterior)
+        
+        elif commit:
+            # 🔥 MANEJO DE IMAGEN NUEVA
+            if self.cleaned_data.get('imagen') and instance.pk:
+                # Si hay una imagen nueva y el producto ya existe, eliminar la anterior
+                try:
+                    producto_anterior = Producto.objects.get(pk=instance.pk)
+                    if producto_anterior.imagen and producto_anterior.imagen != instance.imagen:
+                        imagen_anterior_path = producto_anterior.imagen.path
+                        instance.save()  # Guardar primero la nueva imagen
+                        # Eliminar la imagen anterior después de guardar
+                        instance.delete_old_image(imagen_anterior_path)
+                    else:
+                        instance.save()
+                except Producto.DoesNotExist:
+                    instance.save()
+            else:
+                instance.save()
+        
+        return instance
 
 
 # ========================================================================================
-# FORMULARIO DE CATEGORÍAS (Mejorado)
+# FORMULARIO DE CATEGORÍAS
 # ========================================================================================
 
 class CategoriaForm(forms.ModelForm):
@@ -236,7 +304,6 @@ class CategoriaForm(forms.ModelForm):
         if len(nombre) < 2:
             raise ValidationError('El nombre debe tener al menos 2 caracteres.')
         
-        # Verificar duplicados (excluyendo la categoría actual si es edición)
         queryset = Categoria.objects.filter(nombre__iexact=nombre)
         if self.instance and self.instance.pk:
             queryset = queryset.exclude(pk=self.instance.pk)
@@ -248,7 +315,7 @@ class CategoriaForm(forms.ModelForm):
 
 
 # ========================================================================================
-# FORMULARIO DE MESAS (Mejorado)
+# FORMULARIO DE MESAS
 # ========================================================================================
 
 class MesaForm(forms.ModelForm):
@@ -282,7 +349,6 @@ class MesaForm(forms.ModelForm):
         if numero > 9999:
             raise ValidationError('El número de mesa es demasiado alto (máximo: 9999).')
         
-        # Verificar duplicados (excluyendo la mesa actual si es edición)
         queryset = Mesa.objects.filter(numero=numero)
         if self.instance and self.instance.pk:
             queryset = queryset.exclude(pk=self.instance.pk)
@@ -294,7 +360,7 @@ class MesaForm(forms.ModelForm):
 
 
 # ========================================================================================
-# FORMULARIO DE GASTOS (Mejorado)
+# FORMULARIO DE GASTOS
 # ========================================================================================
 
 class GastoForm(forms.ModelForm):
@@ -348,7 +414,7 @@ class GastoForm(forms.ModelForm):
 
 
 # ========================================================================================
-# FORMULARIO DE PAGOS A BARTENDER (Mejorado)
+# FORMULARIO DE PAGOS A BARTENDER
 # ========================================================================================
 
 class PagoBartenderForm(forms.ModelForm):
@@ -374,7 +440,6 @@ class PagoBartenderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Solo mostrar bartenders activos
         self.fields['bartender'].queryset = User.objects.filter(
             perfil__rol='bartender',
             is_active=True
@@ -401,80 +466,206 @@ class PagoBartenderForm(forms.ModelForm):
 
 
 # ========================================================================================
-# FORMULARIO DE DEVOLUCIONES (Mejorado basado en tu código)
+# FORMULARIO DE DEVOLUCIONES
 # ========================================================================================
 
 class DevolucionForm(forms.ModelForm):
     class Meta:
         model = Devolucion
-        fields = ['producto', 'cantidad', 'observaciones']
+        fields = ['producto', 'cantidad', 'tipo', 'razon', 'observaciones', 'venta_origen']
         widgets = {
             'producto': forms.Select(attrs={
                 'class': 'form-select',
-                'placeholder': 'Selecciona el producto'
+                'required': True
             }),
             'cantidad': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Cantidad a devolver',
-                'min': '1'
+                'min': '1',
+                'required': True
+            }),
+            'tipo': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True,
+                'id': 'id_tipo',
+                'onchange': 'updateFormByType()'
+            }),
+            'razon': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True,
+                'id': 'id_razon'
             }),
             'observaciones': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
-                'placeholder': 'Describe el motivo de la devolución (defecto, vencimiento, etc.)'
+                'placeholder': 'Describe detalladamente el motivo de la devolución...',
+                'required': True
+            }),
+            'venta_origen': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_venta_origen'
             })
         }
         labels = {
             'producto': 'Producto a devolver',
             'cantidad': 'Cantidad',
-            'observaciones': 'Motivo de la devolución'
+            'tipo': 'Tipo de devolución',
+            'razon': 'Razón específica',
+            'observaciones': 'Observaciones detalladas',
+            'venta_origen': 'Venta de origen (opcional)'
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # Solo mostrar productos que tienen stock (tu código original)
-        self.fields['producto'].queryset = Producto.objects.filter(cantidad__gt=0).order_by('nombre')
-
-    def clean_cantidad(self):
-        cantidad = self.cleaned_data.get('cantidad')
         
-        if cantidad is None:
-            raise ValidationError('La cantidad es obligatoria.')
+        # 🔥 FILTRAR PRODUCTOS DISPONIBLES (todos los productos)
+        self.fields['producto'].queryset = Producto.objects.all().order_by('nombre')
         
-        if cantidad <= 0:
-            raise ValidationError('La cantidad debe ser mayor a cero.')
+        # 🔥 FILTRAR VENTAS RECIENTES CON MANEJO SEGURO DE TOTALES
+        venta_choices = [('', 'Seleccionar venta (opcional)')]
         
-        if cantidad > 999:
-            raise ValidationError('La cantidad es demasiado alta (máximo: 999 unidades).')
+        if user:
+            try:
+                # Ventas de los últimos 30 días
+                hace_30_dias = timezone.now() - timedelta(days=30)
+                
+                # 🔥 USAR VALUES() PARA EVITAR PROBLEMAS DE CONVERSIÓN
+                ventas_raw = Venta.objects.filter(
+                    cerrada=True,
+                    fecha__gte=hace_30_dias,
+                    mesero=user
+                ).values(
+                    'id', 'total', 'fecha', 'mesa__numero'
+                ).order_by('-fecha')[:20]
+                
+                # Procesar ventas de forma segura
+                for venta_data in ventas_raw:
+                    try:
+                        # 🔥 CONVERSIÓN SEGURA DEL TOTAL
+                        total_seguro = "0"
+                        total_raw = venta_data.get('total')
+                        
+                        if total_raw is not None:
+                            try:
+                                if isinstance(total_raw, (int, float)):
+                                    total_seguro = f"{int(total_raw):,}".replace(',', '.')
+                                elif isinstance(total_raw, Decimal):
+                                    total_seguro = f"{int(total_raw):,}".replace(',', '.')
+                                elif isinstance(total_raw, str):
+                                    # Limpiar string y convertir
+                                    total_clean = ''.join(c for c in total_raw if c.isdigit() or c in '.-')
+                                    if total_clean and total_clean not in ['-', '.', '-.']:
+                                        total_num = float(total_clean)
+                                        total_seguro = f"{int(total_num):,}".replace(',', '.')
+                                else:
+                                    total_seguro = f"{int(float(str(total_raw))):,}".replace(',', '.')
+                            except (ValueError, TypeError, InvalidOperation, OverflowError):
+                                total_seguro = "Error"
+                        
+                        # 🔥 FORMATEO SEGURO DE FECHA
+                        fecha_str = "N/A"
+                        try:
+                            fecha = venta_data.get('fecha')
+                            if fecha:
+                                fecha_str = fecha.strftime("%d/%m/%Y %H:%M")
+                        except:
+                            fecha_str = "N/A"
+                        
+                        # 🔥 CREAR CHOICE SEGURO
+                        mesa_numero = venta_data.get('mesa__numero', 'N/A')
+                        choice_text = f'Mesa {mesa_numero} - {fecha_str} - ${total_seguro}'
+                        
+                        venta_choices.append((
+                            venta_data['id'], 
+                            choice_text
+                        ))
+                        
+                    except Exception as e:
+                        print(f"Error procesando venta {venta_data.get('id', 'N/A')}: {e}")
+                        continue
+                        
+            except Exception as e:
+                print(f"Error general obteniendo ventas: {e}")
+                # Si hay error, usar choices básico
+                venta_choices = [('', 'No hay ventas disponibles')]
         
-        return cantidad
-
-    def clean_observaciones(self):
-        observaciones = self.cleaned_data.get('observaciones')
-        
-        if not observaciones:
-            raise ValidationError('Debes explicar el motivo de la devolución.')
-        
-        observaciones = observaciones.strip()
-        
-        if len(observaciones) < 10:
-            raise ValidationError('La explicación debe tener al menos 10 caracteres.')
-        
-        return observaciones
+        # 🔥 ASIGNAR CHOICES DE FORMA SEGURA
+        self.fields['venta_origen'].choices = venta_choices
 
     def clean(self):
         cleaned_data = super().clean()
+        tipo = cleaned_data.get('tipo')
+        razon = cleaned_data.get('razon')
         producto = cleaned_data.get('producto')
         cantidad = cleaned_data.get('cantidad')
+        venta_origen = cleaned_data.get('venta_origen')
         
-        # Tu validación original mejorada
-        if producto and cantidad:
-            if cantidad > producto.cantidad:
-                raise ValidationError({
-                    'cantidad': f'No puedes devolver más de {producto.cantidad} unidades disponibles en stock.'
-                })
+        if not tipo or not producto or not cantidad:
+            return cleaned_data
+
+        # 🔥 VALIDACIONES ESPECÍFICAS POR TIPO - CORREGIDAS
+        if tipo == 'cliente':
+            # Para devoluciones de cliente, verificar razones válidas
+            razones_cliente = ['defectuoso', 'no_conforme', 'vencido', 'equivocado']
+            if razon not in razones_cliente:
+                raise forms.ValidationError("Razón no válida para devolución de cliente")
+            
+            # Si hay venta origen, verificar que el producto esté en esa venta
+            if venta_origen:
+                from .models import DetalleVenta
+                detalle_venta = DetalleVenta.objects.filter(
+                    venta=venta_origen,
+                    producto=producto
+                ).first()
+                
+                if not detalle_venta:
+                    raise forms.ValidationError(
+                        f"El producto '{producto.nombre}' no está en la venta seleccionada."
+                    )
+                
+                if cantidad > detalle_venta.cantidad:
+                    raise forms.ValidationError(
+                        f"No se pueden devolver {cantidad} unidades. "
+                        f"En esa venta solo se vendieron {detalle_venta.cantidad} unidades."
+                    )
+                
+        elif tipo == 'inventario':
+            # Para devoluciones de inventario, verificar razones válidas
+            razones_inventario = ['llegada_malo', 'caducado', 'roto_almacen', 'calidad_baja', 'otro']
+            if razon not in razones_inventario:
+                raise forms.ValidationError("Razón no válida para devolución de inventario")
+            
+            # 🔥 CORREGIDO: Para inventario, permitir cualquier cantidad razonable
+            # No validar contra stock actual porque es producto perdido/dañado
+            if cantidad > 200:  # Límite de seguridad
+                raise forms.ValidationError(
+                    "Por seguridad, no se pueden devolver más de 200 unidades de una vez. "
+                    "Para cantidades mayores, contacta al administrador."
+                )
         
+        # Validaciones generales
+        if cantidad <= 0:
+            raise forms.ValidationError("La cantidad debe ser mayor a 0.")
+            
         return cleaned_data
+
+    def get_razones_por_tipo(self):
+        """Retorna las razones agrupadas por tipo para JavaScript"""
+        return {
+            'cliente': [
+                ('defectuoso', 'Producto defectuoso'),
+                ('no_conforme', 'Cliente no conforme'),
+                ('vencido', 'Producto vencido'),
+                ('equivocado', 'Producto equivocado'),
+            ],
+            'inventario': [
+                ('llegada_malo', 'Llegó dañado del proveedor'),
+                ('caducado', 'Producto caducado en inventario'),
+                ('roto_almacen', 'Se rompió en almacén'),
+                ('calidad_baja', 'Calidad no aceptable'),
+                ('otro', 'Otro motivo'),
+            ]
+        }
 
 
 # ========================================================================================
@@ -551,39 +742,3 @@ class FiltroVentasForm(forms.Form):
             'class': 'form-select'
         })
     )
-
-
-# ========================================================================================
-# COMENTARIOS Y NOTAS IMPORTANTES
-# ========================================================================================
-
-"""
-🔥 RESUMEN DE MEJORAS APLICADAS A TU CÓDIGO:
-
-1. ✅ ORGANIZACIÓN:
-   - Imports limpiados y organizados
-   - Comentarios claros por sección
-   - Orden lógico de formularios
-
-2. ✅ VALIDACIONES CRÍTICAS AGREGADAS:
-   - ProductoForm: precios válidos, cantidades no negativas
-   - Todos los formularios: validaciones de negocio
-   - Mensajes de error claros y específicos
-
-3. ✅ WIDGETS MEJORADOS:
-   - Bootstrap 5 classes consistentes
-   - Placeholders descriptivos
-   - Atributos HTML5 (min, max, step)
-
-4. ✅ FUNCIONALIDAD PRESERVADA:
-   - Tu DevolucionForm mantiene la lógica original
-   - PagoBartenderForm con filtro de bartenders
-   - Todos los campos y widgets que ya tenías
-
-5. ✅ AGREGADOS ÚTILES:
-   - BusquedaProductosForm para filtros
-   - FiltroVentasForm para admin
-   - Validaciones robustas en todos los formularios
-
-🎯 TU CÓDIGO ORIGINAL + MIS MEJORAS = FORMULARIOS PROFESIONALES
-"""

@@ -3,7 +3,7 @@
 
 {% block content %}
 <style>
-/* Variables CSS - Paleta Profesional */
+/* Variables CSS - Paleta Profesional (SIN CAMBIOS) */
 :root {
   --primary-green: #10b981;
   --primary-green-light: #34d399;
@@ -233,6 +233,53 @@ body {
   opacity: 1;
 }
 
+/* 🔥 IMAGEN DEL PRODUCTO */
+.producto-imagen-container {
+  width: 100%;
+  height: 200px;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--gray-100);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.producto-imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.producto-imagen:hover {
+  transform: scale(1.05);
+}
+
+.producto-sin-imagen {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  font-size: 3rem;
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+}
+
+.sin-imagen-texto {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  text-align: center;
+  font-weight: 500;
+}
+
 /* Header del card */
 .card-header {
   display: flex;
@@ -443,6 +490,36 @@ body {
   border-bottom: none;
 }
 
+/* 🔥 IMAGEN EN TABLA */
+.producto-imagen-tabla {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--gray-200);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.producto-imagen-tabla:hover {
+  transform: scale(1.1);
+  border-color: var(--primary-green);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.producto-sin-imagen-tabla {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+  font-size: 24px;
+}
+
 /* Estado vacío */
 .empty-state {
   text-align: center;
@@ -556,6 +633,10 @@ body {
     flex-direction: column;
     gap: 0.5rem;
   }
+  
+  .producto-imagen-container {
+    height: 150px;
+  }
 }
 
 @media (min-width: 641px) and (max-width: 1024px) {
@@ -659,6 +740,22 @@ body {
     <div class="productos-grid">
       {% for producto in productos %}
       <div class="producto-card">
+        <!-- 🔥 IMAGEN DEL PRODUCTO -->
+        <div class="producto-imagen-container">
+          {% if producto.imagen %}
+            <img src="{{ producto.imagen.url }}" 
+                 alt="{{ producto.nombre }}" 
+                 class="producto-imagen"
+                 onclick="verImagenCompleta('{{ producto.imagen.url }}', '{{ producto.nombre }}')"
+                 title="Haz clic para ver en tamaño completo">
+          {% else %}
+            <div class="producto-sin-imagen">
+              📷
+              <div class="sin-imagen-texto">Sin imagen</div>
+            </div>
+          {% endif %}
+        </div>
+
         <!-- Header -->
         <div class="card-header">
           <h3 class="producto-nombre">{{ producto.nombre }}</h3>
@@ -722,6 +819,7 @@ body {
       <table>
         <thead>
           <tr>
+            <th><i class="bi bi-image"></i> Imagen</th>
             <th><i class="bi bi-tag-fill"></i> Producto</th>
             <th><i class="bi bi-folder2"></i> Categoría</th>
             <th><i class="bi bi-wallet2"></i> Costo</th>
@@ -734,6 +832,19 @@ body {
         <tbody>
           {% for producto in productos %}
           <tr>
+            <td>
+              {% if producto.imagen %}
+                <img src="{{ producto.imagen.url }}" 
+                     alt="{{ producto.nombre }}" 
+                     class="producto-imagen-tabla"
+                     onclick="verImagenCompleta('{{ producto.imagen.url }}', '{{ producto.nombre }}')"
+                     title="Haz clic para ver en tamaño completo">
+              {% else %}
+                <div class="producto-sin-imagen-tabla">
+                  📷
+                </div>
+              {% endif %}
+            </td>
             <td>
               <div class="font-bold">{{ producto.nombre }}</div>
             </td>
@@ -783,7 +894,7 @@ body {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Animaciones progresivas
+  // Animaciones progresivas (SIN CAMBIOS)
   const cards = document.querySelectorAll('.producto-card');
   const toolbar = document.querySelector('.productos-toolbar');
   
@@ -827,5 +938,52 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// 🔥 NUEVA FUNCIÓN PARA VER IMAGEN COMPLETA
+function verImagenCompleta(imagenUrl, nombreProducto) {
+  const modal = document.createElement('div');
+  modal.className = 'modal fade';
+  modal.tabIndex = -1;
+  modal.innerHTML = `
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-zoom-in"></i>
+            ${nombreProducto}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img src="${imagenUrl}" 
+               alt="${nombreProducto}" 
+               class="img-fluid rounded shadow"
+               style="max-height: 70vh; cursor: zoom-in;"
+               onclick="window.open('${imagenUrl}', '_blank')">
+          <p class="text-muted mt-2">
+            <small>Haz clic en la imagen para verla en tamaño original</small>
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cerrar
+          </button>
+          <a href="${imagenUrl}" target="_blank" class="btn btn-primary">
+            <i class="bi bi-download"></i>
+            Abrir en nueva pestaña
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+  
+  modal.addEventListener('hidden.bs.modal', function() {
+    document.body.removeChild(modal);
+  });
+}
 </script>
 {% endblock %}

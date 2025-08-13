@@ -1,6 +1,8 @@
 import decimal
 from django.db import models
+from PIL import Image
 from django.contrib.auth.models import User
+import os
 
 # ✅ CATEGORÍA DE PRODUCTOS
 class Categoria(models.Model):
@@ -39,36 +41,43 @@ class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, related_name='productos')
     descripcion = models.TextField(blank=True)
-    precio_costo = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # NUEVO
-    precio = models.DecimalField(max_digits=10, decimal_places=2)  # Este es el precio de venta
+    precio_costo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    precio = models.DecimalField(max_digits=10, decimal_places=2)
     cantidad = models.PositiveIntegerField()
+    
+    # 🔥 NUEVO CAMPO: Imagen del producto
+    imagen = models.ImageField(
+        upload_to='productos/',
+        null=True,
+        blank=True,
+        help_text="Imagen del producto (opcional). Tamaño recomendado: 800x600px"
+    )
+    
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 
-    def ganancia_unitaria(self):  # NUEVO MÉTODO
+    def ganancia_unitaria(self):
         return self.precio - self.precio_costo
 
-    def porcentaje_ganancia(self):  # NUEVO MÉTODO
+    def porcentaje_ganancia(self):
         if self.precio_costo > 0:
             return ((self.precio - self.precio_costo) / self.precio_costo) * 100
         return 0
 
-    # 🔥 NUEVO MÉTODO: Validaciones del modelo
+    # 🔥 NUEVO MÉTODO: Validar imagen
     def clean(self):
         from django.core.exceptions import ValidationError
         from decimal import Decimal
         
         errors = {}
         
-        # Validar que el precio de venta sea mayor a 0
+        # Validaciones existentes...
         if self.precio is not None and self.precio <= 0:
             errors['precio'] = 'El precio de venta debe ser mayor a cero ($0).'
         
-        # Validar que precio_costo sea mayor o igual a 0
         if self.precio_costo is not None and self.precio_costo < 0:
             errors['precio_costo'] = 'El precio de costo no puede ser negativo.'
         
-        # Validar que precio_costo < precio_venta (cuando ambos están definidos)
         if (self.precio_costo is not None and self.precio is not None and 
             self.precio_costo > 0 and self.precio > 0):
             
@@ -76,30 +85,117 @@ class Producto(models.Model):
                 errors['precio_costo'] = f'El precio de costo (${self.precio_costo:,.0f}) debe ser menor al precio de venta (${self.precio:,.0f}).'
                 errors['precio'] = 'El precio de venta debe ser mayor al precio de costo para generar ganancia.'
         
-        # Validar cantidad no negativa (aunque sea PositiveIntegerField, doble validación)
         if self.cantidad is not None and self.cantidad < 0:
             errors['cantidad'] = 'La cantidad no puede ser negativa.'
         
-        # Validar que el nombre no esté vacío
         if not self.nombre or self.nombre.strip() == '':
             errors['nombre'] = 'El nombre del producto es obligatorio.'
+        
+        # 🔥 NUEVA VALIDACIÓN: Imagen
+        if self.imagen:
+            # Validar tamaño del archivo (máximo 5MB)
+            if self.imagen.size > 5 * 1024 * 1024:
+                errors['imagen'] = 'La imagen es demasiado grande. Máximo permitido: 5MB.'
+            
+            # Validar extensión
+            extensiones_validas = ['.jpg', '.jpeg', '.png', '.webp']
+            extension = os.path.splitext(self.imagen.name)[1].lower()
+            
+            if extension not in extensiones_validas:
+                errors['imagen'] = f'Formato de imagen no válido. Permitidos: {", ".join(extensiones_validas)}'
         
         if errors:
             raise ValidationError(errors)
 
-    # 🔥 NUEVO MÉTODO: Detectar stock bajo
+    # 🔥 NUEVO MÉTODO: Redimensionar imagen automáticamente
+    def save(self, *args, **kwargs):
+        # Ejecutar validaciones antes de guardar
+        self.clean()
+        
+        # Guardar primero para obtener la ruta del archivo
+        super().save(*args, **kwargs)
+        
+        # 🔥 REDIMENSIONAR IMAGEN SI EXISTE
+        if self.imagen:
+            self.redimensionar_imagen()
+
+    def redimensionar_imagen(self):
+        """
+        Redimensiona la imagen automáticamente para optimizar espacio
+        Tamaño objetivo: máximo 800x600px manteniendo proporción
+        """
+        try:
+            from PIL import Image
+            import os
+            
+            # Abrir la imagen
+            img_path = self.imagen.path
+            
+            if os.path.exists(img_path):
+                with Image.open(img_path) as img:
+                    # Convertir a RGB si es necesario (para JPEGs)
+                    if img.mode in ('RGBA', 'LA', 'P'):
+                        img = img.convert('RGB')
+                    
+                    # Redimensionar manteniendo proporción
+                    max_size = (800, 600)
+                    img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                    
+                    # Guardar la imagen redimensionada
+                    img.save(img_path, 'JPEG', quality=85, optimize=True)
+                    
+        except Exception as e:
+            print(f"Error redimensionando imagen para producto {self.id}: {e}")
+            # No lanzar excepción para no interrumpir el guardado
+
+    # 🔥 NUEVO MÉTODO: URL de imagen o placeholder
+    def get_imagen_url(self):
+        """
+        Retorna la URL de la imagen o un placeholder si no tiene imagen
+        """
+        if self.imagen:
+            return self.imagen.url
+        else:
+            # Placeholder por defecto (puedes cambiar esta URL)
+            return '/static/images/producto-placeholder.jpg'
+    
+    # 🔥 NUEVO MÉTODO: Verificar si tiene imagen
+    def tiene_imagen(self):
+        """
+        Retorna True si el producto tiene imagen
+        """
+        return bool(self.imagen)
+    
+    # 🔥 NUEVO MÉTODO: Eliminar imagen anterior al actualizar
+    def delete_old_image(self, old_image_path):
+        """
+        Elimina la imagen anterior cuando se actualiza el producto
+        """
+        try:
+            if old_image_path and os.path.exists(old_image_path):
+                os.remove(old_image_path)
+        except Exception as e:
+            print(f"Error eliminando imagen anterior: {e}")
+
+    # 🔥 MÉTODO ACTUALIZADO: __str__ con indicador de imagen
+    def __str__(self):
+        stock_info = f" (Stock: {self.cantidad})"
+        if self.stock_bajo():
+            stock_info += " ⚠️"
+        elif self.cantidad == 0:
+            stock_info += " ❌"
+        
+        # Agregar indicador de imagen
+        if self.tiene_imagen():
+            stock_info += " 📷"
+        
+        return f"{self.nombre}{stock_info}"
+
+    # Métodos existentes...
     def stock_bajo(self):
-        """
-        Retorna True si el stock está bajo (cantidad <= 5)
-        Útil para alertas de inventario
-        """
         return self.cantidad <= 5
 
-    # 🔥 NUEVO MÉTODO: Estado del stock como texto
     def estado_stock(self):
-        """
-        Retorna el estado del stock como texto descriptivo
-        """
         if self.cantidad == 0:
             return "Sin stock"
         elif self.stock_bajo():
@@ -109,35 +205,15 @@ class Producto(models.Model):
         else:
             return "Stock disponible"
 
-    # 🔥 NUEVO MÉTODO: Clase CSS para alertas en templates
     def clase_stock_css(self):
-        """
-        Retorna clase CSS para colorear según el stock
-        """
         if self.cantidad == 0:
-            return "text-danger fw-bold"  # Rojo fuerte
+            return "text-danger fw-bold"
         elif self.stock_bajo():
-            return "text-warning fw-bold"  # Amarillo/naranja
+            return "text-warning fw-bold"
         elif self.cantidad <= 10:
-            return "text-info"  # Azul claro
+            return "text-info"
         else:
-            return "text-success"  # Verde
-
-    # 🔥 NUEVO MÉTODO: Validar antes de guardar
-    def save(self, *args, **kwargs):
-        # Ejecutar validaciones antes de guardar
-        self.clean()
-        super().save(*args, **kwargs)
-
-    # 🔥 MÉTODO MEJORADO: __str__ con información de stock
-    def __str__(self):
-        stock_info = f" (Stock: {self.cantidad})"
-        if self.stock_bajo():
-            stock_info += " ⚠️"
-        elif self.cantidad == 0:
-            stock_info += " ❌"
-        
-        return f"{self.nombre}{stock_info}"
+            return "text-success"
 
 # ✅ MOVIMIENTO CONTABLE - MOVIDO ANTES DE VENTA
 class MovimientoContable(models.Model):
@@ -550,74 +626,155 @@ class PagoMixto(models.Model):
 # ✅ SISTEMA DE DEVOLUCIONES
 class Devolucion(models.Model):
     ESTADO_CHOICES = [
-        ('pendiente', 'Pendiente de Autorización'),
+        ('pendiente', 'Pendiente'),
         ('autorizada', 'Autorizada'),
         ('rechazada', 'Rechazada'),
         ('procesada', 'Procesada'),
     ]
     
-    # Información básica
+    # 🔥 NUEVO: Tipos de devolución
+    TIPO_CHOICES = [
+        ('cliente', 'Devolución de Cliente'),          # Cliente devuelve producto vendido
+        ('inventario', 'Devolución de Inventario'),    # Producto malo del proveedor/dañado
+    ]
+    
+    # 🔥 NUEVO: Razones específicas
+    RAZON_CHOICES = [
+        # Para devoluciones de cliente
+        ('defectuoso', 'Producto defectuoso'),
+        ('no_conforme', 'Cliente no conforme'),
+        ('vencido', 'Producto vencido'),
+        ('equivocado', 'Producto equivocado'),
+        
+        # Para devoluciones de inventario
+        ('llegada_malo', 'Llegó dañado del proveedor'),
+        ('caducado', 'Producto caducado en inventario'),
+        ('roto_almacen', 'Se rompió en almacén'),
+        ('calidad_baja', 'Calidad no aceptable'),
+        ('otro', 'Otro motivo'),
+    ]
+
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
+    
+    # 🔥 NUEVOS CAMPOS
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='cliente')
+    razon = models.CharField(max_length=20, choices=RAZON_CHOICES, default='defectuoso')
+    
     observaciones = models.TextField()
-    
-    # Control de estados
-    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
-    
-    # Usuarios involucrados
     solicitada_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name='devoluciones_solicitadas')
-    autorizada_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='devoluciones_autorizadas')
-    
-    # Fechas de seguimiento
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    autorizada_por = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='devoluciones_autorizadas')
     fecha_autorizacion = models.DateTimeField(null=True, blank=True)
     fecha_procesamiento = models.DateTimeField(null=True, blank=True)
+    comentario_admin = models.TextField(blank=True)
     
-    # Comentarios del administrador
-    comentario_admin = models.TextField(blank=True, null=True)
+    # 🔥 NUEVOS CAMPOS PARA TRACKING
+    venta_origen = models.ForeignKey('Venta', on_delete=models.SET_NULL, null=True, blank=True, 
+                                   help_text="Venta de donde proviene el producto (solo para devoluciones de cliente)")
+    valor_recuperado = models.DecimalField(max_digits=10, decimal_places=2, default=0, 
+                                         help_text="Valor que se recupera al inventario")
     
-    # Movimiento contable relacionado (para revertir si es necesario)
-    movimiento_reversion = models.OneToOneField(MovimientoContable, on_delete=models.SET_NULL, null=True, blank=True)
+    class Meta:
+        ordering = ['-fecha_solicitud']
 
-    def save(self, *args, **kwargs):
-        from django.utils import timezone
-        
-        # Si se está autorizando o rechazando, guardar la fecha
-        if self.pk:
-            try:
-                devolucion_anterior = Devolucion.objects.get(pk=self.pk)
-                if devolucion_anterior.estado == 'pendiente' and self.estado in ['autorizada', 'rechazada']:
-                    self.fecha_autorizacion = timezone.now()
-                elif devolucion_anterior.estado == 'autorizada' and self.estado == 'procesada':
-                    self.fecha_procesamiento = timezone.now()
-                    # Procesar la devolución: devolver al inventario
-                    self.producto.cantidad += self.cantidad
-                    self.producto.save()
-                    
-                    # Crear movimiento contable de ajuste (gasto por devolución)
-                    MovimientoContable.objects.create(
-                        tipo='gasto',
-                        concepto=f'Devolución: {self.producto.nombre} (x{self.cantidad})',
-                        monto=self.producto.precio * self.cantidad,
-                        usuario=self.autorizada_por
-                    )
-            except Devolucion.DoesNotExist:
-                pass
-        
-        super().save(*args, **kwargs)
+    def __str__(self):
+        return f'Devolución {self.get_tipo_display()}: {self.producto.nombre} ({self.cantidad})'
 
+    @property
     def valor_total(self):
-        """Calcula el valor total de la devolución"""
-        return self.producto.precio * self.cantidad
+        """Valor total de la devolución"""
+        return self.producto.precio_costo * self.cantidad
 
+    @property
+    def valor_venta_perdida(self):
+        """Valor de venta que se pierde (solo para devoluciones de cliente)"""
+        if self.tipo == 'cliente':
+            return self.producto.precio * self.cantidad
+        return 0
+
+    @property
     def puede_ser_procesada(self):
         """Verifica si la devolución puede ser procesada"""
         return self.estado == 'autorizada'
 
-    def __str__(self):
-        return f"Devolución #{self.id} - {self.producto.nombre} (x{self.cantidad}) - {self.estado}"
+    @property
+    def afecta_stock_positivo(self):
+        """Indica si esta devolución suma al stock"""
+        return self.tipo == 'cliente'  # Solo devoluciones de cliente suman stock
 
-    class Meta:
-        ordering = ['-fecha_solicitud']
-        verbose_name = 'Devolución'
-        verbose_name_plural = 'Devoluciones'
+    @property
+    def es_perdida_inventario(self):
+        """Indica si es una pérdida de inventario"""
+        return self.tipo == 'inventario'
+
+    def save(self, *args, **kwargs):
+        # 🔥 PROCESAMIENTO AUTOMÁTICO CUANDO CAMBIA A 'procesada'
+        if self.estado == 'procesada' and self.pk:
+            # Verificar si ya fue procesada antes
+            devolucion_anterior = Devolucion.objects.filter(pk=self.pk).first()
+            if devolucion_anterior and devolucion_anterior.estado != 'procesada':
+                self.procesar_devolucion()
+        
+        super().save(*args, **kwargs)
+
+    def procesar_devolucion(self):
+        """Procesa la devolución según su tipo"""
+        from django.utils import timezone
+        
+        # Marcar fecha de procesamiento
+        self.fecha_procesamiento = timezone.now()
+        
+        if self.tipo == 'cliente':
+            # DEVOLUCIÓN DE CLIENTE: Sumar al stock
+            self.producto.cantidad += self.cantidad
+            self.producto.save()
+            
+            # Registrar movimiento contable como pérdida de ingreso
+            MovimientoContable.objects.create(
+                tipo='gasto',
+                concepto=f'Devolución de cliente: {self.producto.nombre} (x{self.cantidad}) - {self.get_razon_display()}',
+                monto=self.valor_venta_perdida,  # Valor de venta perdido
+                usuario=self.autorizada_por,
+                fecha=timezone.now().date()
+            )
+            
+            # Registrar recuperación de inventario como costo recuperado
+            MovimientoContable.objects.create(
+                tipo='ingreso',
+                concepto=f'Recuperación inventario: {self.producto.nombre} (x{self.cantidad}) - Valor costo',
+                monto=self.valor_total,  # Valor de costo recuperado
+                usuario=self.autorizada_por,
+                fecha=timezone.now().date()
+            )
+            
+        else:  # tipo == 'inventario'
+            # DEVOLUCIÓN DE INVENTARIO: NO sumar al stock (es pérdida)
+            # Solo registrar la pérdida económica
+            MovimientoContable.objects.create(
+                tipo='gasto',
+                concepto=f'Pérdida de inventario: {self.producto.nombre} (x{self.cantidad}) - {self.get_razon_display()}',
+                monto=self.valor_total,  # Valor de costo perdido
+                usuario=self.autorizada_por,
+                fecha=timezone.now().date()
+            )
+
+    def get_color_estado(self):
+        """Retorna la clase CSS para el color del estado"""
+        colores = {
+            'pendiente': 'warning',
+            'autorizada': 'success', 
+            'rechazada': 'danger',
+            'procesada': 'primary'
+        }
+        return colores.get(self.estado, 'secondary')
+
+    def get_icon_tipo(self):
+        """Retorna el ícono para el tipo de devolución"""
+        iconos = {
+            'cliente': 'bi-person-x',
+            'inventario': 'bi-box-seam'
+        }
+        return iconos.get(self.tipo, 'bi-arrow-counterclockwise')

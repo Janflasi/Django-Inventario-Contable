@@ -10,6 +10,7 @@
   --success-green: #10b981;
   --danger-red: #ef4444;
   --warning-orange: #f59e0b;
+  --info-purple: #8b5cf6;
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-light: #475569;
@@ -95,6 +96,7 @@
 
 .stat-card.ingresos { --card-color: var(--success-green); }
 .stat-card.gastos { --card-color: var(--danger-red); }
+.stat-card.costos { --card-color: var(--info-purple); }
 .stat-card.ganancia { --card-color: var(--primary-blue); }
 .stat-card.deudas { --card-color: var(--warning-orange); }
 
@@ -226,6 +228,7 @@
 
 .movimiento-card.ingreso { --movimiento-color: var(--success-green); }
 .movimiento-card.gasto { --movimiento-color: var(--danger-red); }
+.movimiento-card.costo { --movimiento-color: var(--info-purple); }
 
 .movimiento-header {
   display: flex;
@@ -253,6 +256,10 @@
 
 .movimiento-monto.gasto {
   color: var(--danger-red);
+}
+
+.movimiento-monto.costo {
+  color: var(--info-purple);
 }
 
 .movimiento-footer {
@@ -307,6 +314,7 @@
 .text-success { color: var(--success-green); }
 .text-danger { color: var(--danger-red); }
 .text-warning { color: var(--warning-orange); }
+.text-info { color: var(--info-purple); }
 
 /* Responsive breakpoints */
 @media (min-width: 480px) {
@@ -325,7 +333,7 @@
   }
   
   .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
   }
   
   .resumen-grid {
@@ -385,6 +393,7 @@
 .mov-concepto { font-weight: 600; color: var(--text-primary); }
 .mov-ingreso { color: var(--success-green); font-weight: 700; }
 .mov-gasto { color: var(--danger-red); font-weight: 700; }
+.mov-costo { color: var(--info-purple); font-weight: 700; }
 </style>
 
 <div class="contabilidad-container">
@@ -411,6 +420,10 @@
       <div class="stat-label">Total Gastos</div>
       <div class="stat-value">${{ total_gastos|floatformat:0 }}</div>
     </div>
+    <div class="stat-card costos">
+      <div class="stat-label">Total Costos</div>
+      <div class="stat-value">${{ total_costos|floatformat:0 }}</div>
+    </div>
     <div class="stat-card ganancia" style="--card-color: {% if ganancia_total >= 0 %}var(--success-green){% else %}var(--danger-red){% endif %}">
       <div class="stat-label">Ganancia Total</div>
       <div class="stat-value">${{ ganancia_total|floatformat:0 }}</div>
@@ -434,8 +447,12 @@
         <span class="resumen-value text-danger">${{ gastos_hoy|floatformat:0 }}</span>
       </div>
       <div class="resumen-item">
+        <span class="resumen-label">Costos:</span>
+        <span class="resumen-value text-info">${{ costos_hoy|floatformat:0 }}</span>
+      </div>
+      <div class="resumen-item">
         <span class="resumen-label">Balance:</span>
-        {% with balance=ingresos_hoy|add:gastos_hoy %}
+        {% with balance=ingresos_hoy|add:gastos_hoy|add:costos_hoy %}
           <span class="resumen-value {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}">
             ${{ balance|floatformat:0 }}
           </span>
@@ -448,6 +465,10 @@
       <div class="resumen-item">
         <span class="resumen-label">Ventas Totales:</span>
         <span class="resumen-value">${{ ventas_totales|floatformat:0 }}</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-label">Inversión en Inventario:</span>
+        <span class="resumen-value text-info">${{ total_costos|floatformat:0 }}</span>
       </div>
       <div class="resumen-item">
         <span class="resumen-label">Efectivo Real:</span>
@@ -494,6 +515,8 @@
             <td>
               {% if mov.tipo == 'ingreso' %}
                 <span class="mov-ingreso">📈 INGRESO</span>
+              {% elif mov.tipo == 'costo' %}
+                <span class="mov-costo">📦 COSTO</span>
               {% else %}
                 <span class="mov-gasto">📉 GASTO</span>
               {% endif %}
@@ -501,6 +524,8 @@
             <td>
               {% if mov.tipo == 'ingreso' %}
                 <span class="mov-ingreso">+${{ mov.monto|floatformat:0 }}</span>
+              {% elif mov.tipo == 'costo' %}
+                <span class="mov-costo">${{ mov.monto|floatformat:0 }}</span>
               {% else %}
                 <span class="mov-gasto">-${{ mov.monto|floatformat:0 }}</span>
               {% endif %}
@@ -520,6 +545,8 @@
             <div class="movimiento-monto {{ mov.tipo }}">
               {% if mov.tipo == 'ingreso' %}
                 +${{ mov.monto|floatformat:0 }}
+              {% elif mov.tipo == 'costo' %}
+                ${{ mov.monto|floatformat:0 }}
               {% else %}
                 -${{ mov.monto|floatformat:0 }}
               {% endif %}
@@ -529,6 +556,8 @@
             <div class="movimiento-tipo">
               {% if mov.tipo == 'ingreso' %}
                 📈 Ingreso
+              {% elif mov.tipo == 'costo' %}
+                📦 Costo
               {% else %}
                 📉 Gasto
               {% endif %}

@@ -39,11 +39,25 @@
 .quick-actions{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
 .btn-quick{background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%);color:#fff;border:none;padding:.5rem 1rem;border-radius:8px;font-weight:600;cursor:pointer;transition:all .3s ease;font-size:.8rem}
 .btn-quick:hover{transform:translateY(-2px);opacity:.9}
+
+/* 🔥 NUEVOS ESTILOS PARA IMAGEN */
+.imagen-section{background:#f8fafc;border:2px dashed #e5e7eb;border-radius:16px;padding:1.5rem;margin:1rem 0;text-align:center;transition:all .3s ease}
+.imagen-section.drag-over{border-color:#10b981;background:#ecfdf5}
+.imagen-section:hover{border-color:#10b981}
+.imagen-preview{max-width:200px;max-height:200px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.1);margin:1rem 0;transition:all .3s ease}
+.imagen-preview:hover{transform:scale(1.05)}
+.current-image-container{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;margin:1rem 0;text-align:center}
+.current-image{max-width:250px;max-height:250px;border-radius:8px;cursor:pointer;transition:all .3s ease}
+.current-image:hover{transform:scale(1.02)}
+.image-info{color:#6b7280;font-size:.8rem;margin-top:.5rem}
+.checkbox-eliminar{margin:1rem 0;padding:1rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px}
+.checkbox-eliminar label{color:#dc2626;font-weight:600}
+
 @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes shake{0%,20%,40%,60%,80%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-5px)}}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 .f-card{animation:fadeInUp .6s ease forwards}
-@media(max-width:768px){.f-c{padding:1rem}.f-t{font-size:2rem}.f-card{padding:1.5rem}.f-buttons{flex-direction:column}.btn-cancel,.btn-submit{width:100%;justify-content:center}}
+@media(max-width:768px){.f-c{padding:1rem}.f-t{font-size:2rem}.f-card{padding:1.5rem}.f-buttons{flex-direction:column}.btn-cancel,.btn-submit{width:100%;justify-content:center}.imagen-preview{max-width:150px;max-height:150px}}
 </style>
 
 <div class="f-c">
@@ -56,7 +70,9 @@
     <form method="post" enctype="multipart/form-data" novalidate id="productoForm">
       {% csrf_token %}
       <div class="row g-3">
+        <!-- CAMPOS EXISTENTES -->
         {% for field in form %}
+          {% if field.name != 'imagen' and field.name != 'eliminar_imagen' %}
           <div class="col-md-6">
             <div class="f-group">
               <label class="f-label">
@@ -88,14 +104,66 @@
               {% endif %}
             </div>
           </div>
+          {% endif %}
         {% endfor %}
+      </div>
+
+      <!-- 🔥 SECCIÓN DE IMAGEN (NUEVA) -->
+      <div class="col-12">
+        <div class="f-group">
+          <label class="f-label">
+            📷 Imagen del Producto
+          </label>
+          
+          <!-- Mostrar imagen actual si existe -->
+          {% if producto.imagen %}
+          <div class="current-image-container" id="current-image-container">
+            <h6 class="mb-2">Imagen actual:</h6>
+            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="current-image" onclick="verImagenCompleta('{{ producto.imagen.url }}', '{{ producto.nombre }}')">
+            <div class="image-info">Haz clic para ver en tamaño completo</div>
+          </div>
+          
+          <!-- Checkbox para eliminar imagen -->
+          <div class="checkbox-eliminar">
+            {{ form.eliminar_imagen }}
+            <label for="{{ form.eliminar_imagen.id_for_label }}" class="ms-2">
+              🗑️ Eliminar imagen actual
+            </label>
+          </div>
+          {% endif %}
+
+          <!-- Input de nueva imagen -->
+          <div class="imagen-section" id="image-drop-zone">
+            <div class="mb-3">
+              <i class="bi bi-cloud-upload" style="font-size: 2rem; color: #10b981;"></i>
+              <h6 class="mt-2 mb-1">Seleccionar o arrastrar imagen</h6>
+              <p class="text-muted mb-0">JPG, JPEG, PNG, WEBP - Máximo 5MB</p>
+            </div>
+            {{ form.imagen }}
+          </div>
+
+          <!-- Preview de nueva imagen -->
+          <div id="preview-container" style="display: none;">
+            <img id="imagen-preview" class="imagen-preview">
+            <div id="file-info" class="image-info"></div>
+          </div>
+
+          {% if form.imagen.help_text %}
+            <div class="f-help">{{ form.imagen.help_text }}</div>
+          {% endif %}
+          {% if form.imagen.errors %}
+            <div class="f-error">
+              ⚠️ {{ form.imagen.errors.0 }}
+            </div>
+          {% endif %}
+        </div>
       </div>
       
       <div class="ganancia-info" id="gananciaInfo">
         💰 <span id="gananciaText">Ingresa precios para calcular ganancia</span>
       </div>
       
-      <!-- ASISTENTE DE PRECIOS -->
+      <!-- ASISTENTE DE PRECIOS (SIN CAMBIOS) -->
       <div class="price-assistant" id="priceAssistant" style="display:none;">
         <div class="assistant-header">
           <h4>🤖 Asistente de Precios</h4>
@@ -124,6 +192,7 @@
 </div>
 
 <script>
+// FUNCIONES EXISTENTES (SIN CAMBIOS)
 document.addEventListener('DOMContentLoaded',()=>{
 const f=document.getElementById('productoForm');
 const pc=document.querySelector('input[name="precio_costo"]');
@@ -220,6 +289,164 @@ if(!v){e.preventDefault();const fe=f.querySelector('.is-invalid');if(fe){fe.scro
 });
 
 calcularGanancia();
+
+// 🔥 NUEVAS FUNCIONES PARA IMAGEN
+const imageInput = document.getElementById('id_imagen');
+const deleteCheckbox = document.getElementById('id_eliminar_imagen');
+
+// Preview de imagen
+if (imageInput) {
+  imageInput.addEventListener('change', function() {
+    previewImage(this);
+  });
+}
+
+// Checkbox eliminar imagen
+if (deleteCheckbox) {
+  deleteCheckbox.addEventListener('change', function() {
+    toggleImageInput(this);
+  });
+}
 });
+
+// 🔥 FUNCIONES DE IMAGEN
+function previewImage(input) {
+  const preview = document.getElementById('imagen-preview');
+  const previewContainer = document.getElementById('preview-container');
+  const file = input.files[0];
+  
+  if (file) {
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('❌ La imagen es demasiado grande. Máximo permitido: 5MB');
+      input.value = '';
+      hidePreview();
+      return;
+    }
+    
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('❌ Formato de imagen no válido. Permitidos: JPG, JPEG, PNG, WEBP');
+      input.value = '';
+      hidePreview();
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (preview) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      }
+      if (previewContainer) {
+        previewContainer.style.display = 'block';
+      }
+      showFileInfo(file);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    hidePreview();
+  }
+}
+
+function hidePreview() {
+  const preview = document.getElementById('imagen-preview');
+  const previewContainer = document.getElementById('preview-container');
+  const fileInfo = document.getElementById('file-info');
+  
+  if (preview) {
+    preview.style.display = 'none';
+    preview.src = '';
+  }
+  if (previewContainer) {
+    previewContainer.style.display = 'none';
+  }
+  if (fileInfo) {
+    fileInfo.style.display = 'none';
+  }
+}
+
+function showFileInfo(file) {
+  const fileInfo = document.getElementById('file-info');
+  if (fileInfo) {
+    const sizeInMB = (file.size / 1024 / 1024).toFixed(2);
+    fileInfo.innerHTML = `
+      <i class="bi bi-info-circle"></i>
+      <strong>${file.name}</strong> - ${sizeInMB} MB
+    `;
+    fileInfo.style.display = 'block';
+  }
+}
+
+function toggleImageInput(checkbox) {
+  const imageInput = document.getElementById('id_imagen');
+  const currentImageContainer = document.getElementById('current-image-container');
+  
+  if (checkbox.checked) {
+    if (imageInput) {
+      imageInput.disabled = true;
+      imageInput.value = '';
+    }
+    if (currentImageContainer) {
+      currentImageContainer.style.opacity = '0.5';
+      currentImageContainer.style.filter = 'grayscale(100%)';
+    }
+    hidePreview();
+  } else {
+    if (imageInput) {
+      imageInput.disabled = false;
+    }
+    if (currentImageContainer) {
+      currentImageContainer.style.opacity = '1';
+      currentImageContainer.style.filter = 'none';
+    }
+  }
+}
+
+function verImagenCompleta(imagenUrl, nombreProducto) {
+  const modal = document.createElement('div');
+  modal.className = 'modal fade';
+  modal.tabIndex = -1;
+  modal.innerHTML = `
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-zoom-in"></i>
+            ${nombreProducto}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img src="${imagenUrl}" 
+               alt="${nombreProducto}" 
+               class="img-fluid rounded shadow"
+               style="max-height: 70vh; cursor: zoom-in;"
+               onclick="window.open('${imagenUrl}', '_blank')">
+          <p class="text-muted mt-2">
+            <small>Haz clic en la imagen para verla en tamaño original</small>
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cerrar
+          </button>
+          <a href="${imagenUrl}" target="_blank" class="btn btn-primary">
+            <i class="bi bi-download"></i>
+            Abrir en nueva pestaña
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+  
+  modal.addEventListener('hidden.bs.modal', function() {
+    document.body.removeChild(modal);
+  });
+}
 </script>
 {% endblock %}

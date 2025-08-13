@@ -3,10 +3,10 @@ from . import views
 from .views import seguimiento_mesas, generar_factura_html
 
 urlpatterns = [
-    # Autenticación
+    # 🔥 AUTENTICACIÓN MEJORADA - Maneja tanto /login/ como /accounts/login/
     path('', views.custom_login),
-    path('registro/', views.registro, name='registro'),
     path('login/', views.custom_login, name='login'),
+    path('accounts/login/', views.custom_login, name='accounts_login'),  # 🔥 NUEVA RUTA
     path('logout/', views.custom_logout, name='logout'),
 
     # Perfil de usuario
@@ -26,12 +26,16 @@ urlpatterns = [
     # Movimiento contable
     path('movimientos/', views.movimientos_contables, name='movimientos_contables'),
 
-    # Productos
+    # Productos (ACTUALIZADAS para manejo de imágenes)
     path('productos/', views.productos_listar, name='productos_listar'),
     path('productos/crear/', views.producto_crear, name='producto_crear'),
     path('productos/<int:pk>/editar/', views.producto_editar, name='producto_editar'),
     path('productos/<int:pk>/eliminar/', views.producto_eliminar, name='producto_eliminar'),
     path('productos/ver/', views.productos_bartender, name='productos_bartender'),
+    
+    # 🔥 NUEVAS RUTAS PARA MANEJO DE IMÁGENES
+    path('productos/<int:pk>/ver-imagen/', views.producto_ver_imagen, name='producto_ver_imagen'),
+    path('api/producto/<int:pk>/info/', views.producto_info_api, name='producto_info_api'),
 
     # Categorías
     path('categorias/', views.categorias_listar, name='categorias_listar'),
@@ -51,7 +55,7 @@ urlpatterns = [
     path('ventas/detalle/<int:detalle_id>/eliminar/', views.eliminar_detalle, name='eliminar_detalle'),
     path('ventas/<int:venta_id>/finalizar/', views.finalizar_venta, name='finalizar_venta'),
 
-    # NUEVAS RUTAS PARA PAGOS COMPARTIDOS Y MIXTOS
+    # RUTAS PARA PAGOS COMPARTIDOS Y MIXTOS
     path('ventas/<int:venta_id>/pago-compartido/', views.pago_compartido, name='pago_compartido'),
     path('ventas/<int:venta_id>/pago-mixto/', views.pago_mixto, name='pago_mixto'),
 
@@ -63,7 +67,7 @@ urlpatterns = [
     path('cerrar-caja/', views.cerrar_caja_dia, name='cerrar_caja_dia'),
     path('caja/factura-html/', generar_factura_html, name='generar_factura_html'),
     
-    # 🔥 NUEVAS APIs OPTIMIZADAS
+    # 🔥 APIs OPTIMIZADAS
     path('api/resumen-dia/', views.resumen_dia_ajax, name='resumen_dia_ajax'),
     path('api/comparacion-dias/', views.comparacion_dias, name='comparacion_dias'),
     
@@ -91,4 +95,8 @@ urlpatterns = [
     path('panel/devoluciones/autorizar/<int:devolucion_id>/', views.autorizar_devolucion, name='autorizar_devolucion'),
     path('panel/devoluciones/procesar/<int:devolucion_id>/', views.procesar_devolucion, name='procesar_devolucion'),
     path('api/devoluciones/pendientes/', views.devoluciones_api_pendientes, name='devoluciones_api_pendientes'),
+    
+    # 🔥 NUEVAS RUTAS PARA ADMINISTRACIÓN DE IMÁGENES (Solo admin)
+    path('admin/limpiar-imagenes/', views.limpiar_imagenes_huerfanas, name='limpiar_imagenes_huerfanas'),
+    path('api/estadisticas-imagenes/', views.estadisticas_imagenes, name='estadisticas_imagenes'),
 ]

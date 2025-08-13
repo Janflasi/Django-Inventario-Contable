@@ -124,3 +124,70 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+ 
+ # 🔥 AGREGAR ESTO A TU settings.py
+
+# En la sección MIDDLEWARE, agregar tu middleware personalizado
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    
+    # 🔥 AGREGAR TU MIDDLEWARE PERSONALIZADO AQUÍ
+    'core.middleware.AccountStatusMiddleware',  # 🔥 NUEVA LÍNEA
+    
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# 🔥 CONFIGURACIÓN DE LOGIN MEJORADA
+LOGIN_URL = '/login/'  # Asegurar que apunte a tu vista personalizada
+LOGIN_REDIRECT_URL = '/inicio/'  # Redirigir aquí después del login exitoso
+LOGOUT_REDIRECT_URL = '/login/'  # Redirigir aquí después del logout
+
+# 🔥 CONFIGURACIÓN DE MENSAJES PARA BOOTSTRAP (opcional)
+from django.contrib.messages import constants as messages
+MESSAGE_TAGS = {
+    messages.DEBUG: 'debug',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',  # Bootstrap usa 'danger' en lugar de 'error'
+}
+
+# 🔥 CONFIGURACIÓN DE SESIONES SEGURAS
+SESSION_COOKIE_AGE = 3600  # 1 hora de inactividad antes de cerrar sesión
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Cerrar sesión al cerrar el navegador
+SESSION_SAVE_EVERY_REQUEST = True  # Renovar sesión en cada request
+
+import os
+from pathlib import Path
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 🔥 CONFIGURACIÓN DE ARCHIVOS MEDIA (Agregar estas líneas)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# 🔥 CONFIGURACIÓN DE ARCHIVOS ESTÁTICOS (Si no existe ya)
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# 🔥 CONFIGURACIÓN DE PILLOW PARA MANEJO DE IMÁGENES
+# Asegúrate de tener Pillow instalado: pip install Pillow
+
+# 🔥 CONFIGURACIÓN DE UPLOAD (Opcional - para limitar tamaños)
+# Tamaño máximo de archivo de 10MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# 🔥 CONFIGURACIÓN DE SEGURIDAD PARA ARCHIVOS (Opcional)
+# Tipos de archivo permitidos para upload
+ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB por imagen
