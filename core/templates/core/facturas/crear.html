@@ -1,0 +1,330 @@
+<!-- core/templates/core/facturas/crear.html -->
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Crear Nueva Factura{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-wizard {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 20px;
+        color: white;
+        margin-bottom: 20px;
+    }
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+    }
+    .step {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        border-radius: 10px;
+        margin: 0 5px;
+        background: rgba(255,255,255,0.1);
+        transition: all 0.3s ease;
+    }
+    .step.active {
+        background: rgba(255,255,255,0.3);
+        transform: scale(1.05);
+    }
+    .card-form {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: none;
+        border-radius: 15px;
+    }
+    .form-floating label {
+        color: #6c757d;
+    }
+    .btn-gradient {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border: none;
+        color: white;
+        border-radius: 25px;
+        padding: 12px 30px;
+        transition: all 0.3s ease;
+    }
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        color: white;
+    }
+    .calculation-box {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="form-wizard">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Crear Nueva Factura
+                </h1>
+                <p class="mb-0 opacity-75">Registra una nueva factura de compra</p>
+            </div>
+            <div>
+                <a href="{% url 'facturas_dashboard' %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+                </a>
+            </div>
+        </div>
+        
+        <!-- Indicador de pasos -->
+        <div class="step-indicator mt-4">
+            <div class="step active">
+                <i class="fas fa-file-invoice fa-2x mb-2"></i>
+                <div>Datos Básicos</div>
+            </div>
+            <div class="step">
+                <i class="fas fa-boxes fa-2x mb-2"></i>
+                <div>Productos</div>
+            </div>
+            <div class="step">
+                <i class="fas fa-calculator fa-2x mb-2"></i>
+                <div>Totales</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario Principal -->
+    <div class="row justify-content-center">
+        <div class="col-xl-10">
+            <div class="card card-form">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-receipt me-2"></i>Información de la Factura
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="facturaForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Información básica -->
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.numero_factura }}
+                                    <label for="{{ form.numero_factura.id_for_label }}">
+                                        <i class="fas fa-hashtag me-1"></i>{{ form.numero_factura.label }}
+                                    </label>
+                                </div>
+                                
+                                <div class="form-floating mb-3">
+                                    {{ form.proveedor }}
+                                    <label for="{{ form.proveedor.id_for_label }}">
+                                        <i class="fas fa-truck me-1"></i>{{ form.proveedor.label }}
+                                    </label>
+                                </div>
+                                
+                                <div class="form-floating mb-3">
+                                    {{ form.tipo_factura }}
+                                    <label for="{{ form.tipo_factura.id_for_label }}">
+                                        <i class="fas fa-tag me-1"></i>{{ form.tipo_factura.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Fechas y archivo -->
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.fecha_factura }}
+                                    <label for="{{ form.fecha_factura.id_for_label }}">
+                                        <i class="fas fa-calendar me-1"></i>{{ form.fecha_factura.label }}
+                                    </label>
+                                </div>
+                                
+                                <div class="form-floating mb-3">
+                                    {{ form.fecha_vencimiento }}
+                                    <label for="{{ form.fecha_vencimiento.id_for_label }}">
+                                        <i class="fas fa-calendar-times me-1"></i>{{ form.fecha_vencimiento.label }}
+                                    </label>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.archivo_factura.id_for_label }}" class="form-label">
+                                        <i class="fas fa-file-upload me-1"></i>{{ form.archivo_factura.label }}
+                                    </label>
+                                    {{ form.archivo_factura }}
+                                    <div class="form-text">PDF, JPG, PNG - Máximo 5MB</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cálculos y totales -->
+                        <div class="calculation-box">
+                            <h6 class="mb-3">
+                                <i class="fas fa-calculator me-2"></i>Cálculos de la Factura
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-floating mb-3">
+                                        {{ form.subtotal }}
+                                        <label for="{{ form.subtotal.id_for_label }}">
+                                            <i class="fas fa-minus me-1"></i>{{ form.subtotal.label }}
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="form-floating mb-3">
+                                        {{ form.iva }}
+                                        <label for="{{ form.iva.id_for_label }}">
+                                            <i class="fas fa-plus me-1"></i>{{ form.iva.label }}
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="form-floating mb-3">
+                                        {{ form.descuento }}
+                                        <label for="{{ form.descuento.id_for_label }}">
+                                            <i class="fas fa-percentage me-1"></i>{{ form.descuento.label }}
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="form-floating mb-3">
+                                        {{ form.total }}
+                                        <label for="{{ form.total.id_for_label }}">
+                                            <i class="fas fa-equals me-1"></i>{{ form.total.label }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info d-flex align-items-center">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <div>
+                                    <strong>Fórmula:</strong> Total = Subtotal + IVA - Descuento
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="mb-4">
+                            <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                                <i class="fas fa-comment me-1"></i>{{ form.observaciones.label }}
+                            </label>
+                            {{ form.observaciones }}
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'facturas_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            
+                            <div>
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="calcularTotal()">
+                                    <i class="fas fa-calculator me-1"></i>Calcular Total
+                                </button>
+                                <button type="submit" class="btn-gradient">
+                                    <i class="fas fa-save me-1"></i>Crear Factura
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-lightbulb fa-2x text-warning mb-2"></i>
+                    <h6>Tip</h6>
+                    <small>Después de crear la factura podrás agregar productos específicos.</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-link fa-2x text-info mb-2"></i>
+                    <h6>Integración</h6>
+                    <small>Los productos se pueden enlazar automáticamente con tu inventario.</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                    <h6>Reportes</h6>
+                    <small>Genera reportes de rentabilidad conectando compras y ventas.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calcularTotal() {
+    const subtotal = parseFloat(document.getElementById('{{ form.subtotal.id_for_label }}').value) || 0;
+    const iva = parseFloat(document.getElementById('{{ form.iva.id_for_label }}').value) || 0;
+    const descuento = parseFloat(document.getElementById('{{ form.descuento.id_for_label }}').value) || 0;
+    
+    const total = subtotal + iva - descuento;
+    document.getElementById('{{ form.total.id_for_label }}').value = total.toFixed(2);
+    
+    // Mostrar notificación
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alert.style.top = '20px';
+    alert.style.right = '20px';
+    alert.style.zIndex = '9999';
+    alert.innerHTML = `
+        <i class="fas fa-check me-2"></i>Total calculado: $${total.toLocaleString('es-CO')} COP
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 3000);
+}
+
+// Auto-calcular cuando cambien los valores
+document.addEventListener('DOMContentLoaded', function() {
+    const campos = ['{{ form.subtotal.id_for_label }}', '{{ form.iva.id_for_label }}', '{{ form.descuento.id_for_label }}'];
+    campos.forEach(campo => {
+        const elemento = document.getElementById(campo);
+        if (elemento) {
+            elemento.addEventListener('blur', calcularTotal);
+        }
+    });
+});
+
+// Validación del formulario
+document.getElementById('facturaForm').addEventListener('submit', function(e) {
+    const numero = document.getElementById('{{ form.numero_factura.id_for_label }}').value;
+    const proveedor = document.getElementById('{{ form.proveedor.id_for_label }}').value;
+    const total = document.getElementById('{{ form.total.id_for_label }}').value;
+    
+    if (!numero || !proveedor || !total || parseFloat(total) <= 0) {
+        e.preventDefault();
+        alert('Por favor completa todos los campos obligatorios y asegúrate de que el total sea mayor a cero.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

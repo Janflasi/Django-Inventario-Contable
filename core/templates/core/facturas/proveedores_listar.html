@@ -1,0 +1,302 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Lista de Proveedores{% endblock %}
+
+{% block content %}
+<style>
+.providers-header{background:linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);color:white;border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 30px rgba(0,0,0,0.15)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+.stat-card{background:white;border-radius:16px;padding:1.5rem;text-align:center;box-shadow:0 8px 25px rgba(0,0,0,0.08);border:none;transition:transform 0.3s ease,box-shadow 0.3s ease;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent-color)}
+.stat-card.total{--accent-color:#6a11cb}.stat-card.activos{--accent-color:#10d876}.stat-card.con-facturas{--accent-color:#2575fc}
+.stat-card:hover{transform:translateY(-8px);box-shadow:0 15px 40px rgba(0,0,0,0.15)}
+.stat-card i{margin-bottom:0.75rem;opacity:0.8}
+.stat-card h3{font-size:2rem;font-weight:700;margin:0.5rem 0;background:linear-gradient(45deg,var(--accent-color),#667eea);background-clip:text;-webkit-background-clip:text;color:transparent}
+.search-section{background:white;border-radius:20px;padding:1.5rem;box-shadow:0 8px 25px rgba(0,0,0,0.08);margin-bottom:2rem;border:1px solid #f0f0f0}
+.search-form{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:1rem;align-items:end}
+.form-control,.form-select{border-radius:12px;border:2px solid #e9ecef;padding:0.75rem 1rem;font-size:0.9rem;transition:all 0.3s ease}
+.form-control:focus,.form-select:focus{border-color:#6a11cb;box-shadow:0 0 0 0.2rem rgba(106,17,203,0.15);outline:none}
+.btn-search{background:linear-gradient(135deg,#6a11cb,#2575fc);border:none;border-radius:12px;padding:0.75rem 1.5rem;color:white;font-weight:600;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(106,17,203,0.3)}
+.btn-search:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(106,17,203,0.4);background:linear-gradient(135deg,#5a0eb8,#1e5dd9)}
+.providers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem}
+.provider-card{background:white;border-radius:20px;padding:1.5rem;box-shadow:0 8px 25px rgba(0,0,0,0.08);transition:all 0.3s ease;border:1px solid #f0f0f0;position:relative;overflow:hidden}
+.provider-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#6a11cb,#2575fc)}
+.provider-card:hover{transform:translateY(-8px);box-shadow:0 20px 40px rgba(0,0,0,0.15)}
+.provider-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.provider-name{font-size:1.1rem;font-weight:700;color:#2d3748;text-decoration:none!important;transition:color 0.3s ease}
+.provider-name:hover{color:#6a11cb}
+.provider-status{font-size:0.75rem;padding:0.4rem 0.8rem;border-radius:50px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.provider-info{margin-bottom:1rem}
+.provider-info p{margin-bottom:0.5rem;font-size:0.9rem;color:#666}
+.provider-info i{width:16px;opacity:0.6}
+.provider-info a{color:#6a11cb;text-decoration:none;transition:color 0.3s ease}
+.provider-info a:hover{color:#2575fc}
+.provider-stats{background:#f8fafc;border-radius:12px;padding:1rem;margin-bottom:1rem}
+.provider-stats .row{margin:0}
+.provider-stats .col-6{padding:0.5rem}
+.provider-stats h6{font-size:1.2rem;font-weight:700;margin:0}
+.provider-stats small{font-size:0.8rem;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px}
+.factura-item{border-left:4px solid #6a11cb;padding:0.75rem 1rem;margin-bottom:0.5rem;background:#f8fafc;border-radius:8px;transition:all 0.3s ease;font-size:0.85rem}
+.factura-item:hover{background:#e8f4fd;transform:translateX(4px)}
+.factura-item .d-flex{flex-wrap:wrap;gap:0.5rem}
+.factura-item .d-flex>div{min-width:0;flex:1}
+.badge-estado{font-size:0.7rem;padding:0.3rem 0.6rem;border-radius:20px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.btn-group .btn{border-radius:10px;padding:0.5rem 1rem;font-size:0.8rem;font-weight:600;transition:all 0.3s ease;border:2px solid transparent}
+.btn-outline-primary{color:#6a11cb;border-color:#6a11cb}
+.btn-outline-primary:hover{background:#6a11cb;border-color:#6a11cb;transform:translateY(-2px)}
+.btn-outline-warning{color:#f6ad55;border-color:#f6ad55}
+.btn-outline-warning:hover{background:#f6ad55;border-color:#f6ad55;transform:translateY(-2px)}
+.btn-outline-success{color:#10d876;border-color:#10d876}
+.btn-outline-success:hover{background:#10d876;border-color:#10d876;transform:translateY(-2px)}
+.empty-state{text-align:center;padding:4rem 2rem;background:white;border-radius:20px;box-shadow:0 8px 25px rgba(0,0,0,0.08)}
+.empty-state i{color:#cbd5e0;margin-bottom:1.5rem}
+.empty-state h4{color:#4a5568;margin-bottom:1rem}
+.empty-state p{color:#718096;margin-bottom:2rem}
+.btn-create{background:linear-gradient(135deg,#6a11cb,#2575fc);border:none;border-radius:12px;padding:0.75rem 2rem;color:white;font-weight:600;font-size:1rem;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(106,17,203,0.3);text-decoration:none!important}
+.btn-create:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(106,17,203,0.4);color:white}
+
+@media (max-width:768px){
+.providers-header{padding:1.5rem;margin-bottom:1.5rem}
+.providers-header h1{font-size:1.5rem}
+.providers-header .btn{padding:0.6rem 1rem;font-size:0.9rem}
+.stats-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.75rem}
+.stat-card{padding:1rem;border-radius:12px}
+.stat-card h3{font-size:1.5rem}
+.search-section{padding:1rem;border-radius:16px}
+.search-form{grid-template-columns:1fr;gap:0.75rem}
+.btn-search{width:100%;padding:0.75rem}
+.providers-grid{grid-template-columns:1fr;gap:1rem}
+.provider-card{padding:1rem;border-radius:16px}
+.provider-header{flex-direction:column;gap:0.5rem;align-items:flex-start}
+.provider-status{align-self:flex-end}
+.factura-item{padding:0.5rem 0.75rem}
+.factura-item .d-flex{flex-direction:column;gap:0.25rem}
+.factura-item .d-flex>div{text-align:left!important}
+.btn-group{flex-direction:column}
+.btn-group .btn{border-radius:8px!important;margin-bottom:0.25rem}
+.empty-state{padding:2rem 1rem}
+}
+
+@media (max-width:576px){
+.container-fluid{padding-left:1rem;padding-right:1rem}
+.providers-header{margin-bottom:1rem}
+.providers-header .col-md-4{text-align:left!important;margin-top:1rem}
+.stat-card{padding:0.75rem}
+.stat-card h3{font-size:1.25rem}
+.provider-card{padding:0.75rem}
+.provider-stats{padding:0.75rem}
+.provider-stats .col-6{padding:0.25rem}
+}
+</style>
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="providers-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">
+                    <i class="fas fa-building me-3"></i>
+                    Gestión de Proveedores
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb text-white-50 mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'facturas_dashboard' %}" class="text-white-50">Dashboard</a></li>
+                        <li class="breadcrumb-item active text-white">Proveedores</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'proveedor_crear' %}" class="btn-create">
+                    <i class="fas fa-plus me-2"></i>Nuevo Proveedor
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <i class="fas fa-building fa-2x"></i>
+            <h3>{{ total_proveedores }}</h3>
+            <p class="mb-0 fw-500">Total Proveedores</p>
+        </div>
+        <div class="stat-card activos">
+            <i class="fas fa-check-circle fa-2x"></i>
+            <h3>{{ total_proveedores }}</h3>
+            <p class="mb-0 fw-500">Proveedores Activos</p>
+        </div>
+        <div class="stat-card con-facturas">
+            <i class="fas fa-file-invoice fa-2x"></i>
+            <h3>{{ proveedores_con_facturas }}</h3>
+            <p class="mb-0 fw-500">Con Facturas</p>
+        </div>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="search-section">
+        <h5 class="mb-3 fw-600">
+            <i class="fas fa-search me-2" style="color:#6a11cb"></i>
+            Buscar Proveedores
+        </h5>
+        <form method="get" class="search-form">
+            <input type="text" name="q" class="form-control" placeholder="Buscar por nombre, email o NIT..." 
+                   value="{{ request.GET.q }}">
+            <select name="estado" class="form-select">
+                <option value="">Todos los estados</option>
+                <option value="activo" {% if request.GET.estado == 'activo' %}selected{% endif %}>Solo activos</option>
+                <option value="inactivo" {% if request.GET.estado == 'inactivo' %}selected{% endif %}>Solo inactivos</option>
+            </select>
+            <select name="con_facturas" class="form-select">
+                <option value="">Todos</option>
+                <option value="si" {% if request.GET.con_facturas == 'si' %}selected{% endif %}>Con facturas</option>
+                <option value="no" {% if request.GET.con_facturas == 'no' %}selected{% endif %}>Sin facturas</option>
+            </select>
+            <button type="submit" class="btn-search">
+                <i class="fas fa-search me-1"></i> Buscar
+            </button>
+        </form>
+    </div>
+
+    <!-- Lista de proveedores -->
+    {% if proveedores %}
+    <div class="providers-grid">
+        {% for proveedor in proveedores %}
+        <div class="provider-card">
+            <div class="provider-header">
+                <h5 class="mb-0">
+                    <a href="{% url 'proveedor_detalle' proveedor.pk %}" class="provider-name">
+                        {{ proveedor.nombre }}
+                    </a>
+                </h5>
+                {% if proveedor.activo %}
+                    <span class="provider-status bg-success text-white">Activo</span>
+                {% else %}
+                    <span class="provider-status bg-secondary text-white">Inactivo</span>
+                {% endif %}
+            </div>
+
+            <div class="provider-info">
+                {% if proveedor.email %}
+                    <p class="mb-1">
+                        <i class="fas fa-envelope me-2"></i>
+                        <a href="mailto:{{ proveedor.email }}">{{ proveedor.email }}</a>
+                    </p>
+                {% endif %}
+                
+                {% if proveedor.telefono %}
+                    <p class="mb-1">
+                        <i class="fas fa-phone me-2"></i>
+                        <a href="tel:{{ proveedor.telefono }}">{{ proveedor.telefono }}</a>
+                    </p>
+                {% endif %}
+                
+                {% if proveedor.nit %}
+                    <p class="mb-1">
+                        <i class="fas fa-id-card me-2"></i>
+                        {{ proveedor.nit }}
+                    </p>
+                {% endif %}
+                
+                {% if proveedor.direccion %}
+                    <p class="mb-1">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        {{ proveedor.direccion|truncatewords:4 }}
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="provider-stats">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h6 class="text-primary mb-0">{{ proveedor.facturacompra_set.count }}</h6>
+                            <small class="text-muted">Facturas</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-success mb-0">
+                            ${{ proveedor.facturacompra_set.aggregate.total__sum|default:0|floatformat:0 }}
+                        </h6>
+                        <small class="text-muted">Total</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Últimas facturas del proveedor -->
+            {% if proveedor.facturacompra_set.all %}
+            <div class="mb-3">
+                <h6 class="mb-2 text-muted fw-600">
+                    <i class="fas fa-file-invoice me-1"></i>
+                    Últimas Facturas
+                </h6>
+                {% for factura in proveedor.facturacompra_set.all|slice:":2" %}
+                <div class="factura-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-600">{{ factura.numero_factura }}</div>
+                            <small class="text-muted">{{ factura.get_tipo_factura_display }}</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="fw-500">{{ factura.fecha_factura|date:"d/m/Y" }}</div>
+                            <small class="text-muted">{{ factura.fecha_factura|date:"D" }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-600 text-success">${{ factura.total|floatformat:0 }}</div>
+                            {% if factura.descuento > 0 %}
+                                <small class="text-warning">-${{ factura.descuento|floatformat:0 }}</small>
+                            {% endif %}
+                        </div>
+                        <div>
+                            {% if factura.estado == 'pendiente' %}
+                                <span class="badge badge-estado bg-warning text-dark">Pendiente</span>
+                            {% elif factura.estado == 'recibida' %}
+                                <span class="badge badge-estado bg-info">Recibida</span>
+                            {% elif factura.estado == 'pagada' %}
+                                <span class="badge badge-estado bg-success">Pagada</span>
+                            {% elif factura.estado == 'anulada' %}
+                                <span class="badge badge-estado bg-danger">Anulada</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if proveedor.facturacompra_set.count > 2 %}
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        +{{ proveedor.facturacompra_set.count|add:"-2" }} más...
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="provider-actions">
+                <div class="btn-group w-100" role="group">
+                    <a href="{% url 'proveedor_detalle' proveedor.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye me-1"></i> Ver
+                    </a>
+                    <a href="{% url 'proveedor_editar' proveedor.pk %}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </a>
+                    <a href="{% url 'factura_crear' %}?proveedor={{ proveedor.pk }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-plus me-1"></i> Factura
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-building fa-5x"></i>
+        <h4>No hay proveedores registrados</h4>
+        <p>Comienza creando tu primer proveedor para gestionar las facturas de compra.</p>
+        <a href="{% url 'proveedor_crear' %}" class="btn-create">
+            <i class="fas fa-plus me-2"></i>Crear Primer Proveedor
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -8,8 +8,8 @@
       <!-- Header -->
       <div class="text-center mb-4">
         <div class="avatar mb-3">
-          <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" 
-               style="width: 60px; height: 60px;">
+          <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center"
+                style="width: 60px; height: 60px;">
             <i class="fas fa-edit text-white"></i>
           </div>
         </div>
@@ -23,47 +23,63 @@
           <form method="post">
             {% csrf_token %}
             
-            <!-- Campos del formulario -->
-            {% for field in form %}
-              <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label text-muted small">
-                  <i class="fas fa-{% if 'username' in field.name %}user{% elif 'first_name' in field.name or 'last_name' in field.name %}id-card{% elif 'email' in field.name %}envelope{% else %}info-circle{% endif %} me-1"></i>
-                  {% if field.name == 'username' %}
-                    Usuario
-                  {% elif field.name == 'first_name' %}
-                    Nombre
-                  {% elif field.name == 'last_name' %}
-                    Apellido
-                  {% elif field.name == 'email' %}
-                    Correo electrónico
-                  {% else %}
-                    {{ field.label }}
-                  {% endif %}
-                </label>
-                <div class="input-group">
-                  {{ field }}
-                </div>
-                {% if field.errors %}
-                  <div class="text-danger small mt-1">
-                    {% for error in field.errors %}
-                      <div><i class="fas fa-exclamation-circle me-1"></i>
-                        {% if 'required' in error|lower %}
-                          Este campo es obligatorio
-                        {% elif 'invalid' in error|lower %}
-                          Formato inválido
-                        {% elif 'unique' in error|lower %}
-                          Este valor ya existe
-                        {% elif '150 characters or fewer' in error %}
-                          Máximo 150 caracteres. Solo letras, números y @/./+/-/_
-                        {% else %}
-                          {{ error }}
-                        {% endif %}
-                      </div>
-                    {% endfor %}
-                  </div>
-                {% endif %}
+            <!-- Campo Usuario -->
+            <div class="mb-3">
+              <label for="{{ form.username.id_for_label }}" class="form-label text-muted small">
+                <i class="fas fa-user me-1"></i>
+                Usuario
+              </label>
+              <div class="input-group">
+                {{ form.username }}
               </div>
-            {% endfor %}
+              {% if form.username.errors %}
+                <div class="text-danger small mt-1">
+                  {% for error in form.username.errors %}
+                    <div><i class="fas fa-exclamation-circle me-1"></i>
+                      {% if 'required' in error|lower %}
+                        Este campo es obligatorio
+                      {% elif 'invalid' in error|lower %}
+                        Formato inválido
+                      {% elif 'unique' in error|lower %}
+                        Este nombre de usuario ya existe
+                      {% elif '150 characters or fewer' in error %}
+                        Máximo 150 caracteres. Solo letras, números y @/./+/-/_
+                      {% else %}
+                        {{ error }}
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Campo Email -->
+            <div class="mb-3">
+              <label for="{{ form.email.id_for_label }}" class="form-label text-muted small">
+                <i class="fas fa-envelope me-1"></i>
+                Correo electrónico
+              </label>
+              <div class="input-group">
+                {{ form.email }}
+              </div>
+              {% if form.email.errors %}
+                <div class="text-danger small mt-1">
+                  {% for error in form.email.errors %}
+                    <div><i class="fas fa-exclamation-circle me-1"></i>
+                      {% if 'required' in error|lower %}
+                        Este campo es obligatorio
+                      {% elif 'invalid' in error|lower %}
+                        Formato de correo inválido
+                      {% elif 'unique' in error|lower %}
+                        Este correo ya está en uso
+                      {% else %}
+                        {{ error }}
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
 
             <!-- Botones -->
             <div class="d-grid gap-2 mt-4">
@@ -74,9 +90,9 @@
                 <i class="fas fa-arrow-left me-1"></i>Cancelar
               </a>
             </div>
-
+           
           </form>
-
+         
         </div>
       </div>
     </div>
@@ -90,22 +106,22 @@
   .card {
     transition: transform 0.2s ease;
   }
-  
+   
   .card:hover {
     transform: translateY(-2px);
   }
-  
+   
   .form-control {
     transition: all 0.2s ease;
     border: 1px solid #dee2e6;
     border-radius: 0.75rem !important;
   }
-  
+   
   .form-control:focus {
     border-color: #198754;
     box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
   }
-  
+   
   .btn {
     transition: all 0.2s ease;
   }

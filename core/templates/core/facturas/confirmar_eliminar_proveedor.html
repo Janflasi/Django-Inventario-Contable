@@ -1,0 +1,168 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Proveedor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .warning-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        border-left: 5px solid #dc3545;
+    }
+    
+    .provider-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header de confirmación -->
+    <div class="delete-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">
+                    <i class="fas fa-exclamation-triangle me-3"></i>
+                    Confirmar Eliminación
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb text-white-50">
+                        <li class="breadcrumb-item"><a href="{% url 'facturas_dashboard' %}" class="text-white">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'proveedores_listar' %}" class="text-white">Proveedores</a></li>
+                        <li class="breadcrumb-item active text-white">Eliminar</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'proveedor_detalle' proveedor.pk %}" class="btn btn-light">
+                    <i class="fas fa-arrow-left me-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido de confirmación -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="warning-card">
+                <div class="text-center mb-4">
+                    <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                    <h4 class="text-danger">¿Estás seguro de eliminar este proveedor?</h4>
+                    <p class="text-muted">Esta acción no se puede deshacer.</p>
+                </div>
+
+                <!-- Información del proveedor -->
+                <div class="provider-info">
+                    <h5 class="mb-3">
+                        <i class="fas fa-building text-primary me-2"></i>
+                        Información del Proveedor
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Nombre:</strong></td>
+                                    <td>{{ proveedor.nombre }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>NIT/CC:</strong></td>
+                                    <td>{{ proveedor.nit|default:"No registrado" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>{{ proveedor.email|default:"No registrado" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Teléfono:</strong></td>
+                                    <td>{{ proveedor.telefono|default:"No registrado" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>
+                                        {% if proveedor.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Facturas:</strong></td>
+                                    <td>
+                                        {% if proveedor.facturacompra_set.count > 0 %}
+                                            <span class="badge bg-warning">{{ proveedor.facturacompra_set.count }} facturas</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Sin facturas</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advertencias -->
+                {% if proveedor.facturacompra_set.count > 0 %}
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>¡Atención!</h6>
+                    <p class="mb-0">
+                        Este proveedor tiene <strong>{{ proveedor.facturacompra_set.count }} facturas</strong> asociadas.
+                        No es posible eliminarlo mientras tenga facturas registradas.
+                    </p>
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'proveedor_detalle' proveedor.pk %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Proveedor
+                    </a>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-info-circle me-2"></i>Información</h6>
+                    <p class="mb-0">
+                        Al eliminar este proveedor se perderá toda su información de contacto y configuración.
+                        Esta acción es permanente y no se puede deshacer.
+                    </p>
+                </div>
+
+                <!-- Botones de confirmación -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'proveedor_detalle' proveedor.pk %}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <form method="post" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('¿Confirmas la eliminación definitiva del proveedor {{ proveedor.nombre }}?')">
+                                    <i class="fas fa-trash-alt me-2"></i>Eliminar Definitivamente
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

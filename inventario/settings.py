@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +31,6 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,14 +41,16 @@ INSTALLED_APPS = [
     'core',
 ]
     
-
+# 🔥 MIDDLEWARE SIN EL PROBLEMÁTICO - PROBEMOS ESTO PRIMERO
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    # 🔥 COMENTADO TEMPORALMENTE EL MIDDLEWARE PROBLEMÁTICO
+    # 'core.middleware.AccountStatusMiddleware',  # ← ESTE PUEDE SER EL PROBLEMA
+    'django.contrib.messages.middleware.MessageMiddleware',  # ← IMPORTANTE
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -70,21 +73,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'inventario.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'inventario_bar',
+        'USER': 'bar_admin',
+        'PASSWORD': 'inventario123',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -100,94 +103,77 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
- 
- # 🔥 AGREGAR ESTO A TU settings.py
-
-# En la sección MIDDLEWARE, agregar tu middleware personalizado
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    
-    # 🔥 AGREGAR TU MIDDLEWARE PERSONALIZADO AQUÍ
-    'core.middleware.AccountStatusMiddleware',  # 🔥 NUEVA LÍNEA
-    
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
-
-# 🔥 CONFIGURACIÓN DE LOGIN MEJORADA
-LOGIN_URL = '/login/'  # Asegurar que apunte a tu vista personalizada
-LOGIN_REDIRECT_URL = '/inicio/'  # Redirigir aquí después del login exitoso
-LOGOUT_REDIRECT_URL = '/login/'  # Redirigir aquí después del logout
-
-# 🔥 CONFIGURACIÓN DE MENSAJES PARA BOOTSTRAP (opcional)
-from django.contrib.messages import constants as messages
-MESSAGE_TAGS = {
-    messages.DEBUG: 'debug',
-    messages.INFO: 'info',
-    messages.SUCCESS: 'success',
-    messages.WARNING: 'warning',
-    messages.ERROR: 'danger',  # Bootstrap usa 'danger' en lugar de 'error'
-}
-
-# 🔥 CONFIGURACIÓN DE SESIONES SEGURAS
-SESSION_COOKIE_AGE = 3600  # 1 hora de inactividad antes de cerrar sesión
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Cerrar sesión al cerrar el navegador
-SESSION_SAVE_EVERY_REQUEST = True  # Renovar sesión en cada request
-
-import os
-from pathlib import Path
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-# 🔥 CONFIGURACIÓN DE ARCHIVOS MEDIA (Agregar estas líneas)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# 🔥 CONFIGURACIÓN DE ARCHIVOS ESTÁTICOS (Si no existe ya)
+# 🔥 CONFIGURACIÓN DE ARCHIVOS ESTÁTICOS
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-# 🔥 CONFIGURACIÓN DE PILLOW PARA MANEJO DE IMÁGENES
-# Asegúrate de tener Pillow instalado: pip install Pillow
+# 🔥 CONFIGURACIÓN DE ARCHIVOS MEDIA
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# 🔥 CONFIGURACIÓN DE UPLOAD (Opcional - para limitar tamaños)
-# Tamaño máximo de archivo de 10MB
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 🔥 CONFIGURACIÓN DE LOGIN
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/inicio/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+# 🔥 CONFIGURACIÓN DE MENSAJES PARA BOOTSTRAP
+MESSAGE_TAGS = {
+    messages.DEBUG: 'debug',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+}
+
+# 🔥 CONFIGURACIÓN DE SESIONES SEGURAS
+SESSION_COOKIE_AGE = 3600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
+
+# 🔥 CONFIGURACIÓN DE UPLOAD
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 
-# 🔥 CONFIGURACIÓN DE SEGURIDAD PARA ARCHIVOS (Opcional)
-# Tipos de archivo permitidos para upload
+# 🔥 CONFIGURACIÓN DE SEGURIDAD PARA ARCHIVOS
 ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp']
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB por imagen
+
+
+
+# Configuración de idioma
+LANGUAGE_CODE = 'es-co'  # Español de Colombia
+TIME_ZONE = 'America/Bogota'
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
+# Si quieres formato completo en español
+DATE_FORMAT = 'd de F de Y'  # Ejemplo: 25 de diciembre de 2024
+
+# Agregar al final de tu settings.py
+
+# Crear directorios media si no existen
+MEDIA_SUBDIRS = [
+    'productos',
+    'combos',
+    'avatars', 
+    'facturas/compras'
+]
+
+# Crear directorios automáticamente
+for subdir in MEDIA_SUBDIRS:
+    os.makedirs(os.path.join(MEDIA_ROOT, subdir), exist_ok=True)

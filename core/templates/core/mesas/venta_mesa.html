@@ -1,116 +1,29 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Venta - Mesa {{ mesa.numero }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h3>Venta - Mesa {{ mesa.numero }}</h3>
-  <p>Ubicación: {{ mesa.ubicacion }}</p>
-
-  <!-- Formulario para agregar productos -->
-  <form method="POST" class="row g-2 mb-4">
-    {% csrf_token %}
-    <div class="col-md-6">
-      <select name="producto" class="form-select" required>
-        <option value="">-- Selecciona un producto --</option>
-        {% for producto in productos %}
-          <option value="{{ producto.id }}">{{ producto.nombre }} - ${{ producto.precio }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-2">
-      <input type="number" name="cantidad" min="1" class="form-control" placeholder="Cantidad" required>
-    </div>
-    <div class="col-md-2">
-      <button type="submit" class="btn btn-primary w-100">Agregar</button>
-    </div>
-  </form>
-
-  <!-- Tabla de productos agregados -->
-  <table class="table table-bordered table-sm">
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Cantidad</th>
-        <th>Precio Unitario</th>
-        <th>Subtotal</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for detalle in detalles %}
-      <tr>
-        <td>{{ detalle.producto.nombre }}</td>
-        <td>{{ detalle.cantidad }}</td>
-        <td>${{ detalle.precio_unitario }}</td>
-        <td>${{ detalle.subtotal }}</td>
-        <td>
-          <a href="{% url 'eliminar_detalle' detalle.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr>
-        <th colspan="3" class="text-end">Total:</th>
-        <th colspan="2">${{ total }}</th>
-      </tr>
-    </tfoot>
-  </table>
-
-  <!-- OPCIONES DE PAGO MEJORADAS -->
-  <div class="row mt-4">
-    <div class="col-md-12">
-      <h5>Opciones de Pago</h5>
-      <div class="row g-2">
-        <!-- Pago Simple -->
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-title">Pago Simple</h6>
-              <form method="POST" action="{% url 'finalizar_venta' venta.id %}">
-                {% csrf_token %}
-                <div class="mb-2">
-                  <select name="metodo_pago" id="metodo_pago_simple" class="form-select form-select-sm" required>
-                    <option value="efectivo">Efectivo</option>
-                    <option value="transferencia">Transferencia</option>
-                    <option value="credito">Crédito / Fiado</option>
-                  </select>
-                </div>
-                
-                <div id="monto_efectivo_simple" style="display:none;">
-                  <input type="number" name="monto_pagado" class="form-control form-control-sm mb-2" placeholder="Monto pagado" step="0.01">
-                </div>
-
-                <div id="datos_credito_simple" style="display:none;">
-                  <input type="text" name="nombre_cliente" class="form-control form-control-sm mb-2" placeholder="Nombre cliente">
-                  <input type="text" name="telefono_cliente" class="form-control form-control-sm mb-2" placeholder="Teléfono">
-                </div>
-
-                <button type="submit" class="btn btn-success btn-sm w-100">Finalizar Venta</button>
-              </form>
+<div class="container-fluid px-3 py-4">
+  <!-- HEADER DE LA VENTA -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm bg-gradient-primary">
+        <div class="card-body text-white">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h3 class="mb-1 fw-bold">
+                <i class="fas fa-utensils me-2"></i>Mesa {{ mesa.numero }}
+              </h3>
+              <p class="mb-0 opacity-75">
+                <i class="fas fa-map-marker-alt me-1"></i>{{ mesa.ubicacion }}
+              </p>
             </div>
-          </div>
-        </div>
-
-        <!-- Pago Compartido -->
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-title">Pago Compartido</h6>
-              <p class="card-text small">Varios clientes pagan partes del total</p>
-              <a href="{% url 'pago_compartido' venta.id %}" class="btn btn-info btn-sm w-100">Pago Compartido</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pago Mixto -->
-        <div class="col-md-4">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="card-title">Pago Mixto</h6>
-              <p class="card-text small">Efectivo + Transferencia</p>
-              <a href="{% url 'pago_mixto' venta.id %}" class="btn btn-warning btn-sm w-100">Pago Mixto</a>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+              <div class="badge bg-light text-dark fs-6 px-3 py-2">
+                <i class="fas fa-user me-1"></i>
+                {{ venta.mesero.get_full_name|default:venta.mesero.username }}
+              </div>
             </div>
           </div>
         </div>
@@ -118,32 +31,665 @@
     </div>
   </div>
 
-  <div class="mt-3">
-    <a href="{% url 'mesas_listar' %}" class="btn btn-secondary">Volver a Mesas</a>
+  <!-- PESTAÑAS MODERNAS -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <ul class="nav nav-pills nav-fill modern-tabs" id="ventaTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="productos-tab" data-bs-toggle="tab" data-bs-target="#productos" type="button" role="tab">
+            <i class="fas fa-box me-2"></i>
+            <span class="d-none d-sm-inline">Productos</span>
+            <span class="d-inline d-sm-none">📦</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="combos-tab" data-bs-toggle="tab" data-bs-target="#combos" type="button" role="tab">
+            <i class="fas fa-gift me-2"></i>
+            <span class="d-none d-sm-inline">Combos</span>
+            <span class="d-inline d-sm-none">🎁</span>
+            {% if combos_disponibles %}
+              <span class="badge bg-success ms-2">{{ combos_disponibles|length }}</span>
+            {% endif %}
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CONTENIDO DE LAS PESTAÑAS -->
+  <div class="tab-content" id="ventaTabContent">
+    
+    <!-- PESTAÑA DE PRODUCTOS INDIVIDUALES -->
+    <div class="tab-pane fade show active" id="productos" role="tabpanel">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>Agregar Producto
+          </h6>
+        </div>
+        <div class="card-body">
+          <form method="POST" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="tipo_item" value="producto">
+            <div class="col-md-7">
+              <label class="form-label small text-muted">Producto</label>
+              <select name="producto" class="form-select" required>
+                <option value="">-- Selecciona un producto --</option>
+                {% for producto in productos %}
+                  <option value="{{ producto.id }}">
+                    {{ producto.nombre }} - ${{ producto.precio|floatformat:0 }} 
+                    (Stock: {{ producto.cantidad }})
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small text-muted">Cantidad</label>
+              <input type="number" name="cantidad" min="1" class="form-control" placeholder="1" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small text-muted d-block">&nbsp;</label>
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-plus d-md-none"></i>
+                <span class="d-none d-md-inline">Agregar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA DE COMBOS -->
+    <div class="tab-pane fade" id="combos" role="tabpanel">
+      {% if combos_disponibles %}
+        <div class="row g-3">
+          {% for combo_info in combos_disponibles %}
+            <div class="col-lg-6 col-xl-4">
+              <div class="card h-100 border-0 shadow-sm combo-card">
+                <div class="card-header bg-warning bg-opacity-10 border-0">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <h6 class="mb-0 fw-bold text-dark">
+                      🎁 {{ combo_info.objeto.nombre }}
+                    </h6>
+                    <span class="badge bg-success">
+                      -${{ combo_info.ahorro|floatformat:0 }}
+                    </span>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <!-- COMPONENTES -->
+                  <div class="mb-3">
+                    <small class="text-muted fw-semibold">Incluye:</small>
+                    <div class="mt-1">
+                      {% for componente in combo_info.componentes %}
+                        <span class="badge bg-light text-dark me-1 mb-1">
+                          {{ componente.cantidad }}x {{ componente.producto.nombre }}
+                        </span>
+                      {% endfor %}
+                    </div>
+                  </div>
+
+                  <!-- PRECIOS -->
+                  <div class="price-comparison mb-3">
+                    <div class="row text-center g-2">
+                      <div class="col-4">
+                        <div class="price-box">
+                          <small class="text-muted d-block">Individual</small>
+                          <span class="text-decoration-line-through small">
+                            ${{ combo_info.precio_individual_total|floatformat:0 }}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="price-box bg-success bg-opacity-10 rounded">
+                          <small class="text-success d-block fw-semibold">Combo</small>
+                          <strong class="text-success">
+                            ${{ combo_info.objeto.precio_combo|floatformat:0 }}
+                          </strong>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="price-box">
+                          <small class="text-warning d-block">Descuento</small>
+                          <span class="badge bg-warning text-dark">
+                            {{ combo_info.descuento_real|floatformat:1 }}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- STOCK -->
+                  <div class="mb-3">
+                    <small class="text-info">
+                      <i class="fas fa-box-open"></i> 
+                      Disponibles: {{ combo_info.stock_limitante.cantidad_maxima_combos }}
+                    </small>
+                  </div>
+
+                  <!-- FORMULARIO -->
+                  <form method="POST" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="tipo_item" value="combo">
+                    <input type="hidden" name="combo_id" value="{{ combo_info.objeto.id }}">
+                    <input type="number" name="cantidad" min="1" max="{{ combo_info.stock_limitante.cantidad_maxima_combos }}" 
+                           class="form-control form-control-sm" value="1" style="width: 70px;">
+                    <button type="submit" class="btn btn-warning btn-sm flex-grow-1">
+                      <i class="fas fa-gift me-1"></i>Agregar
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-gift fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay combos disponibles</h5>
+          <p class="text-muted">En este momento no hay promociones activas</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- TABLA DE PRODUCTOS INDIVIDUALES -->
+  {% if detalles %}
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h6 class="mb-0">
+          <i class="fas fa-box me-2 text-primary"></i>Productos Individuales
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="border-0">Producto</th>
+                <th class="border-0 text-center">Cant.</th>
+                <th class="border-0 text-end d-none d-md-table-cell">Precio</th>
+                <th class="border-0 text-end">Subtotal</th>
+                <th class="border-0 text-center" width="60">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for detalle in detalles %}
+              <tr>
+                <td>
+                  <div class="fw-semibold">{{ detalle.producto.nombre }}</div>
+                  <small class="text-muted d-md-none">
+                    ${{ detalle.precio_unitario|floatformat:0 }} c/u
+                  </small>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-primary">{{ detalle.cantidad }}</span>
+                </td>
+                <td class="text-end d-none d-md-table-cell">
+                  ${{ detalle.precio_unitario|floatformat:0 }}
+                </td>
+                <td class="text-end fw-bold">
+                  ${{ detalle.subtotal|floatformat:0 }}
+                </td>
+                <td class="text-center">
+                  <a href="{% url 'eliminar_detalle' detalle.id %}" 
+                     class="btn btn-sm btn-outline-danger rounded-circle">
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <th colspan="3" class="text-end border-0">Subtotal Productos:</th>
+                <th class="text-end border-0">${{ total_productos|floatformat:0 }}</th>
+                <th class="border-0"></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- TABLA DE COMBOS AGREGADOS -->
+  {% if combos_en_venta %}
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-warning bg-opacity-10">
+        <h6 class="mb-0">
+          <i class="fas fa-gift me-2 text-warning"></i>Combos y Promociones
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-warning bg-opacity-25">
+              <tr>
+                <th class="border-0">Combo</th>
+                <th class="border-0 text-center">Cant.</th>
+                <th class="border-0 text-end d-none d-lg-table-cell">Precio</th>
+                <th class="border-0 text-end">Subtotal</th>
+                <th class="border-0 text-center" width="60">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for combo_venta in combos_en_venta %}
+              <tr>
+                <td>
+                  <div class="fw-semibold">{{ combo_venta.combo.nombre }}</div>
+                  <small class="text-success">
+                    <i class="fas fa-tags me-1"></i>
+                    Ahorro: ${{ combo_venta.combo.precio_individual_total|add:combo_venta.combo.precio_combo|floatformat:0 }}
+                  </small>
+                  <div class="d-lg-none">
+                    <small class="text-muted">
+                      ${{ combo_venta.precio_unitario|floatformat:0 }} c/u
+                    </small>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="badge bg-warning text-dark">{{ combo_venta.cantidad_vendida }}</span>
+                </td>
+                <td class="text-end d-none d-lg-table-cell">
+                  ${{ combo_venta.precio_unitario|floatformat:0 }}
+                </td>
+                <td class="text-end fw-bold text-success">
+                  ${{ combo_venta.subtotal|floatformat:0 }}
+                </td>
+                <td class="text-center">
+                  <a href="{% url 'eliminar_combo_venta' combo_venta.id %}" 
+                     class="btn btn-sm btn-outline-danger rounded-circle">
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-warning bg-opacity-25">
+              <tr>
+                <th colspan="3" class="text-end border-0">Subtotal Combos:</th>
+                <th class="text-end border-0">${{ total_combos|floatformat:0 }}</th>
+                <th class="border-0"></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- RESUMEN TOTAL MEJORADO -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-lg bg-gradient-success text-white">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-3 fw-bold">
+                <i class="fas fa-calculator me-2"></i>Resumen de la Venta
+              </h5>
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="opacity-75">Productos:</span>
+                    <strong class="fs-5">${{ total_productos|floatformat:0 }}</strong>
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="opacity-75">Combos:</span>
+                    <strong class="fs-5">${{ total_combos|floatformat:0 }}</strong>
+                  </div>
+                </div>
+              </div>
+              <hr class="my-3 opacity-50">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fs-4 fw-bold">TOTAL:</span>
+                <span class="fs-2 fw-bold">${{ total|floatformat:0 }}</span>
+              </div>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+              <div class="bg-white bg-opacity-10 rounded p-3">
+                <div class="small opacity-75 mb-2">Detalles de la orden</div>
+                <div class="mb-1">
+                  <i class="fas fa-utensils me-2"></i>Mesa: {{ mesa.numero }}
+                </div>
+                <div class="mb-1">
+                  <i class="fas fa-user me-2"></i>{{ venta.mesero.get_full_name|default:venta.mesero.username }}
+                </div>
+                <div>
+                  <i class="fas fa-shopping-cart me-2"></i>
+                  {{ detalles|length }} productos + {{ combos_en_venta|length }} combos
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPCIONES DE PAGO MEJORADAS -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h5 class="mb-3">
+        <i class="fas fa-credit-card me-2 text-primary"></i>Opciones de Pago
+      </h5>
+      <div class="row g-3">
+        <!-- Pago Simple -->
+        <div class="col-lg-4">
+          <div class="card h-100 border-0 shadow-sm payment-card">
+            <div class="card-header bg-success bg-opacity-10 border-0">
+              <h6 class="mb-0 text-success">
+                <i class="fas fa-check-circle me-2"></i>Pago Simple
+              </h6>
+            </div>
+            <div class="card-body">
+              <form method="POST" action="{% url 'finalizar_venta' venta.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label class="form-label small">Método de pago</label>
+                  <select name="metodo_pago" id="metodo_pago_simple" class="form-select" required>
+                    <option value="efectivo">💵 Efectivo</option>
+                    <option value="transferencia">📱 Transferencia</option>
+                    <option value="credito">💳 Crédito / Fiado</option>
+                  </select>
+                </div>
+                
+                <div id="monto_efectivo_simple" style="display:none;">
+                  <div class="mb-3">
+                    <label class="form-label small">Monto recibido</label>
+                    <input type="number" name="monto_pagado" class="form-control" placeholder="Ingrese el monto" step="0.01">
+                  </div>
+                </div>
+
+                <div id="datos_credito_simple" style="display:none;">
+                  <div class="mb-2">
+                    <label class="form-label small">Nombre del cliente</label>
+                    <input type="text" name="nombre_cliente" class="form-control" placeholder="Nombre completo">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small">Teléfono</label>
+                    <input type="text" name="telefono_cliente" class="form-control" placeholder="Número de contacto">
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 fw-semibold" 
+                        {% if not detalles and not combos_en_venta %}disabled{% endif %}>
+                  <i class="fas fa-check me-2"></i>Finalizar Venta
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pago Compartido -->
+        <div class="col-lg-4">
+          <div class="card h-100 border-0 shadow-sm payment-card">
+            <div class="card-header bg-info bg-opacity-10 border-0">
+              <h6 class="mb-0 text-info">
+                <i class="fas fa-users me-2"></i>Pago Compartido
+              </h6>
+            </div>
+            <div class="card-body d-flex flex-column">
+              <p class="text-muted small flex-grow-1">
+                Permite que varios clientes paguen diferentes partes del total de la cuenta.
+              </p>
+              <a href="{% url 'pago_compartido' venta.id %}" 
+                 class="btn btn-info w-100 fw-semibold"
+                 {% if not detalles and not combos_en_venta %}disabled{% endif %}>
+                <i class="fas fa-users me-2"></i>Dividir Cuenta
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pago Mixto -->
+        <div class="col-lg-4">
+          <div class="card h-100 border-0 shadow-sm payment-card">
+            <div class="card-header bg-warning bg-opacity-10 border-0">
+              <h6 class="mb-0 text-warning">
+                <i class="fas fa-exchange-alt me-2"></i>Pago Mixto
+              </h6>
+            </div>
+            <div class="card-body d-flex flex-column">
+              <p class="text-muted small flex-grow-1">
+                Combina efectivo y transferencia en un solo pago para mayor flexibilidad.
+              </p>
+              <a href="{% url 'pago_mixto' venta.id %}" 
+                 class="btn btn-warning w-100 fw-semibold text-dark"
+                 {% if not detalles and not combos_en_venta %}disabled{% endif %}>
+                <i class="fas fa-exchange-alt me-2"></i>Pago Mixto
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVEGACIÓN -->
+  <div class="text-center">
+    <a href="{% url 'mesas_listar' %}" class="btn btn-secondary btn-lg px-4">
+      <i class="fas fa-arrow-left me-2"></i>Volver a Mesas
+    </a>
   </div>
 </div>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Manejo del selector de método de pago
     const metodoPagoSelect = document.getElementById('metodo_pago_simple');
     const montoEfectivo = document.getElementById('monto_efectivo_simple');
     const datosCredito = document.getElementById('datos_credito_simple');
 
-    metodoPagoSelect.addEventListener('change', function () {
-      if (this.value === 'efectivo') {
-        montoEfectivo.style.display = 'block';
-        datosCredito.style.display = 'none';
-      } else if (this.value === 'transferencia') {
+    if (metodoPagoSelect) {
+      metodoPagoSelect.addEventListener('change', function () {
+        // Ocultar todos primero
         montoEfectivo.style.display = 'none';
         datosCredito.style.display = 'none';
-      } else if (this.value === 'credito') {
-        montoEfectivo.style.display = 'none';
-        datosCredito.style.display = 'block';
-      }
+        
+        // Mostrar según selección
+        if (this.value === 'efectivo') {
+          montoEfectivo.style.display = 'block';
+        } else if (this.value === 'credito') {
+          datosCredito.style.display = 'block';
+        }
+      });
+
+      // Trigger inicial
+      metodoPagoSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Confirmación antes de eliminar items
+    document.querySelectorAll('a[href*="eliminar"]').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        if (!confirm('¿Estás seguro de que quieres eliminar este item?')) {
+          e.preventDefault();
+        }
+      });
     });
 
-    metodoPagoSelect.dispatchEvent(new Event('change'));
+    // Efectos de hover para las tarjetas
+    document.querySelectorAll('.combo-card, .payment-card').forEach(function(card) {
+      card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px)';
+      });
+      
+      card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+      });
+    });
   });
 </script>
+
+<style>
+  /* Gradientes personalizados */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  }
+  
+  .bg-gradient-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+  }
+
+  /* Pestañas modernas */
+  .modern-tabs .nav-link {
+    border: none;
+    background: #f8f9fa;
+    color: #6c757d;
+    margin: 0 0.25rem;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+  }
+  
+  .modern-tabs .nav-link:hover {
+    background: #e9ecef;
+    color: #495057;
+    transform: translateY(-2px);
+  }
+  
+  .modern-tabs .nav-link.active {
+    background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+    color: #212529;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+  }
+
+  /* Tarjetas de combos */
+  .combo-card {
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    overflow: hidden;
+  }
+  
+  .combo-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+  }
+
+  /* Cajas de precios */
+  .price-box {
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  /* Tarjetas de pago */
+  .payment-card {
+    transition: all 0.3s ease;
+    border-radius: 15px;
+  }
+  
+  .payment-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+  }
+
+  /* Tablas responsivas */
+  .table-responsive {
+    border-radius: 0 0 15px 15px;
+  }
+  
+  .table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Animaciones suaves */
+  .card {
+    transition: all 0.3s ease;
+  }
+  
+  .btn {
+    transition: all 0.2s ease;
+  }
+  
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Sombras modernas */
+  .shadow-sm {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important;
+  }
+  
+  .shadow-lg {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+  }
+
+  /* Responsive específico */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    
+    .modern-tabs .nav-link {
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+    }
+    
+    .price-comparison .col-4 {
+      margin-bottom: 0.5rem;
+    }
+    
+    .table {
+      font-size: 0.9rem;
+    }
+    
+    .card-body {
+      padding: 1rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .modern-tabs .nav-link {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.8rem;
+    }
+    
+    .fs-2 {
+      font-size: 1.5rem !important;
+    }
+    
+    .fs-4 {
+      font-size: 1.1rem !important;
+    }
+    
+    .btn-lg {
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+    }
+  }
+
+  /* Estados de botones disabled */
+  .btn:disabled {
+    opacity: 0.6;
+    transform: none !important;
+  }
+
+  /* Mejoras visuales adicionales */
+  .badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+  
+  .form-label {
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .text-muted {
+    color: #6c757d !important;
+  }
+  
+  /* Contenedor principal */
+  .container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+</style>
 
 {% endblock %}

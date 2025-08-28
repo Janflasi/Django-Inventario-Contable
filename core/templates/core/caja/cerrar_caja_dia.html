@@ -1,370 +1,545 @@
 {% extends 'core/base.html' %}
-{% block title %}Cierre de Caja - {{ fecha|date:"d/m/Y" }}{% endblock %}
+{% load static %}
+
+{% block title %}Cierre de Caja - {{ fecha_formateada }}{% endblock %}
 
 {% block content %}
 <style>
-:root {
-  --primary-green: #10b981;
-  --primary-green-dark: #059669;
-  --warning-orange: #f59e0b;
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-600: #4b5563;
-  --gray-800: #1f2937;
-  --gray-900: #111827;
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --radius-xl: 16px;
-}
-
-.cierre-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.cierre-header {
-  background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
-  color: white;
-  padding: 2rem;
-  border-radius: var(--radius-xl);
-  margin-bottom: 2rem;
-  text-align: center;
-  box-shadow: var(--shadow-lg);
-}
-
-.cierre-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.stat-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  text-align: center;
-  border-left: 4px solid var(--primary-green);
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: bold;
-  color: var(--primary-green);
-}
-
-.stat-label {
-  color: var(--gray-600);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.ventas-section, .productos-section {
-  background: white;
-  border-radius: var(--radius-xl);
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: var(--shadow-lg);
-}
-
-.section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--gray-800);
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--gray-200);
-}
-
-.venta-item {
-  border: 1px solid var(--gray-200);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  background: var(--gray-50);
-}
-
-.venta-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.venta-info {
-  font-weight: bold;
-  color: var(--gray-800);
-}
-
-.venta-total {
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: var(--primary-green);
-}
-
-.productos-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.productos-table th {
-  background: var(--gray-100);
-  padding: 0.75rem;
-  text-align: left;
-  font-weight: 600;
-  color: var(--gray-700);
-  border-bottom: 2px solid var(--gray-200);
-}
-
-.productos-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--gray-200);
-}
-
-.productos-table tr:hover {
-  background: var(--gray-50);
-}
-
-.acciones-factura {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin: 2rem 0;
-}
-
-.btn {
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-  box-shadow: var(--shadow-lg);
-}
-
-.btn-generar-factura {
-  background: linear-gradient(135deg, var(--warning-orange), #d97706);
-  color: white;
-}
-
-.btn-generar-factura:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.btn-imprimir {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-}
-
-.btn-imprimir:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: var(--gray-600);
-}
-
-@media (max-width: 768px) {
-  .cierre-container {
-    padding: 1rem;
-  }
-  
-  .venta-header {
-    flex-direction: column;
-    gap: 0.5rem;
-    text-align: center;
-  }
-  
-  .productos-table {
-    font-size: 0.875rem;
-  }
-  
-  .productos-table th,
-  .productos-table td {
-    padding: 0.5rem;
-  }
-  
-  .acciones-factura {
-    flex-direction: column;
-    align-items: center;
-  }
-}
+:root{--primary:#4f46e5;--success:#059669;--warning:#d97706;--danger:#dc2626;--info:#0891b2;--purple:#7c3aed;--gray:#6b7280}
+body{font-size:.9rem;line-height:1.4}
+.cierre-header{background:linear-gradient(135deg,var(--primary),#6366f1);color:white;padding:1rem;border-radius:8px;margin-bottom:1rem;box-shadow:0 2px 12px rgba(79,70,229,.15)}
+.metodo-pago-card{background:white;border-radius:6px;padding:.8rem;box-shadow:0 1px 4px rgba(0,0,0,.1);border-left:3px solid var(--success);margin-bottom:.8rem;transition:all .15s ease}
+.metodo-pago-card:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.metodo-efectivo{border-left-color:var(--success)}
+.metodo-transferencia{border-left-color:var(--primary)}
+.metodo-credito{border-left-color:var(--warning)}
+.metodo-mixto{border-left-color:var(--purple)}
+.metodo-compartido{border-left-color:var(--info)}
+.cuadre-perfecto{background:linear-gradient(135deg,var(--success),#047857);color:white}
+.cuadre-error{background:linear-gradient(135deg,var(--danger),#b91c1c);color:white}
+.stat-number{font-size:1.4rem;font-weight:600;line-height:1;margin:0}
+.stat-label{font-size:.7rem;opacity:.8;text-transform:uppercase;letter-spacing:.3px;margin-top:.2rem}
+.bg-purple{background-color:var(--purple)!important}
+.text-purple{color:var(--purple)!important}
+.border-purple{border-color:var(--purple)!important}
+.card{border:1px solid #e5e7eb;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:all .15s ease}
+.card:hover{box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.card-body{padding:.8rem}
+.badge{font-size:.7rem;padding:.25rem .5rem;border-radius:4px}
+.table{font-size:.85rem;margin-bottom:0}
+.table th{border-top:0;font-weight:500;background:#f9fafb;padding:.6rem .8rem;font-size:.8rem}
+.table td{padding:.6rem .8rem}
+.btn{border-radius:5px;font-weight:500;font-size:.85rem}
+.btn-lg{padding:.6rem 1.2rem;font-size:.9rem}
+.btn-sm{padding:.3rem .6rem;font-size:.75rem}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.8rem;margin-bottom:1rem}
+.stats-grid .card{padding:.6rem;text-align:center}
+.stats-grid .card h5{font-size:1.1rem;margin-bottom:.2rem}
+.stats-grid .card small{font-size:.7rem;color:var(--gray)}
+details summary{cursor:pointer;color:var(--primary);font-size:.8rem;font-weight:500;padding:.3rem 0}
+details summary:hover{text-decoration:underline}
+.collapse-content{background:#f8fafc;padding:.8rem;border-radius:4px;margin-top:.3rem;font-size:.8rem}
+h3{font-size:1.2rem;margin-bottom:.8rem}
+h5{font-size:1rem}
+h6{font-size:.9rem}
+.container-fluid{padding:1rem}
+.mb-4{margin-bottom:1rem!important}
+.mb-3{margin-bottom:.8rem!important}
+@media(max-width:768px){.stat-number{font-size:1.2rem}.cierre-header{padding:.8rem}.btn-group{flex-direction:column;width:100%}.btn-group .btn{margin-bottom:.4rem;border-radius:5px!important}.container-fluid{padding:.8rem}.stats-grid{grid-template-columns:repeat(2,1fr);gap:.6rem}}
+@media(max-width:576px){.container-fluid{padding:.6rem}.stat-number{font-size:1rem}.table-responsive{font-size:.75rem}.stats-grid{grid-template-columns:1fr}.card-body{padding:.6rem}.metodo-pago-card{padding:.6rem}}
+@media print{.no-print{display:none!important}body{background:white;font-size:.8rem}.card{box-shadow:none;border:1px solid #ccc}.cierre-header{background:var(--primary)!important}.btn{display:none}.table{font-size:.75rem}}
 </style>
 
-<div class="cierre-container">
-  <!-- Header -->
-  <div class="cierre-header">
-    <h1>📊 Cierre de Caja</h1>
-    <p>{{ bartender|title }} - {{ fecha|date:"d/m/Y" }}</p>
-  </div>
-
-  <!-- Estadísticas Generales -->
-  <div class="cierre-stats">
-    <div class="stat-card">
-      <div class="stat-number">{{ total_ventas }}</div>
-      <div class="stat-label">Ventas Realizadas</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-number">{{ total_productos }}</div>
-      <div class="stat-label">Productos Vendidos</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-number">${{ total|floatformat:0 }}</div>
-      <div class="stat-label">Total del Día (COP)</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-number">${{ promedio_venta|floatformat:0 }}</div>
-      <div class="stat-label">Promedio por Venta</div>
-    </div>
-  </div>
-
-  <!-- Acciones principales -->
-  <div class="acciones-factura">
-    <a href="{% url 'generar_factura_html' %}" class="btn btn-generar-factura" target="_blank">
-      📄 Ver Factura Completa
-    </a>
-    <button onclick="window.print()" class="btn btn-imprimir">
-      🖨️ Imprimir Esta Página
-    </button>
-  </div>
-
-  {% if ventas %}
-    <!-- Resumen de Ventas -->
-    <div class="ventas-section">
-      <h2 class="section-title">🧾 Resumen de Ventas</h2>
-      {% for venta in ventas %}
-        <div class="venta-item">
-          <div class="venta-header">
-            <div class="venta-info">
-              <strong>Venta #{{ venta.id }}</strong> - 
-              {% if venta.mesa %}Mesa {{ venta.mesa.numero }}{% else %}Sin Mesa{% endif %} - 
-              {{ venta.hora }} - {{ venta.metodo_pago }}
+<div class="container-fluid px-4">
+    <!-- HEADER PRINCIPAL -->
+    <div class="cierre-header text-center">
+        <div class="row align-items-center g-3">
+            <div class="col-md-3 col-6">
+                <div class="stat-number">{{ total_ventas }}</div>
+                <div class="stat-label">Ventas del día</div>
             </div>
-            <div class="venta-total">${{ venta.total|floatformat:0 }} COP</div>
-          </div>
-          
-          {% if venta.detalles %}
-            <table class="productos-table">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Cantidad</th>
-                  <th>Precio Unit.</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for detalle in venta.detalles %}
-                  <tr>
-                    <td>{{ detalle.nombre }}</td>
-                    <td>{{ detalle.cantidad }}</td>
-                    <td>${{ detalle.precio_unitario|floatformat:0 }}</td>
-                    <td>${{ detalle.subtotal|floatformat:0 }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          {% endif %}
+            <div class="col-md-6 col-12 order-first order-md-0">
+                <h1 class="h3 mb-1">Cierre de Caja</h1>
+                <h2 class="h5 mb-1">{{ fecha_formateada }}</h2>
+                <p class="mb-0 small">Bartender: <strong>{{ bartender }}</strong> | Hora: {{ hora_actual }}</p>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-number">{{ total_formateado }}</div>
+                <div class="stat-label">Total Vendido</div>
+            </div>
         </div>
-      {% endfor %}
     </div>
 
-    <!-- Detalle Completo de Productos -->
-    <div class="productos-section">
-      <h2 class="section-title">📦 Detalle de Todos los Productos Vendidos</h2>
-      {% if productos_vendidos %}
-        <table class="productos-table">
-          <thead>
-            <tr>
-              <th>Hora</th>
-              <th>Mesa</th>
-              <th>Producto</th>
-              <th>Cantidad</th>
-              <th>Precio Unit.</th>
-              <th>Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for producto in productos_vendidos %}
-              <tr>
-                <td><strong>{{ producto.hora }}</strong></td>
-                <td>{{ producto.mesa_numero }}</td>
-                <td>{{ producto.producto }}</td>
-                <td>{{ producto.cantidad }}</td>
-                <td>${{ producto.precio_unitario|floatformat:0 }}</td>
-                <td>${{ producto.subtotal|floatformat:0 }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <div class="empty-state">
-          <p>No se encontraron productos vendidos</p>
+    <!-- VERIFICACIÓN DE CUADRE -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card {% if cuadra_perfecto %}cuadre-perfecto{% else %}cuadre-error{% endif %}">
+                <div class="card-body text-center py-3">
+                    {% if cuadra_perfecto %}
+                        <h3><i class="fas fa-check-circle me-2"></i>TODO CUADRA PERFECTAMENTE</h3>
+                        <p class="mb-0">El total vendido ({{ total_formateado }}) coincide exactamente con la suma de todos los métodos de pago ({{ total_por_metodos_formateado }})</p>
+                    {% else %}
+                        <h3><i class="fas fa-exclamation-triangle me-2"></i>DIFERENCIA DETECTADA</h3>
+                        <p class="mb-0">
+                            Total vendido: {{ total_formateado }} | 
+                            Suma de métodos: {{ total_por_metodos_formateado }} | 
+                            Diferencia: {{ diferencia_formateada }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-      {% endif %}
     </div>
 
-  {% else %}
-    <!-- Estado Vacío -->
-    <div class="ventas-section">
-      <div class="empty-state">
-        <h3>🤷‍♂️ No hay ventas registradas</h3>
-        <p>No se encontraron ventas para el día {{ fecha|date:"d/m/Y" }}</p>
-        <p>Verifica que hayas realizado ventas como bartender hoy.</p>
-      </div>
+    <!-- DESGLOSE POR MÉTODO DE PAGO -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-4"><i class="fas fa-credit-card me-2"></i>Desglose por Método de Pago</h3>
+        </div>
+        
+        {% for metodo, datos in metodos_pago.items %}
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="metodo-pago-card metodo-{{ metodo }}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="mb-0 h6">
+                        {% if metodo == 'efectivo' %}
+                            <i class="fas fa-money-bill-wave text-success me-2"></i>Efectivo
+                        {% elif metodo == 'transferencia' %}
+                            <i class="fas fa-university text-primary me-2"></i>Transferencia
+                        {% elif metodo == 'credito' %}
+                            <i class="fas fa-credit-card text-warning me-2"></i>Crédito/Fiado
+                        {% elif metodo == 'mixto' %}
+                            <i class="fas fa-exchange-alt text-purple me-2"></i>Pago Mixto
+                        {% elif metodo == 'compartido' %}
+                            <i class="fas fa-users text-info me-2"></i>Pago Compartido
+                        {% endif %}
+                    </h5>
+                    <span class="badge bg-secondary">{{ datos.porcentaje }}%</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-end mb-2">
+                    <div>
+                        <div class="stat-number text-dark">{{ datos.total_formateado }}</div>
+                        <small class="text-muted">Promedio: {{ datos.promedio_formateado }}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">{{ datos.cantidad }} ventas</div>
+                    </div>
+                </div>
+                
+                {% if datos.ventas %}
+                <details class="mt-3">
+                    <summary>Ver detalle de ventas</summary>
+                    <div class="mt-2">
+                        {% for venta in datos.ventas %}
+                        <div class="d-flex justify-content-between small border-bottom py-1">
+                            <span>Mesa {{ venta.mesa }} ({{ venta.hora }})</span>
+                            <span>${{ venta.total|floatformat:0|add:","|cut:" "|add:"." }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i>No hay ventas registradas para el día de hoy
+            </div>
+        </div>
+        {% endfor %}
     </div>
-  {% endif %}
+
+    <!-- RESUMEN DE EFECTIVO REAL -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-4"><i class="fas fa-cash-register me-2"></i>Resumen de Efectivo Real</h3>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-money-bill-wave fa-2x text-success mb-2"></i>
+                    <h4 class="text-success">{{ efectivo_real_formateado }}</h4>
+                    <p class="mb-0 small">Efectivo Recibido</p>
+                    <small class="text-muted">(Incluyendo vueltos)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-university fa-2x text-primary mb-2"></i>
+                    <h4 class="text-primary">{{ transferencias_reales_formateado }}</h4>
+                    <p class="mb-0 small">Transferencias</p>
+                    <small class="text-muted">(Pagos digitales)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <i class="fas fa-credit-card fa-2x text-warning mb-2"></i>
+                    <h4 class="text-warning">{{ deudas_generadas_formateado }}</h4>
+                    <p class="mb-0 small">Deudas Generadas</p>
+                    <small class="text-muted">(Por cobrar)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-calculator fa-2x text-info mb-2"></i>
+                    <h4 class="text-info">{{ total_formateado }}</h4>
+                    <p class="mb-0 small">Total General</p>
+                    <small class="text-muted">(Suma de todo)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ESTADÍSTICAS ADICIONALES -->
+    <div class="stats-grid mb-4">
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="text-primary mb-0">{{ total_productos_vendidos }}</h5>
+                <small>Productos Vendidos</small>
+            </div>
+        </div>
+        
+        {% if total_combos_vendidos > 0 %}
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="text-success mb-0">{{ total_combos_vendidos }}</h5>
+                <small>Combos Vendidos</small>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="text-info mb-0">${{ promedio_venta|floatformat:0|add:","|cut:" "|add:"." }}</h5>
+                <small>Promedio por Venta</small>
+            </div>
+        </div>
+        
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="text-success mb-0">${{ venta_mas_alta|floatformat:0|add:","|cut:" "|add:"." }}</h5>
+                <small>Venta Más Alta</small>
+            </div>
+        </div>
+        
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="text-warning mb-0">${{ venta_mas_baja|floatformat:0|add:","|cut:" "|add:"." }}</h5>
+                <small>Venta Más Baja</small>
+            </div>
+        </div>
+        
+        <div class="card text-center">
+            <div class="card-body py-3">
+                <h5 class="text-primary mb-0">{{ metodo_mas_usado|capfirst }}</h5>
+                <small>Método Más Usado</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETALLE DE VENTAS -->
+    {% if ventas %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-receipt me-2"></i>Detalle de Ventas ({{ total_ventas }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Mesa</th>
+                                    <th>Total</th>
+                                    <th>Método de Pago</th>
+                                    <th>Productos</th>
+                                    <th class="no-print">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venta in ventas %}
+                                <tr>
+                                    <td>{{ venta.hora }}</td>
+                                    <td>
+                                        <i class="fas fa-table me-1"></i>
+                                        {% if venta.mesa %}
+                                            Mesa {{ venta.mesa.numero }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-bold text-success">{{ venta.total_formateado }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if venta.metodo_pago_codigo == 'efectivo' %}success{% elif venta.metodo_pago_codigo == 'transferencia' %}primary{% elif venta.metodo_pago_codigo == 'credito' %}warning{% elif venta.metodo_pago_codigo == 'mixto' %}purple{% else %}info{% endif %}">
+                                            {{ venta.metodo_pago }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#venta-{{ venta.id }}" aria-expanded="false">
+                                            <i class="fas fa-eye me-1"></i>Ver Productos ({{ venta.detalles|length }}{% if venta.combos %}+{{ venta.combos|length }}C{% endif %})
+                                        </button>
+                                    </td>
+                                    <td class="no-print">
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="imprimirVenta({{ venta.id }})">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="venta-{{ venta.id }}">
+                                    <td colspan="6">
+                                        <div class="bg-light p-3 rounded">
+                                            <h6 class="fw-bold mb-3">Detalle de la Venta #{{ venta.id }}</h6>
+                                            
+                                            {% if venta.detalles %}
+                                            <h6 class="text-primary"><i class="fas fa-box me-2"></i>Productos Individuales:</h6>
+                                            <div class="table-responsive mb-3">
+                                                <table class="table table-sm">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Producto</th>
+                                                            <th>Cantidad</th>
+                                                            <th>Precio Unit.</th>
+                                                            <th>Subtotal</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for detalle in venta.detalles %}
+                                                        <tr>
+                                                            <td>{{ detalle.nombre }}</td>
+                                                            <td>{{ detalle.cantidad }}</td>
+                                                            <td>${{ detalle.precio_unitario|floatformat:0|add:","|cut:" "|add:"." }}</td>
+                                                            <td class="fw-bold">${{ detalle.subtotal|floatformat:0|add:","|cut:" "|add:"." }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if venta.combos %}
+                                            <h6 class="text-success"><i class="fas fa-gift me-2"></i>Combos/Promociones:</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Combo</th>
+                                                            <th>Cantidad</th>
+                                                            <th>Precio Unit.</th>
+                                                            <th>Subtotal</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for combo in venta.combos %}
+                                                        <tr>
+                                                            <td>
+                                                                <i class="fas fa-gift text-success me-1"></i>
+                                                                {{ combo.nombre }}
+                                                            </td>
+                                                            <td>{{ combo.cantidad }}</td>
+                                                            <td>${{ combo.precio_unitario|floatformat:0|add:","|cut:" "|add:"." }}</td>
+                                                            <td class="fw-bold text-success">${{ combo.subtotal|floatformat:0|add:","|cut:" "|add:"." }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ACCIONES RÁPIDAS -->
+    <div class="row mt-4 no-print">
+        <div class="col-12 text-center">
+            <div class="btn-group flex-wrap" role="group">
+                <button type="button" class="btn btn-primary btn-lg" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Imprimir Cierre
+                </button>
+                
+                <a href="{% url 'generar_factura_html' %}" class="btn btn-success btn-lg" target="_blank">
+                    <i class="fas fa-file-invoice me-2"></i>Generar Factura
+                </a>
+                
+                <a href="{% url 'inicio' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- INFORMACIÓN DE CONTACTO (PARA IMPRESIÓN) -->
+    <div class="row mt-4 d-none d-print-block">
+        <div class="col-12 text-center">
+            <hr>
+            <h5>Mi Bar & Restaurant</h5>
+            <p>
+                Tu dirección aquí<br>
+                Tu teléfono aquí<br>
+                Tu email aquí
+            </p>
+            <small>Cierre generado el {{ fecha_formateada }} a las {{ hora_actual }}</small>
+        </div>
+    </div>
 </div>
+
+<!-- MODAL PARA DIFERENCIAS -->
+{% if not cuadra_perfecto %}
+<div class="modal fade" id="modalDiferencia" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Diferencia Detectada
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Se ha detectado una diferencia en el cierre:</strong></p>
+                <ul>
+                    <li>Total vendido: <strong>{{ total_formateado }}</strong></li>
+                    <li>Suma de métodos de pago: <strong>{{ total_por_metodos_formateado }}</strong></li>
+                    <li>Diferencia: <strong class="text-danger">{{ diferencia_formateada }}</strong></li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <h6>Posibles causas:</h6>
+                    <ul class="mb-0">
+                        <li>Venta con método de pago no registrado correctamente</li>
+                        <li>Pago mixto o compartido mal calculado</li>
+                        <li>Error en el registro de vueltos</li>
+                        <li>Venta cancelada sin revertir el método de pago</li>
+                    </ul>
+                </div>
+                
+                <p><strong>Se recomienda:</strong></p>
+                <ul>
+                    <li>Revisar cada venta del día</li>
+                    <li>Verificar los métodos de pago registrados</li>
+                    <li>Contactar al administrador si la diferencia es significativa</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Entendido</button>
+                <button type="button" class="btn btn-primary" onclick="contactarAdmin()">Contactar Admin</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Animar las estadísticas
-  const statNumbers = document.querySelectorAll('.stat-number');
-  statNumbers.forEach(stat => {
-    const target = parseInt(stat.textContent.replace(/[^0-9]/g, ''));
-    if (target > 0) {
-      let current = 0;
-      const increment = target / 30;
-      const timer = setInterval(() => {
-        current += increment;
-        if (current >= target) {
-          current = target;
-          clearInterval(timer);
-        }
-        if (stat.textContent.includes('COP')) {
-          stat.textContent = `${Math.floor(current)} COP`;
-        } else {
-          stat.textContent = Math.floor(current);
-        }
-      }, 50);
-    }
-  });
-
-  // Resaltar filas al hacer hover
-  const tableRows = document.querySelectorAll('.productos-table tbody tr');
-  tableRows.forEach(row => {
-    row.addEventListener('mouseenter', function() {
-      this.style.backgroundColor = '#f3f4f6';
-      this.style.transform = 'scale(1.01)';
-      this.style.transition = 'all 0.2s ease';
-    });
+    {% if not cuadra_perfecto %}
+    // Mostrar modal de diferencia automáticamente
+    var modalDiferencia = new bootstrap.Modal(document.getElementById('modalDiferencia'));
+    modalDiferencia.show();
+    {% endif %}
     
-    row.addEventListener('mouseleave', function() {
-      this.style.backgroundColor = '';
-      this.style.transform = 'scale(1)';
-    });
-  });
+    // Actualizar cada 30 segundos (opcional)
+    // setInterval(actualizarDatos, 30000);
 });
+
+function imprimirVenta(ventaId) {
+    // Función para imprimir venta individual
+    var ventaDetalle = document.getElementById('venta-' + ventaId);
+    if (ventaDetalle) {
+        var contenido = ventaDetalle.innerHTML;
+        var ventanaImpresion = window.open('', '_blank');
+        ventanaImpresion.document.write(`
+            <html>
+                <head>
+                    <title>Venta #${ventaId}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+                        .fw-bold { font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <h2>Detalle de Venta #${ventaId}</h2>
+                    ${contenido}
+                </body>
+            </html>
+        `);
+        ventanaImpresion.document.close();
+        ventanaImpresion.print();
+    }
+}
+
+function exportarCSV() {
+    // Función para exportar datos a CSV
+    var csv = 'Hora,Mesa,Total,Método de Pago,Productos\n';
+    
+    {% for venta in ventas %}
+    csv += '{{ venta.hora }},';
+    csv += '{% if venta.mesa %}Mesa {{ venta.mesa.numero }}{% else %}N/A{% endif %},';
+    csv += '{{ venta.total }},';
+    csv += '{{ venta.metodo_pago }},';
+    csv += '{{ venta.detalles|length }}{% if venta.combos %}+{{ venta.combos|length }}C{% endif %}\n';
+    {% endfor %}
+    
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'cierre_caja_{{ fecha_formateada }}.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function contactarAdmin() {
+    // Función para contactar al administrador
+    alert('Contacta al administrador para revisar la diferencia de {{ diferencia_formateada }}');
+    // Aquí puedes agregar lógica para enviar notificación al admin
+}
+
+function actualizarDatos() {
+    // Función para actualizar datos en tiempo real (opcional)
+    fetch(window.location.href)
+        .then(response => response.text())
+        .then(html => {
+            // Actualizar solo las partes necesarias
+            console.log('Datos actualizados');
+        })
+        .catch(error => console.error('Error actualizando datos:', error));
+}
+
+// Función para formatear números como moneda colombiana
+function formatearPeso(numero) {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(numero).replace('COP', '').trim();
+}
 </script>
 {% endblock %}

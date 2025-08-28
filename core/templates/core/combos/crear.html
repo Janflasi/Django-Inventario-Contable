@@ -1,0 +1,887 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px 12px 0 0;
+        margin: -2rem -2rem 2rem -2rem;
+    }
+    
+    .form-section {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        background: #f8f9fa;
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .productos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .producto-card {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1rem;
+        background: white;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .producto-card:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .producto-card.selected {
+        border-color: #28a745;
+        background: #f8fff8;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+    }
+    
+    .cantidad-selector {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        width: 60px;
+        text-align: center;
+        font-size: 0.9rem;
+        padding: 0.25rem;
+    }
+    
+    .productos-seleccionados {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        border: 2px dashed #28a745;
+        display: none;
+    }
+    
+    /* 🔥 NUEVO: Estilos para asistente de precios */
+    .precio-asistente {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    
+    .precio-asistente:hover {
+        background: linear-gradient(45deg, #218838, #1e7e6e);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .resumen-productos {
+        background: #e3f2fd;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        display: none;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'productos_listar' %}">Inventario</a></li>
+            <li class="breadcrumb-item active">{{ titulo }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Formulario Principal -->
+        <div class="col-lg-8">
+            <div class="form-container">
+                <!-- Header -->
+                <div class="form-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-gift"></i> {{ titulo }}
+                    </h3>
+                    <p class="mb-0 opacity-75">Crea un nuevo combo seleccionando productos y estableciendo el precio manualmente</p>
+                </div>
+
+                <form method="post" enctype="multipart/form-data" id="comboForm">
+                    {% csrf_token %}
+                    
+                    <!-- Información Básica -->
+                    <div class="form-section">
+                        <h5 class="section-title">
+                            <i class="fas fa-info-circle text-primary"></i>
+                            Información Básica
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="nombre" name="nombre" 
+                                           placeholder="Nombre del combo" required onchange="validarFormulario()">
+                                    <label for="nombre" class="required-field">Nombre del Combo</label>
+                                </div>
+                                <div class="help-text">Ej: "Combo Familiar", "Promo 2x1 Cervezas"</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="form-floating">
+                                    <select class="form-select" id="tipo_combo" name="tipo_combo" required>
+                                        <option value="combo">Combo Regular</option>
+                                        <option value="promocion">Promoción</option>
+                                        <option value="oferta">Oferta Especial</option>
+                                        <option value="pack">Pack de Productos</option>
+                                    </select>
+                                    <label for="tipo_combo">Tipo de Combo</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="descripcion" name="descripcion" 
+                                          placeholder="Descripción del combo" style="height: 100px"></textarea>
+                                <label for="descripcion">Descripción</label>
+                            </div>
+                            <div class="help-text">Describe qué incluye el combo y por qué es especial</div>
+                        </div>
+                    </div>
+
+                    <!-- Selección de Productos -->
+                    <div class="form-section">
+                        <h5 class="section-title">
+                            <i class="fas fa-box text-warning"></i>
+                            Seleccionar Productos del Combo
+                        </h5>
+                        
+                        <!-- Grid de Productos -->
+                        <div class="productos-grid" id="productos-grid">
+                            {% for producto in productos_disponibles %}
+                                {% if producto.cantidad > 0 %}
+                                <div class="producto-card" 
+                                     data-producto-id="{{ producto.id }}"
+                                     data-precio="{{ producto.precio }}"
+                                     onclick="seleccionarProducto(this)">
+                                     
+                                    <input type="number" class="cantidad-selector" 
+                                           min="1" max="{{ producto.cantidad }}" value="1"
+                                           onclick="event.stopPropagation()">
+                                    
+                                    <div class="row align-items-center">
+                                        <div class="col-3">
+                                            {% if producto.imagen %}
+                                                <img src="{{ producto.imagen.url }}" 
+                                                     alt="{{ producto.nombre }}" 
+                                                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                                            {% else %}
+                                                <div style="width: 60px; height: 60px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                                    <i class="fas fa-box"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-9">
+                                            <h6 class="mb-1">{{ producto.nombre }}</h6>
+                                            <div class="small text-muted mb-1">
+                                                {% if producto.categoria %}
+                                                    <i class="fas fa-tag"></i> {{ producto.categoria.nombre }}
+                                                {% endif %}
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="fw-bold text-success">
+                                                    ${{ producto.precio|floatformat:0 }}
+                                                </span>
+                                                <span class="badge bg-primary">
+                                                    Stock: {{ producto.cantidad }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% empty %}
+                                <div class="text-center py-4 col-12">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No hay productos disponibles</h5>
+                                    <p class="text-muted">Agrega productos al inventario primero</p>
+                                    <a href="{% url 'producto_crear' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Agregar Producto
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Productos Seleccionados -->
+                        <div class="productos-seleccionados" id="productos-seleccionados">
+                            <h6 class="mb-3">
+                                <i class="fas fa-check-circle text-success"></i>
+                                Productos Seleccionados (<span id="contador-productos">0</span>)
+                            </h6>
+                            <div id="lista-seleccionados"></div>
+                        </div>
+                        
+                        <!-- 🔥 NUEVO: Resumen de productos para el asistente -->
+                        <div class="resumen-productos" id="resumen-productos">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Precio Individual Total</h6>
+                                    <p class="mb-0 text-muted">Suma de todos los productos seleccionados</p>
+                                </div>
+                                <div class="text-end">
+                                    <h4 class="mb-0 text-primary">$<span id="precio-individual-total">0</span></h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🔥 SECCIÓN DE PRECIO COMPLETAMENTE RENOVADA -->
+                    <div class="form-section">
+                        <h5 class="section-title">
+                            <i class="fas fa-dollar-sign text-success"></i>
+                            Configuración de Precio Manual
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control" id="precio_combo" name="precio_combo" 
+                                           placeholder="0" min="0" step="100" required>
+                                    <label for="precio_combo" class="required-field">Precio del Combo (COP)</label>
+                                </div>
+                                <div class="help-text">
+                                    <strong>Tú estableces el precio.</strong> El sistema NO lo calcula automáticamente.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3 d-flex align-items-end">
+                                <button type="button" class="btn precio-asistente w-100" id="btn-asistente" onclick="abrirAsistentePrecios()" disabled>
+                                    <i class="fas fa-robot"></i> Asistente de Precios
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 🔥 INFORMACIÓN DEL PRECIO ESTABLECIDO -->
+                        <div id="info-precio" class="alert alert-info" style="display: none;">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="h6 mb-0">Precio Individual</div>
+                                    <div class="h5 mb-0 text-muted">$<span id="precio-individual-display">0</span></div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="h6 mb-0">Precio Combo</div>
+                                    <div class="h5 mb-0 text-primary">$<span id="precio-combo-display">0</span></div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="h6 mb-0"><span id="tipo-diferencia">Diferencia</span></div>
+                                    <div class="h5 mb-0" id="diferencia-display">$0</div>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-center">
+                                <small id="mensaje-rentabilidad"></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vigencia e Imagen -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-calendar text-info"></i>
+                                    Vigencia (Opcional)
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
+                                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio">
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label for="fecha_fin" class="form-label">Fecha de Fin</label>
+                                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-image text-warning"></i>
+                                    Imagen del Combo
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    <label for="imagen" class="form-label">Subir Imagen</label>
+                                    <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*">
+                                    <div class="form-text">
+                                        Formatos permitidos: JPG, PNG, WebP. Tamaño máximo: 5MB.
+                                    </div>
+                                </div>
+                                
+                                <!-- Preview de imagen -->
+                                <div id="imagen-preview" class="mt-3" style="display: none;">
+                                    <img id="preview-img" src="" alt="Vista previa" 
+                                         style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #dee2e6;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campo oculto para productos seleccionados -->
+                    <input type="hidden" id="productos-seleccionados-data" name="productos_seleccionados" value="">
+
+                    <!-- Botones -->
+                    <div class="d-flex gap-3 justify-content-end mt-4">
+                        <a href="{% url 'productos_listar' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="btn-crear-combo" disabled>
+                            <i class="fas fa-save"></i> Crear Combo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Panel Lateral de Ayuda -->
+        <div class="col-lg-4">
+            <div class="form-container">
+                <h6 class="mb-3">
+                    <i class="fas fa-info-circle text-primary"></i> 
+                    Guía Rápida
+                </h6>
+                
+                <div class="alert alert-info">
+                    <h6>📦 Selección de Productos</h6>
+                    <ul class="mb-0 small">
+                        <li>Haz clic en los productos para agregarlos</li>
+                        <li>Ajusta la cantidad con el selector</li>
+                        <li>Solo productos con stock están disponibles</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-success">
+                    <h6>💰 Configuración de Precios</h6>
+                    <ul class="mb-0 small">
+                        <li><strong>Tú estableces el precio manualmente</strong></li>
+                        <li>El sistema NO calcula automáticamente</li>
+                        <li>Usa el "Asistente de Precios" para sugerencias</li>
+                        <li>Descuentos recomendados: 5-10% máximo</li>
+                        <li>También puedes poner precios premium</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6>🤖 Asistente Inteligente</h6>
+                    <ul class="mb-0 small">
+                        <li>Te sugiere estrategias de pricing</li>
+                        <li>Calcula descuentos óptimos</li>
+                        <li>Analiza rentabilidad</li>
+                        <li>¡Pero la decisión final es tuya!</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6>⚡ Consejos de Rentabilidad</h6>
+                    <ul class="mb-0 small">
+                        <li>Combina productos complementarios</li>
+                        <li>Descuentos máximos: 10-15%</li>
+                        <li>Los combos venden conveniencia</li>
+                        <li>Usa nombres atractivos</li>
+                        <li>La imagen es clave</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔥 MODAL DEL ASISTENTE DE PRECIOS -->
+<div class="modal fade" id="modalAsistentePrecios" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-robot"></i> Asistente Inteligente de Precios
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="asistente-loading" class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-3x text-success mb-3"></i>
+                    <h5>Analizando productos y calculando recomendaciones...</h5>
+                </div>
+                
+                <div id="asistente-content" style="display: none;">
+                    <div class="alert alert-info">
+                        <h6>📊 Análisis de tu Combo</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Productos:</strong> <span id="modal-cantidad-productos"></span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Precio Individual Total:</strong> <span id="modal-precio-total"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>💡 Estrategias de Precios Recomendadas</h6>
+                    <div id="recomendaciones-lista" class="row">
+                        <!-- Las recomendaciones se cargan dinámicamente -->
+                    </div>
+                </div>
+                
+                <div id="asistente-error" style="display: none;" class="alert alert-danger">
+                    <h6>❌ Error</h6>
+                    <p id="error-mensaje">No se pudo cargar el asistente de precios</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔥 JAVASCRIPT COMPLETAMENTE RENOVADO -->
+<script>
+// Variables globales
+let productosSeleccionados = {};
+let precioIndividualTotal = 0;
+
+function seleccionarProducto(elemento) {
+    const productoId = elemento.getAttribute('data-producto-id');
+    const precio = parseFloat(elemento.getAttribute('data-precio'));
+    const nombre = elemento.querySelector('h6').textContent;
+    const cantidad = parseInt(elemento.querySelector('.cantidad-selector').value);
+    
+    console.log('Seleccionando producto:', nombre, precio, cantidad);
+    
+    if (elemento.classList.contains('selected')) {
+        // Deseleccionar
+        delete productosSeleccionados[productoId];
+        elemento.classList.remove('selected');
+    } else {
+        // Seleccionar
+        productosSeleccionados[productoId] = {
+            id: productoId,
+            nombre: nombre,
+            precio: precio,
+            cantidad: cantidad
+        };
+        elemento.classList.add('selected');
+    }
+    
+    actualizarVista();
+}
+
+function actualizarVista() {
+    const contador = document.getElementById('contador-productos');
+    const lista = document.getElementById('lista-seleccionados');
+    const containerSeleccionados = document.getElementById('productos-seleccionados');
+    const containerResumen = document.getElementById('resumen-productos');
+    
+    const cantidad = Object.keys(productosSeleccionados).length;
+    contador.textContent = cantidad;
+    
+    if (cantidad > 0) {
+        containerSeleccionados.style.display = 'block';
+        containerResumen.style.display = 'block';
+        
+        // 🔥 CALCULAR PRECIO INDIVIDUAL TOTAL (SOLO PARA INFORMACIÓN)
+        precioIndividualTotal = 0;
+        Object.values(productosSeleccionados).forEach(producto => {
+            precioIndividualTotal += producto.precio * producto.cantidad;
+        });
+        
+        // Mostrar en el resumen
+        document.getElementById('precio-individual-total').textContent = precioIndividualTotal.toLocaleString('es-CO');
+        
+        // Mostrar productos seleccionados
+        let html = '';
+        Object.values(productosSeleccionados).forEach(producto => {
+            const subtotal = (producto.precio * producto.cantidad);
+            html += `
+                <div style="background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${producto.nombre}</strong>
+                        <small style="display: block; color: #6c757d;">Cantidad: ${producto.cantidad}</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: bold; color: #28a745;">$${subtotal.toLocaleString('es-CO')}</div>
+                        <button type="button" onclick="removerProducto('${producto.id}')" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        lista.innerHTML = html;
+        
+        // 🔥 HABILITAR ASISTENTE DE PRECIOS
+        document.getElementById('btn-asistente').disabled = false;
+        
+    } else {
+        containerSeleccionados.style.display = 'none';
+        containerResumen.style.display = 'none';
+        document.getElementById('btn-asistente').disabled = true;
+        document.getElementById('info-precio').style.display = 'none';
+    }
+    
+    // Actualizar campo oculto
+    document.getElementById('productos-seleccionados-data').value = JSON.stringify(productosSeleccionados);
+    
+    // 🔥 ACTUALIZAR INFORMACIÓN DE PRECIO SI YA SE ESTABLECIÓ
+    actualizarInfoPrecio();
+    
+    // Validar formulario
+    validarFormulario();
+}
+
+function actualizarInfoPrecio() {
+    const precioComboInput = document.getElementById('precio_combo');
+    const precioCombo = parseFloat(precioComboInput.value) || 0;
+    
+    if (precioCombo > 0 && precioIndividualTotal > 0) {
+        const infoDiv = document.getElementById('info-precio');
+        
+        // Mostrar información
+        document.getElementById('precio-individual-display').textContent = precioIndividualTotal.toLocaleString('es-CO');
+        document.getElementById('precio-combo-display').textContent = precioCombo.toLocaleString('es-CO');
+        
+        // Calcular diferencia
+        const diferencia = precioCombo - precioIndividualTotal;
+        const difereniaAbs = Math.abs(diferencia);
+        const porcentaje = (difereniaAbs / precioIndividualTotal) * 100;
+        
+        if (diferencia < 0) {
+            // Es descuento
+            document.getElementById('tipo-diferencia').textContent = 'Descuento';
+            document.getElementById('diferencia-display').textContent = `${porcentaje.toFixed(1)}%`;
+            document.getElementById('diferencia-display').className = 'h5 mb-0 text-success';
+            
+            if (porcentaje > 15) {
+                document.getElementById('mensaje-rentabilidad').innerHTML = '<strong style="color: #dc3545;">⚠️ Descuento muy alto - Revisar rentabilidad</strong>';
+            } else if (porcentaje > 10) {
+                document.getElementById('mensaje-rentabilidad').innerHTML = '<strong style="color: #fd7e14;">⚠️ Descuento alto - Atractivo pero verificar márgenes</strong>';
+            } else {
+                document.getElementById('mensaje-rentabilidad').innerHTML = '<strong style="color: #28a745;">✅ Descuento moderado - Atractivo y rentable</strong>';
+            }
+        } else if (diferencia > 0) {
+            // Es recargo
+            document.getElementById('tipo-diferencia').textContent = 'Premium';
+            document.getElementById('diferencia-display').textContent = `+${porcentaje.toFixed(1)}%`;
+            document.getElementById('diferencia-display').className = 'h5 mb-0 text-info';
+            document.getElementById('mensaje-rentabilidad').innerHTML = '<strong style="color: #17a2b8;">💰 Precio premium - Muy rentable</strong>';
+        } else {
+            // Igual
+            document.getElementById('tipo-diferencia').textContent = 'Igual';
+            document.getElementById('diferencia-display').textContent = '0%';
+            document.getElementById('diferencia-display').className = 'h5 mb-0 text-secondary';
+            document.getElementById('mensaje-rentabilidad').innerHTML = '<strong style="color: #6c757d;">📊 Precio igual al individual</strong>';
+        }
+        
+        infoDiv.style.display = 'block';
+    } else {
+        document.getElementById('info-precio').style.display = 'none';
+    }
+}
+
+function removerProducto(productoId) {
+    delete productosSeleccionados[productoId];
+    
+    // Quitar selección visual
+    const elemento = document.querySelector(`[data-producto-id="${productoId}"]`);
+    if (elemento) {
+        elemento.classList.remove('selected');
+    }
+    
+    actualizarVista();
+}
+
+function validarFormulario() {
+    const nombre = document.getElementById('nombre').value.trim();
+    const precio = parseFloat(document.getElementById('precio_combo').value) || 0;
+    const tieneProductos = Object.keys(productosSeleccionados).length > 0;
+    
+    const botonCrear = document.getElementById('btn-crear-combo');
+    const valido = nombre.length > 0 && precio > 0 && tieneProductos;
+    
+    console.log('Validando:', {nombre: nombre.length > 0, precio: precio > 0, productos: tieneProductos, valido});
+    
+    botonCrear.disabled = !valido;
+    
+    if (valido) {
+        botonCrear.style.opacity = '1';
+        botonCrear.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    } else {
+        botonCrear.style.opacity = '0.6';
+        botonCrear.style.background = '#6c757d';
+    }
+}
+
+// 🔥 NUEVA FUNCIÓN: Abrir asistente de precios
+function abrirAsistentePrecios() {
+    const modal = new bootstrap.Modal(document.getElementById('modalAsistentePrecios'));
+    modal.show();
+    
+    // Mostrar loading
+    document.getElementById('asistente-loading').style.display = 'block';
+    document.getElementById('asistente-content').style.display = 'none';
+    document.getElementById('asistente-error').style.display = 'none';
+    
+    // Hacer petición al asistente
+    const params = new URLSearchParams({
+        productos: JSON.stringify(productosSeleccionados)
+    });
+    
+    fetch(`{% url 'combo_asistente_precios_api' %}?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarRecomendaciones(data);
+            } else {
+                mostrarErrorAsistente(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error en asistente:', error);
+            mostrarErrorAsistente('Error de conexión con el servidor');
+        });
+}
+
+function mostrarRecomendaciones(data) {
+    // Ocultar loading
+    document.getElementById('asistente-loading').style.display = 'none';
+    document.getElementById('asistente-content').style.display = 'block';
+    
+    // Mostrar análisis
+    document.getElementById('modal-cantidad-productos').textContent = data.analisis.cantidad_productos;
+    document.getElementById('modal-precio-total').textContent = data.analisis.precio_individual_formateado;
+    
+    // Mostrar recomendaciones
+    const lista = document.getElementById('recomendaciones-lista');
+    let html = '';
+    
+    data.recomendaciones.forEach(rec => {
+        const colorClass = rec.color === 'success' ? 'success' : 
+                          rec.color === 'warning' ? 'warning' :
+                          rec.color === 'danger' ? 'danger' :
+                          rec.color === 'info' ? 'info' : 'secondary';
+        
+        const iconoRecomendado = rec.recomendado ? '<i class="fas fa-star text-warning"></i> ' : '';
+        
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card border-${colorClass} ${rec.recomendado ? 'shadow' : ''}">
+                    <div class="card-header bg-${colorClass} text-white d-flex justify-content-between align-items-center">
+                        <span>${iconoRecomendado}${rec.nombre}</span>
+                        <span class="badge bg-white text-${colorClass}">${rec.descuento}%</span>
+                    </div>
+                    <div class="card-body">
+                        <h4 class="card-title text-${colorClass}">${rec.precio_formateado}</h4>
+                        <p class="card-text small">${rec.descripcion}</p>
+                        <button type="button" class="btn btn-outline-${colorClass} btn-sm" 
+                                onclick="aplicarPrecioRecomendado(${rec.precio})">
+                            <i class="fas fa-check"></i> Usar este precio
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    lista.innerHTML = html;
+}
+
+function mostrarErrorAsistente(error) {
+    document.getElementById('asistente-loading').style.display = 'none';
+    document.getElementById('asistente-error').style.display = 'block';
+    document.getElementById('error-mensaje').textContent = error;
+}
+
+function aplicarPrecioRecomendado(precio) {
+    // Aplicar precio al formulario
+    document.getElementById('precio_combo').value = Math.round(precio);
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalAsistentePrecios'));
+    modal.hide();
+    
+    // Actualizar vista
+    actualizarInfoPrecio();
+    validarFormulario();
+    
+    // Mostrar mensaje de confirmación
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-check"></i> Precio aplicado: ${Math.round(precio).toLocaleString('es-CO')}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Preview de imagen
+function mostrarPreviewImagen(input) {
+    const preview = document.getElementById('imagen-preview');
+    const previewImg = document.getElementById('preview-img');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM cargado, inicializando...');
+    
+    // Validar cuando cambien los inputs principales
+    document.getElementById('nombre').addEventListener('input', validarFormulario);
+    
+    // 🔥 EVENTO PARA PRECIO MANUAL (sin cálculo automático)
+    document.getElementById('precio_combo').addEventListener('input', function() {
+        actualizarInfoPrecio();
+        validarFormulario();
+    });
+    
+    // Preview de imagen
+    document.getElementById('imagen').addEventListener('change', function() {
+        mostrarPreviewImagen(this);
+    });
+    
+    // Validar formulario al enviar
+    document.getElementById('comboForm').addEventListener('submit', function(e) {
+        const nombre = document.getElementById('nombre').value.trim();
+        const precio = parseFloat(document.getElementById('precio_combo').value) || 0;
+        const tieneProductos = Object.keys(productosSeleccionados).length > 0;
+        
+        console.log('Enviando formulario:', {nombre, precio, tieneProductos});
+        console.log('Productos seleccionados:', productosSeleccionados);
+        
+        if (!nombre) {
+            e.preventDefault();
+            alert('El nombre del combo es obligatorio');
+            return false;
+        }
+        
+        if (!tieneProductos) {
+            e.preventDefault();
+            alert('Debes seleccionar al menos un producto');
+            return false;
+        }
+        
+        if (precio <= 0) {
+            e.preventDefault();
+            alert('El precio debe ser mayor a cero');
+            return false;
+        }
+        
+        // Actualizar datos antes de enviar
+        document.getElementById('productos-seleccionados-data').value = JSON.stringify(productosSeleccionados);
+        
+        // Mostrar cargando
+        const boton = document.getElementById('btn-crear-combo');
+        boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
+        boton.disabled = true;
+        
+        console.log('Formulario válido, enviando...');
+        return true;
+    });
+    
+    console.log('JavaScript inicializado correctamente');
+});
+</script>
+{% endblock %}

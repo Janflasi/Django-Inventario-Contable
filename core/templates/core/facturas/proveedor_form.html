@@ -1,0 +1,293 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-header {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .form-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .form-section {
+        border-left: 4px solid #20c997;
+        padding-left: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #20c997;
+        box-shadow: 0 0 0 0.2rem rgba(32, 201, 151, 0.25);
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        font-weight: 600;
+    }
+    
+    .btn-cancel {
+        border-radius: 25px;
+        padding: 12px 30px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header del formulario -->
+    <div class="form-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">
+                    <i class="fas fa-{% if proveedor %}edit{% else %}plus{% endif %} me-3"></i>
+                    {{ titulo }}
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb text-white-50">
+                        <li class="breadcrumb-item"><a href="{% url 'facturas_dashboard' %}" class="text-white">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'proveedores_listar' %}" class="text-white">Proveedores</a></li>
+                        <li class="breadcrumb-item active text-white">{{ titulo }}</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% if proveedor %}{% url 'proveedor_detalle' proveedor.pk %}{% else %}{% url 'proveedores_listar' %}{% endif %}" 
+                   class="btn btn-light">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-card">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Información básica -->
+                    <div class="form-section">
+                        <h5 class="text-primary mb-4">
+                            <i class="fas fa-building me-2"></i>
+                            Información Básica
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_nombre" class="form-label">
+                                        Nombre del Proveedor <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                        <div class="text-danger small">{{ form.nombre.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_nit" class="form-label">NIT</label>
+                                    {{ form.nit }}
+                                    {% if form.nit.errors %}
+                                        <div class="text-danger small">{{ form.nit.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información de contacto -->
+                    <div class="form-section">
+                        <h5 class="text-primary mb-4">
+                            <i class="fas fa-address-book me-2"></i>
+                            Información de Contacto
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_email" class="form-label">Email</label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_telefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
+                                    {{ form.telefono }}
+                                    {% if form.telefono.errors %}
+                                        <div class="text-danger small">{{ form.telefono.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_direccion" class="form-label">Dirección</label>
+                                    {{ form.direccion }}
+                                    {% if form.direccion.errors %}
+                                        <div class="text-danger small">{{ form.direccion.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_contacto_principal" class="form-label">Persona de Contacto</label>
+                                    {{ form.contacto_principal }}
+                                    {% if form.contacto_principal.errors %}
+                                        <div class="text-danger small">{{ form.contacto_principal.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuración -->
+                    <div class="form-section">
+                        <h5 class="text-primary mb-4">
+                            <i class="fas fa-cog me-2"></i>
+                            Configuración
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_forma_pago_preferida" class="form-label">Forma de Pago Preferida</label>
+                                    {{ form.forma_pago_preferida }}
+                                    {% if form.forma_pago_preferida.errors %}
+                                        <div class="text-danger small">{{ form.forma_pago_preferida.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        {{ form.activo }}
+                                        <label class="form-check-label" for="id_activo">
+                                            Proveedor Activo
+                                        </label>
+                                    </div>
+                                    <div class="form-text">Los proveedores inactivos no aparecerán en las listas de selección</div>
+                                    {% if form.activo.errors %}
+                                        <div class="text-danger small">{{ form.activo.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-end gap-3">
+                                <a href="{% if proveedor %}{% url 'proveedor_detalle' proveedor.pk %}{% else %}{% url 'proveedores_listar' %}{% endif %}" 
+                                   class="btn btn-outline-secondary btn-cancel">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success btn-save">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if proveedor %}Actualizar Proveedor{% else %}Crear Proveedor{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar campos del formulario
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, textarea, select');
+    
+    // Agregar clases de Bootstrap a todos los campos
+    inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+            input.classList.add('form-check-input');
+        } else if (input.tagName === 'SELECT') {
+            input.classList.add('form-select');
+        } else {
+            input.classList.add('form-control');
+        }
+    });
+    
+    // Validación del formulario
+    form.addEventListener('submit', function(e) {
+        let hasErrors = false;
+        
+        // Validar nombre (campo requerido)
+        const nombre = document.getElementById('id_nombre');
+        if (nombre && !nombre.value.trim()) {
+            nombre.classList.add('is-invalid');
+            hasErrors = true;
+        } else if (nombre) {
+            nombre.classList.remove('is-invalid');
+        }
+        
+        // Validar teléfono (campo requerido)
+        const telefono = document.getElementById('id_telefono');
+        if (telefono && !telefono.value.trim()) {
+            telefono.classList.add('is-invalid');
+            hasErrors = true;
+        } else if (telefono) {
+            telefono.classList.remove('is-invalid');
+        }
+        
+        // Validar email si está presente
+        const email = document.getElementById('id_email');
+        if (email && email.value.trim()) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.value)) {
+                email.classList.add('is-invalid');
+                hasErrors = true;
+            } else {
+                email.classList.remove('is-invalid');
+            }
+        }
+        
+        if (hasErrors) {
+            e.preventDefault();
+            alert('Por favor, corrige los errores en el formulario.');
+        }
+    });
+    
+    // Auto-formateo del teléfono
+    const telefono = document.getElementById('id_telefono');
+    if (telefono) {
+        telefono.addEventListener('input', function() {
+            // Remover caracteres no numéricos excepto + y espacios
+            this.value = this.value.replace(/[^\d\+\s\-\(\)]/g, '');
+        });
+    }
+    
+    // Auto-formateo del NIT
+    const nit = document.getElementById('id_nit');
+    if (nit) {
+        nit.addEventListener('input', function() {
+            // Remover caracteres no numéricos excepto guiones
+            this.value = this.value.replace(/[^\d\-]/g, '');
+        });
+    }
+});
+</script>
+{% endblock %}

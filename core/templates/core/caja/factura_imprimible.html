@@ -1,10 +1,7 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factura - Cierre de Caja - {{ fecha|date:"d/m/Y" }}</title>
-    <style>
+
+
+{% block content %}
+<style>
         /* Estilos para pantalla */
         @media screen {
             body {
@@ -80,6 +77,41 @@
                 background: #4b5563;
                 transform: translateY(-2px);
             }
+
+            /* Estilos para el estado de cuadre */
+            .cuadre-perfecto {
+                background: linear-gradient(135deg, #059669, #047857);
+                color: white;
+                padding: 1rem;
+                border-radius: 8px;
+                margin-bottom: 1rem;
+                text-align: center;
+            }
+
+            .cuadre-error {
+                background: linear-gradient(135deg, #dc2626, #b91c1c);
+                color: white;
+                padding: 1rem;
+                border-radius: 8px;
+                margin-bottom: 1rem;
+                text-align: center;
+            }
+
+            /* Estilos para métodos de pago */
+            .metodo-pago-card {
+                background: white;
+                border-radius: 8px;
+                padding: 1rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid #10b981;
+                margin-bottom: 1rem;
+            }
+
+            .metodo-efectivo { border-left-color: #059669; }
+            .metodo-transferencia { border-left-color: #3b82f6; }
+            .metodo-credito { border-left-color: #d97706; }
+            .metodo-mixto { border-left-color: #7c3aed; }
+            .metodo-compartido { border-left-color: #0891b2; }
         }
         
         /* Estilos para impresión */
@@ -240,214 +272,260 @@
                 font-size: 0.875rem;
             }
         }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Acciones (solo en pantalla) -->
-        <div class="actions">
-            <button class="btn btn-print" onclick="window.print()">
-                🖨️ Imprimir Factura
-            </button>
-            <button class="btn btn-download" onclick="descargarHTML()">
-                💾 Descargar HTML
-            </button>
-            <a href="{% url 'cerrar_caja_dia' %}" class="btn btn-back">
-                ← Volver
-            </a>
+</style>
+
+<div class="container">
+    <!-- Acciones (solo en pantalla) -->
+    <div class="actions">
+        <button class="btn btn-print" onclick="window.print()">
+            🖨️ Imprimir Factura
+        </button>
+        <button class="btn btn-download" onclick="descargarHTML()">
+            💾 Descargar HTML
+        </button>
+        <a href="{% url 'cerrar_caja_dia' %}" class="btn btn-back">
+            ← Volver
+        </a>
+    </div>
+    
+    <!-- Header -->
+    <div class="header">
+        <h1>🏪 FACTURA DE CIERRE DE CAJA</h1>
+        <p>Bar Restaurant - Sistema de Ventas</p>
+    </div>
+    
+    <!-- Contenido de la factura -->
+    <div class="invoice-content">
+        <!-- Información de la empresa -->
+        <div class="company-info">
+            <h2>🍹 BAR & RESTAURANT</h2>
+            <p>📍 Dirección: Calle Principal #123, Ciudad</p>
+            <p>📞 Teléfono: +57 300 123 4567 | 📧 Email: info@barrestaurant.com</p>
+            <p>🆔 NIT: 123.456.789-0</p>
         </div>
         
-        <!-- Header -->
-        <div class="header">
-            <h1>🏪 FACTURA DE CIERRE DE CAJA</h1>
-            <p>Bar Restaurant - Sistema de Ventas</p>
+        <!-- Detalles de la factura -->
+        <div class="invoice-details">
+            <div>
+                <h3>📊 INFORMACIÓN DEL CIERRE</h3>
+                <p><strong>Bartender:</strong> {{ bartender|title }}</p>
+                <p><strong>Fecha:</strong> {{ fecha_formateada }}</p>
+                <p><strong>Hora de Cierre:</strong> {{ hora_actual }}</p>
+            </div>
+            <div>
+                <h3>🔢 NÚMERO DE FACTURA</h3>
+                <p style="font-size: 1.5rem; font-weight: bold; color: #10b981;">
+                    #CIERRE-{{ numero_factura }}
+                </p>
+            </div>
+        </div>
+
+        <!-- VERIFICACIÓN DE CUADRE -->
+        <div class="{% if cuadra_perfecto %}cuadre-perfecto{% else %}cuadre-error{% endif %}">
+            {% if cuadra_perfecto %}
+                <h3><i class="fas fa-check-circle"></i> TODO CUADRA PERFECTAMENTE</h3>
+                <p>El total vendido ({{ total_formateado }}) coincide exactamente con la suma de todos los métodos de pago ({{ total_por_metodos_formateado }})</p>
+            {% else %}
+                <h3><i class="fas fa-exclamation-triangle"></i> DIFERENCIA DETECTADA</h3>
+                <p>
+                    Total vendido: {{ total_formateado }} | 
+                    Suma de métodos: {{ total_por_metodos_formateado }} | 
+                    Diferencia: {{ diferencia_formateada }}
+                </p>
+            {% endif %}
         </div>
         
-        <!-- Contenido de la factura -->
-        <div class="invoice-content">
-            <!-- Información de la empresa -->
-            <div class="company-info">
-                <h2>🍹 BAR & RESTAURANT</h2>
-                <p>📍 Dirección: Calle Principal #123, Ciudad</p>
-                <p>📞 Teléfono: +57 300 123 4567 | 📧 Email: info@barrestaurant.com</p>
-                <p>🆔 NIT: 123.456.789-0</p>
+        <!-- Estadísticas generales -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_ventas }}</div>
+                <div class="stat-label">Ventas Realizadas</div>
             </div>
-            
-            <!-- Detalles de la factura -->
-            <div class="invoice-details">
-                <div>
-                    <h3>📊 INFORMACIÓN DEL CIERRE</h3>
-                    <p><strong>Bartender:</strong> {{ bartender|title }}</p>
-                    <p><strong>Fecha:</strong> {{ fecha|date:"d/m/Y" }}</p>
-                    <p><strong>Hora de Cierre:</strong> <span id="hora-actual"></span></p>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_productos_vendidos }}</div>
+                <div class="stat-label">Productos Vendidos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_formateado }}</div>
+                <div class="stat-label">Total del Día</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ promedio_venta|floatformat:0 }}</div>
+                <div class="stat-label">Promedio por Venta</div>
+            </div>
+            {% if total_combos_vendidos > 0 %}
+            <div class="stat-card">
+                <div class="stat-number">{{ total_combos_vendidos }}</div>
+                <div class="stat-label">Combos Vendidos</div>
+            </div>
+            {% endif %}
+            <div class="stat-card">
+                <div class="stat-number">{{ venta_mas_alta|floatformat:0 }}</div>
+                <div class="stat-label">Venta Más Alta</div>
+            </div>
+        </div>
+
+        <!-- DESGLOSE POR MÉTODO DE PAGO -->
+        <div class="section">
+            <h2 class="section-title">💳 Desglose por Método de Pago</h2>
+            {% for metodo, datos in metodos_pago.items %}
+            <div class="metodo-pago-card metodo-{{ metodo }}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4 style="margin: 0;">
+                        {% if metodo == 'efectivo' %}
+                            💵 Efectivo
+                        {% elif metodo == 'transferencia' %}
+                            🏦 Transferencia
+                        {% elif metodo == 'credito' %}
+                            💳 Crédito/Fiado
+                        {% elif metodo == 'mixto' %}
+                            🔄 Pago Mixto
+                        {% elif metodo == 'compartido' %}
+                            👥 Pago Compartido
+                        {% endif %}
+                    </h4>
+                    <span style="background: #e2e8f0; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                        {{ datos.porcentaje }}%
+                    </span>
                 </div>
-                <div>
-                    <h3>🔢 NÚMERO DE FACTURA</h3>
-                    <p style="font-size: 1.5rem; font-weight: bold; color: #10b981;">
-                        #CIERRE-{{ numero_factura }}
-                    </p>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 1.25rem; font-weight: bold; color: #059669;">{{ datos.total_formateado }}</div>
+                        <div style="font-size: 0.8rem; color: #6b7280;">{{ datos.cantidad }} ventas | Promedio: {{ datos.promedio_formateado }}</div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Estadísticas generales -->
+            {% empty %}
+            <p class="text-center">No hay métodos de pago registrados para el día de hoy</p>
+            {% endfor %}
+        </div>
+
+        <!-- RESUMEN DE EFECTIVO REAL -->
+        <div class="section">
+            <h2 class="section-title">💰 Resumen de Efectivo Real</h2>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">{{ total_ventas }}</div>
-                    <div class="stat-label">Ventas Realizadas</div>
+                <div class="stat-card" style="border-left-color: #059669;">
+                    <div class="stat-number" style="color: #059669;">{{ efectivo_real_formateado }}</div>
+                    <div class="stat-label">Efectivo Recibido</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number">{{ total_productos }}</div>
-                    <div class="stat-label">Productos Vendidos</div>
+                <div class="stat-card" style="border-left-color: #3b82f6;">
+                    <div class="stat-number" style="color: #3b82f6;">{{ transferencias_reales_formateado }}</div>
+                    <div class="stat-label">Transferencias</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number">${{ total|floatformat:0 }}</div>
-                    <div class="stat-label">Total del Día (COP)</div>
+                <div class="stat-card" style="border-left-color: #d97706;">
+                    <div class="stat-number" style="color: #d97706;">{{ deudas_generadas_formateado }}</div>
+                    <div class="stat-label">Deudas Generadas</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number">${{ promedio_venta|floatformat:0 }}</div>
-                    <div class="stat-label">Promedio por Venta</div>
+                <div class="stat-card" style="border-left-color: #0891b2;">
+                    <div class="stat-number" style="color: #0891b2;">{{ metodo_mas_usado|capfirst }}</div>
+                    <div class="stat-label">Método Más Usado</div>
                 </div>
             </div>
-            
-            <!-- Resumen de ventas por mesa -->
-            <div class="section">
-                <h2 class="section-title">🪑 Resumen de Ventas por Mesa</h2>
-                {% if ventas %}
-                    <table class="table">
-                        <thead>
+        </div>
+        
+        <!-- Resumen de ventas por mesa -->
+        <div class="section">
+            <h2 class="section-title">🪑 Resumen de Ventas por Mesa</h2>
+            {% if ventas %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Mesa</th>
+                            <th>Hora</th>
+                            <th>Método de Pago</th>
+                            <th>Productos</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ventas %}
+                        <tr>
+                            <td>{% if venta.mesa %}Mesa {{ venta.mesa.numero }}{% else %}Sin Mesa{% endif %}</td>
+                            <td>{{ venta.hora }}</td>
+                            <td>{{ venta.metodo_pago }}</td>
+                            <td>{{ venta.detalles|length }}{% if venta.combos %}+{{ venta.combos|length }}C{% endif %}</td>
+                            <td class="text-right">{{ venta.total_formateado }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="total-row">
+                            <td colspan="4"><strong>TOTAL DEL DÍA</strong></td>
+                            <td class="text-right"><strong>{{ total_formateado }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-center">No se registraron ventas en este día.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Detalle completo de productos -->
+        <div class="section">
+            <h2 class="section-title">📦 Detalle Completo de Productos Vendidos</h2>
+            {% if ventas %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Mesa</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th class="text-right">Precio Unit.</th>
+                            <th class="text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ventas %}
+                            {% for detalle in venta.detalles %}
                             <tr>
-                                <th>Mesa</th>
-                                <th>Hora</th>
-                                <th>Método de Pago</th>
-                                <th>Productos</th>
-                                <th class="text-right">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for venta in ventas %}
-                            <tr>
-                                <td>{% if venta.mesa %}Mesa {{ venta.mesa.numero }}{% else %}Sin Mesa{% endif %}</td>
                                 <td>{{ venta.hora }}</td>
-                                <td>{{ venta.metodo_pago }}</td>
-                                <td>{{ venta.detalles|length }}</td>
-                                <td class="text-right">${{ venta.total|floatformat:0 }}</td>
+                                <td>{% if venta.mesa %}Mesa {{ venta.mesa.numero }}{% else %}N/A{% endif %}</td>
+                                <td>{{ detalle.nombre }}</td>
+                                <td>{{ detalle.cantidad }}</td>
+                                <td class="text-right">${{ detalle.precio_unitario|floatformat:0 }}</td>
+                                <td class="text-right">${{ detalle.subtotal|floatformat:0 }}</td>
                             </tr>
                             {% endfor %}
-                            <tr class="total-row">
-                                <td colspan="4"><strong>TOTAL DEL DÍA</strong></td>
-                                <td class="text-right"><strong>${{ total|floatformat:0 }} COP</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p class="text-center">No se registraron ventas en este día.</p>
-                {% endif %}
-            </div>
-            
-            <!-- Detalle completo de productos -->
-            <div class="section">
-                <h2 class="section-title">📦 Detalle Completo de Productos Vendidos</h2>
-                {% if productos_vendidos %}
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Hora</th>
-                                <th>Mesa</th>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th class="text-right">Precio Unit.</th>
-                                <th class="text-right">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for producto in productos_vendidos %}
-                            <tr>
-                                <td>{{ producto.hora }}</td>
-                                <td>{{ producto.mesa_numero }}</td>
-                                <td>{{ producto.producto }}</td>
-                                <td>{{ producto.cantidad }}</td>
-                                <td class="text-right">${{ producto.precio_unitario|floatformat:0 }}</td>
-                                <td class="text-right">${{ producto.subtotal|floatformat:0 }}</td>
+                            {% for combo in venta.combos %}
+                            <tr style="background: #f0f9ff;">
+                                <td>{{ venta.hora }}</td>
+                                <td>{% if venta.mesa %}Mesa {{ venta.mesa.numero }}{% else %}N/A{% endif %}</td>
+                                <td>🎁 {{ combo.nombre }}</td>
+                                <td>{{ combo.cantidad }}</td>
+                                <td class="text-right">${{ combo.precio_unitario|floatformat:0 }}</td>
+                                <td class="text-right">${{ combo.subtotal|floatformat:0 }}</td>
                             </tr>
                             {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p class="text-center">No se encontraron productos vendidos.</p>
-                {% endif %}
-            </div>
-            
-            <!-- Footer -->
-            <div class="footer">
-                <p><strong>Gracias por tu trabajo {{ bartender|title }}! 🎉</strong></p>
-                <p>Factura generada automáticamente el {{ fecha|date:"d/m/Y" }} a las <span id="hora-generacion"></span></p>
-                <p>💚 Sistema de Gestión de Bar - Desarrollado con Django</p>
-            </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-center">No se encontraron productos vendidos.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Gracias por tu trabajo {{ bartender|title }}!</strong></p>
+            <p>Factura generada automáticamente el {{ fecha_formateada }} a las {{ hora_actual }}</p>
+            <p>💚 Sistema de Gestión de Bar - Desarrollado con Django</p>
         </div>
     </div>
+</div>
 
-    <script>
-        // Establecer hora actual
-        const ahora = new Date();
-        const opciones = { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            timeZone: 'America/Bogota'
-        };
-        
-        document.getElementById('hora-actual').textContent = ahora.toLocaleTimeString('es-CO', opciones);
-        document.getElementById('hora-generacion').textContent = ahora.toLocaleTimeString('es-CO', opciones);
-        
-        // Función para descargar como HTML
-        function descargarHTML() {
-            const contenido = document.documentElement.outerHTML;
-            const blob = new Blob([contenido], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `factura-cierre-{{ fecha|date:"Y-m-d" }}-{{ bartender }}.html`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-        
-        // Animaciones para estadísticas
-        document.addEventListener('DOMContentLoaded', function() {
-            const statNumbers = document.querySelectorAll('.stat-number');
-            statNumbers.forEach(stat => {
-                const text = stat.textContent;
-                if (text.includes('$')) {
-                    const target = parseInt(text.replace(/[^0-9]/g, ''));
-                    if (target > 0) {
-                        let current = 0;
-                        const increment = target / 30;
-                        const timer = setInterval(() => {
-                            current += increment;
-                            if (current >= target) {
-                                current = target;
-                                clearInterval(timer);
-                            }
-                            stat.textContent = `$${Math.floor(current)}`;
-                        }, 50);
-                    }
-                } else {
-                    const target = parseInt(text);
-                    if (target > 0) {
-                        let current = 0;
-                        const increment = target / 30;
-                        const timer = setInterval(() => {
-                            current += increment;
-                            if (current >= target) {
-                                current = target;
-                                clearInterval(timer);
-                            }
-                            stat.textContent = Math.floor(current);
-                        }, 50);
-                    }
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+<script>
+    // Función para descargar como HTML
+    function descargarHTML() {
+        const contenido = document.documentElement.outerHTML;
+        const blob = new Blob([contenido], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `factura-cierre-{{ fecha_formateada }}-{{ bartender }}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+</script>
+{% endblock %}

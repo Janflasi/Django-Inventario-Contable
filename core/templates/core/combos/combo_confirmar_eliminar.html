@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Combo - {{ combo.nombre }}{% endblock %}
+
+{% block content %}
+<style>
+    .confirm-delete-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin: 2rem auto;
+        max-width: 600px;
+    }
+    
+    .danger-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px 12px 0 0;
+        margin: -2rem -2rem 2rem -2rem;
+        text-align: center;
+    }
+    
+    .combo-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+</style>
+
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'productos_listar' %}">Inventario</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'combo_detalle' combo.pk %}">{{ combo.nombre }}</a></li>
+            <li class="breadcrumb-item active">Eliminar</li>
+        </ol>
+    </nav>
+
+    <div class="confirm-delete-container">
+        <!-- Header de peligro -->
+        <div class="danger-header">
+            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+            <h3 class="mb-0">¡ELIMINAR COMBO!</h3>
+            <p class="mb-0 opacity-75">Esta acción no se puede deshacer</p>
+        </div>
+
+        <!-- Información del combo -->
+        <div class="combo-info">
+            <div class="row align-items-center">
+                <div class="col-3 text-center">
+                    {% if combo.imagen %}
+                        <img src="{{ combo.imagen.url }}" 
+                             alt="{{ combo.nombre }}" 
+                             style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; border: 2px solid #dc3545;">
+                    {% else %}
+                        <div style="width: 80px; height: 80px; background: #e9ecef; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid #dc3545; margin: 0 auto;">
+                            <i class="fas fa-gift fa-2x text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-9">
+                    <h4 class="mb-2 text-danger">{{ combo.nombre }}</h4>
+                    <p class="mb-1"><strong>Tipo:</strong> {{ combo.get_tipo_combo_display }}</p>
+                    <p class="mb-1"><strong>Precio:</strong> {{ combo.get_precio_formateado }}</p>
+                    <p class="mb-1"><strong>Estado:</strong> 
+                        {% if combo.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-0"><strong>Productos:</strong> {{ combo.componentes.count }} productos incluidos</p>
+                </div>
+            </div>
+            
+            {% if combo.descripcion %}
+            <div class="mt-3 pt-3 border-top">
+                <strong>Descripción:</strong> {{ combo.descripcion }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Advertencias -->
+        <div class="warning-box">
+            <h6 class="text-warning mb-3">
+                <i class="fas fa-exclamation-triangle"></i>
+                Consecuencias de eliminar este combo:
+            </h6>
+            <ul class="mb-0">
+                <li>Se eliminará <strong>permanentemente</strong> de tu inventario</li>
+                <li>Los productos individuales NO se verán afectados</li>
+                <li>No estará disponible para futuras ventas</li>
+                <li>Se perderán todas las configuraciones y promociones asociadas</li>
+                {% if combo.imagen %}
+                <li>La imagen del combo también se eliminará del servidor</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Confirmación simple -->
+        <div class="alert alert-danger text-center my-4">
+            <h5 class="mb-3">
+                <i class="fas fa-exclamation-triangle"></i>
+                ¿Estás seguro de que quieres eliminar este combo?
+            </h5>
+            <p class="mb-0">Esta acción <strong>NO se puede deshacer</strong></p>
+        </div>
+
+        <!-- Formulario SIMPLE que funciona -->
+        <form method="post" onsubmit="return confirmarEliminacion()">
+            {% csrf_token %}
+            
+            <div class="d-flex gap-3 justify-content-center mt-4">
+                <a href="{% url 'combo_detalle' combo.pk %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="fas fa-trash"></i> Eliminar Definitivamente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmarEliminacion() {
+    return confirm('¿Estás COMPLETAMENTE SEGURO de que quieres eliminar este combo?\n\nEsta acción NO se puede deshacer.\n\nPresiona OK para eliminar definitivamente.');
+}
+</script>
+
+{% endblock %}

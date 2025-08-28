@@ -1,0 +1,161 @@
+<!-- ======================================================================================== -->
+<!-- TEMPLATE: core/devoluciones/solicitar_mejorado.html -->
+<!-- ======================================================================================== -->
+
+{% extends 'core/base.html' %}
+
+{% block title %}Solicitar Devolución{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Solicitar Devolución</h2>
+                <a href="{% url 'mis_devoluciones' %}" class="btn btn-secondary">
+                    Ver Mis Solicitudes
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" id="formDevolucion">
+                        {% csrf_token %}
+                        
+                        <!-- Información del Producto -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Producto a Devolver *</label>
+                                <select name="producto" class="form-select" required id="selectProducto">
+                                    <option value="">Seleccionar producto...</option>
+                                    {% for producto in productos %}
+                                    <option value="{{ producto.id }}" data-stock="{{ producto.cantidad }}">
+                                        {{ producto.nombre }} (Stock: {{ producto.cantidad }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Cantidad *</label>
+                                <input type="number" name="cantidad" class="form-control" min="1" required id="inputCantidad">
+                                <small class="text-muted">Stock disponible: <span id="stockDisponible">0</span></small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Tipo de Devolución *</label>
+                                <select name="tipo" class="form-select" required id="selectTipo">
+                                    {% for key, value in tipos_devolucion %}
+                                    <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Razón de la Devolución -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Razón de la Devolución *</label>
+                                <select name="razon" class="form-select" required id="selectRazon">
+                                    <option value="">Seleccionar razón...</option>
+                                    {% for key, value in razones_devolucion %}
+                                    <option value="{{ key }}" data-tipos="cliente,inventario,proveedor">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Origen de la Devolución (condicional) -->
+                        <div class="row mb-3" id="origenCliente" style="display: none;">
+                            <div class="col-md-12">
+                                <label class="form-label">Venta de Origen (opcional)</label>
+                                <select name="venta_origen" class="form-select">
+                                    <option value="">Sin venta específica</option>
+                                    {% for venta in ventas_recientes %}
+                                    <option value="{{ venta.id }}">
+                                        Mesa {{ venta.mesa.numero }} - {{ venta.fecha|date:"d/m/Y H:i" }} - ${{ venta.total|floatformat:0 }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">Ventas recientes donde aparece el producto</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="origenInventario" style="display: none;">
+                            <div class="col-md-12">
+                                <label class="form-label">Factura de Origen (opcional)</label>
+                                <select name="factura_origen" class="form-select">
+                                    <option value="">Sin factura específica</option>
+                                    {% for factura in facturas_recientes %}
+                                    <option value="{{ factura.id }}">
+                                        {{ factura.numero_factura }} - {{ factura.proveedor.nombre }} - {{ factura.fecha_factura|date:"d/m/Y" }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">Facturas recientes del producto</small>
+                            </div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Observaciones *</label>
+                                <textarea name="observaciones" class="form-control" rows="3" required placeholder="Describe detalladamente la razón de la devolución..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                                <a href="{% url 'productos_bartender' %}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Actualizar stock disponible
+document.getElementById('selectProducto').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const stock = selectedOption.dataset.stock || 0;
+    document.getElementById('stockDisponible').textContent = stock;
+    document.getElementById('inputCantidad').max = stock;
+    document.getElementById('inputCantidad').value = '';
+});
+
+// Mostrar/ocultar origen según tipo
+document.getElementById('selectTipo').addEventListener('change', function() {
+    const tipo = this.value;
+    const origenCliente = document.getElementById('origenCliente');
+    const origenInventario = document.getElementById('origenInventario');
+    
+    if (tipo === 'cliente') {
+        origenCliente.style.display = 'block';
+        origenInventario.style.display = 'none';
+    } else if (['inventario', 'proveedor'].includes(tipo)) {
+        origenCliente.style.display = 'none';
+        origenInventario.style.display = 'block';
+    } else {
+        origenCliente.style.display = 'none';
+        origenInventario.style.display = 'none';
+    }
+});
+
+// Validar cantidad
+document.getElementById('inputCantidad').addEventListener('input', function() {
+    const stock = parseInt(document.getElementById('stockDisponible').textContent);
+    const cantidad = parseInt(this.value);
+    
+    if (cantidad > stock) {
+        this.setCustomValidity(`La cantidad no puede ser mayor al stock disponible (${stock})`);
+    } else if (cantidad <= 0) {
+        this.setCustomValidity('La cantidad debe ser mayor a cero');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+</script>
+{% endblock %}

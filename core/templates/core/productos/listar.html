@@ -1,989 +1,1010 @@
 {% extends 'core/base.html' %}
-{% block title %}Lista de Productos{% endblock %}
+{% block title %}📦 Inventario Completo{% endblock %}
 
 {% block content %}
 <style>
-/* Variables CSS - Paleta Profesional (SIN CAMBIOS) */
 :root {
-  --primary-green: #10b981;
-  --primary-green-light: #34d399;
-  --primary-green-dark: #059669;
-  --secondary-purple: #8b5cf6;
-  --accent-blue: #3b82f6;
-  --warning-orange: #f59e0b;
-  --danger-red: #ef4444;
-  
-  /* Colores neutros profesionales */
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
-  --gray-500: #6b7280;
-  --gray-600: #4b5563;
-  --gray-700: #374151;
-  --gray-800: #1f2937;
-  --gray-900: #111827;
-  
-  /* Sombras profesionales */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  
-  /* Transiciones */
-  --transition-fast: 150ms ease-in-out;
-  --transition-base: 300ms ease-in-out;
-  --transition-slow: 500ms ease-in-out;
-  
-  /* Bordes */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
+  --green: #10b981; --purple: #8b5cf6; --blue: #3b82f6; --orange: #f59e0b; --red: #ef4444; --gold: #f59e0b;
+  --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-500: #6b7280; --gray-700: #374151; --gray-900: #111827;
 }
+* { box-sizing: border-box; }
+body { font-family: Inter, sans-serif; background: var(--gray-50); color: var(--gray-900); }
 
-/* Reset y base */
-* {
-  box-sizing: border-box;
+.inventario-container { max-width: 1400px; margin: 0 auto; padding: 1rem; }
+.header { text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, var(--green), #059669); border-radius: 12px; color: white; }
+.header h1 { font-size: 1.75rem; margin: 0 0 0.25rem; font-weight: 800; }
+.header p { margin: 0; opacity: 0.9; font-size: 0.9rem; }
+
+/* 🔍 FILTROS Y BÚSQUEDA - COMPACTO */
+.filters-container { 
+  background: white; 
+  padding: 0.75rem; 
+  border-radius: 8px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+  margin-bottom: 1rem; 
 }
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--gray-50);
-  color: var(--gray-900);
-  line-height: 1.6;
+.filters-row { 
+  display: flex; 
+  gap: 0.5rem; 
+  flex-wrap: wrap; 
+  align-items: end; 
 }
-
-/* Contenedor principal */
-.productos-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem;
-  min-height: calc(100vh - 70px);
+.filter-group { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.25rem; 
+  min-width: 120px;
 }
-
-/* Header moderno */
-.productos-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
-  padding: 2rem 1rem;
-  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-lg);
-  position: relative;
-  overflow: hidden;
-}
-
-.productos-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-  opacity: 0.3;
-}
-
-.productos-title {
-  position: relative;
-  color: white;
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
-  font-weight: 800;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.productos-subtitle {
-  position: relative;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
-  font-weight: 400;
-  margin: 0;
-  opacity: 0.95;
-}
-
-/* Barra de acciones */
-.productos-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  background: white;
-  padding: 1.25rem;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-200);
-}
-
-.productos-stats {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.75rem;
-  background: var(--gray-50);
-  border-radius: var(--radius-lg);
-  min-width: 80px;
-}
-
-.stat-number {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary-green);
+.filter-label { 
+  font-size: 0.7rem; 
+  font-weight: 600; 
+  color: var(--gray-700); 
+  text-transform: uppercase; 
   line-height: 1;
 }
-
-.stat-label {
-  font-size: 0.75rem;
-  color: var(--gray-500);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 0.25rem;
+.filter-input { 
+  padding: 0.4rem 0.6rem; 
+  border: 1px solid var(--gray-200); 
+  border-radius: 6px; 
+  font-size: 0.8rem; 
+  height: 32px;
 }
-
-.btn-nuevo-producto {
-  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
-  color: white;
-  padding: 0.875rem 1.5rem;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
+.filter-input:focus { 
+  outline: none; 
+  border-color: var(--green); 
+}
+.filter-select { 
+  padding: 0.4rem 0.6rem; 
+  border: 1px solid var(--gray-200); 
+  border-radius: 6px; 
+  background: white; 
+  font-size: 0.8rem;
+  height: 32px;
+}
+.btn-filtro { 
+  background: var(--green); 
+  color: white; 
+  padding: 0.4rem 0.8rem; 
+  border: none; 
+  border-radius: 6px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  font-size: 0.8rem;
+  height: 32px;
+}
+.btn-limpiar { 
+  background: var(--gray-500); 
+  color: white; 
+  padding: 0.4rem 0.8rem; 
+  border: none; 
+  border-radius: 6px; 
+  font-weight: 600; 
+  cursor: pointer; 
   text-decoration: none;
-  display: inline-flex;
+  font-size: 0.8rem;
+  height: 32px;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all var(--transition-base);
-  font-size: 0.95rem;
-  border: none;
-  box-shadow: var(--shadow-md);
-  position: relative;
-  overflow: hidden;
 }
 
-.btn-nuevo-producto::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left var(--transition-slow);
+/* 📊 ESTADÍSTICAS - MÁS COMPACTAS */
+.stats-container { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+  gap: 0.5rem; 
+  margin-bottom: 1rem; 
+}
+.stat-card { 
+  background: white; 
+  padding: 0.6rem; 
+  border-radius: 8px; 
+  text-align: center; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+}
+.stat-num { 
+  font-size: 1.2rem; 
+  font-weight: 800; 
+}
+.stat-label { 
+  font-size: 0.65rem; 
+  color: var(--gray-500); 
+  text-transform: uppercase; 
+  margin-top: 0.1rem; 
+  line-height: 1.2;
+}
+.stat-productos .stat-num { color: var(--green); }
+.stat-combos .stat-num { color: var(--gold); }
+.stat-stock .stat-num { color: var(--blue); }
+
+/* 🎯 CONTROLES PRINCIPALES - COMPACTO */
+.toolbar { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 1rem; 
+  background: white; 
+  padding: 0.75rem; 
+  border-radius: 8px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+}
+.tipo-toggle { 
+  display: flex; 
+  background: var(--gray-100); 
+  border-radius: 6px; 
+  overflow: hidden; 
+}
+.tipo-btn { 
+  padding: 0.4rem 0.8rem; 
+  border: none; 
+  background: transparent; 
+  font-weight: 600; 
+  cursor: pointer; 
+  transition: all 0.2s; 
+  font-size: 0.8rem;
+}
+.tipo-btn.active { 
+  background: var(--green); 
+  color: white; 
+}
+.btn-nuevo { 
+  background: linear-gradient(135deg, var(--green), #059669); 
+  color: white; 
+  padding: 0.5rem 1rem; 
+  border-radius: 6px; 
+  text-decoration: none; 
+  font-weight: 600; 
+  display: inline-flex; 
+  align-items: center; 
+  gap: 0.4rem; 
+  transition: transform 0.2s; 
+  font-size: 0.8rem;
+}
+.btn-nuevo:hover { 
+  transform: translateY(-1px); 
+  color: white; 
+  text-decoration: none; 
 }
 
-.btn-nuevo-producto:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  color: white;
-  text-decoration: none;
-}
-
-.btn-nuevo-producto:hover::before {
-  left: 100%;
-}
-
-/* Grid de productos */
-.productos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-/* Card de producto */
-.producto-card {
+/* 📋 VISTA TABLA COMPACTA */
+.tabla-inventario {
   background: white;
-  border-radius: var(--radius-xl);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-200);
-  transition: all var(--transition-base);
-  position: relative;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
 }
 
-.producto-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--primary-green), var(--secondary-purple));
-  opacity: 0;
-  transition: opacity var(--transition-base);
-}
-
-.producto-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
-  border-color: var(--primary-green-light);
-}
-
-.producto-card:hover::before {
-  opacity: 1;
-}
-
-/* 🔥 IMAGEN DEL PRODUCTO */
-.producto-imagen-container {
-  width: 100%;
-  height: 200px;
-  margin-bottom: 1.25rem;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+.tabla-header {
+  display: grid;
+  grid-template-columns: 70px 2fr 100px 60px 80px;
   background: var(--gray-100);
-  position: relative;
-  display: flex;
+  padding: 0.75rem 0.5rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--gray-700);
+  border-bottom: 2px solid var(--gray-200);
+  gap: 0.5rem;
+}
+
+.tabla-row {
+  display: grid;
+  grid-template-columns: 70px 2fr 100px 60px 80px;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid var(--gray-200);
   align-items: center;
-  justify-content: center;
+  transition: all 0.2s;
+  min-height: auto;
+  gap: 0.5rem;
 }
 
-.producto-imagen {
-  width: 100%;
-  height: 100%;
+.tabla-row:hover {
+  background: var(--gray-50);
+}
+
+.combo-row {
+  background: linear-gradient(135deg, #fff7ed, #fed7aa);
+  border-left: 4px solid var(--gold);
+}
+
+.combo-row:hover {
+  background: linear-gradient(135deg, #fed7aa, #fdba74);
+}
+
+/* COLUMNAS */
+.col-imagen {
+  text-align: center;
+}
+
+.producto-img {
+  width: 50px;
+  height: 50px;
   object-fit: cover;
-  transition: all var(--transition-base);
+  border-radius: 8px;
   cursor: pointer;
+  transition: transform 0.2s;
 }
 
-.producto-imagen:hover {
-  transform: scale(1.05);
+.producto-img:hover {
+  transform: scale(1.1);
 }
 
-.producto-sin-imagen {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
+.no-img-icon {
+  width: 50px;
+  height: 50px;
+  background: var(--gray-200);
+  border-radius: 8px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   color: var(--gray-500);
-  font-size: 3rem;
-  border: 2px dashed var(--gray-300);
-  border-radius: var(--radius-lg);
+  font-size: 1.5rem;
+  margin: 0 auto;
 }
 
-.sin-imagen-texto {
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-  text-align: center;
-  font-weight: 500;
-}
-
-/* Header del card */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.25rem;
+.col-producto {
+  padding: 0 0.75rem;
 }
 
 .producto-nombre {
-  font-size: 1.25rem;
   font-weight: 700;
+  margin-bottom: 0.25rem;
   color: var(--gray-900);
-  margin: 0;
-  line-height: 1.3;
-  flex: 1;
-  margin-right: 1rem;
 }
 
-.categoria-badge {
-  background: linear-gradient(135deg, var(--secondary-purple) 0%, #7c3aed 100%);
+.producto-categoria {
+  display: inline-block;
+  background: var(--purple);
   color: white;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-2xl);
-  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  box-shadow: var(--shadow-sm);
 }
 
-/* Grid de métricas */
-.metricas-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+.combo-badge {
+  background: var(--gold);
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
 }
 
-.metrica-item {
-  background: var(--gray-50);
-  border-radius: var(--radius-lg);
-  padding: 1rem;
-  text-align: center;
-  border: 1px solid var(--gray-200);
-  transition: all var(--transition-fast);
+.producto-descripcion {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  margin-top: 0.25rem;
 }
 
-.metrica-item:hover {
+.col-detalles {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+}
+
+.detalle-item {
   background: var(--gray-100);
-  transform: scale(1.02);
-}
-
-.metrica-label {
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
   font-size: 0.75rem;
-  color: var(--gray-500);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
 }
 
-.metrica-valor {
-  font-size: 1.125rem;
+.col-precio {
+  text-align: center;
   font-weight: 700;
+}
+
+.precio-venta {
+  font-size: 1.1rem;
+  color: var(--green);
+  margin-bottom: 0.25rem;
+}
+
+.precio-costo {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+
+.precio-combo {
+  font-size: 1.1rem;
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.ahorro {
+  font-size: 0.7rem;
+  color: var(--green);
+  font-weight: 600;
+}
+
+.col-estado {
+  text-align: center;
+}
+
+.stock-numero {
+  font-size: 1.1rem;
+  font-weight: 800;
   color: var(--gray-900);
+  text-align: center;
+  display: block;
 }
 
-.metrica-valor.precio {
-  color: var(--primary-green);
-  font-size: 1.25rem;
+.stock-badge {
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  display: block;
 }
 
-.metrica-valor.ganancia {
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-lg);
+.stock-alto {
+  background: var(--green);
   color: white;
-  font-size: 1rem;
 }
 
-.metrica-valor.ganancia.positive {
-  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
-}
-
-.metrica-valor.ganancia.negative {
-  background: linear-gradient(135deg, var(--danger-red) 0%, #dc2626 100%);
-}
-
-.metrica-valor.stock {
-  background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+.stock-medio {
+  background: var(--orange);
   color: white;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-lg);
-  font-size: 1rem;
 }
 
-/* Acciones del card */
-.card-actions {
+.stock-bajo {
+  background: var(--red);
+  color: white;
+}
+
+.disponible {
+  background: var(--green);
+  color: white;
+}
+
+.no-disponible {
+  background: var(--red);
+  color: white;
+}
+
+.col-acciones {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.25rem;
+  justify-content: center;
 }
 
 .btn-accion {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
-  text-decoration: none;
-  font-size: 0.875rem;
-  transition: all var(--transition-base);
+  padding: 0.4rem;
   border: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-accion::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.2);
-  transition: left var(--transition-base);
-}
-
-.btn-accion:hover::before {
-  left: 100%;
-}
-
-.btn-editar {
-  background: linear-gradient(135deg, var(--warning-orange) 0%, #d97706 100%);
-  color: white;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-eliminar {
-  background: linear-gradient(135deg, var(--danger-red) 0%, #dc2626 100%);
-  color: white;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-accion:hover {
-  transform: translateY(-2px);
-  color: white;
-  text-decoration: none;
-  box-shadow: var(--shadow-md);
-}
-
-/* Vista de tabla para desktop grande */
-.productos-table {
-  background: white;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--gray-200);
-  display: none;
-}
-
-.productos-table table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.productos-table th {
-  background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-700) 100%);
-  color: white;
-  padding: 1.25rem 1rem;
-  font-weight: 600;
-  text-align: left;
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  position: relative;
-}
-
-.productos-table th::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--primary-green);
-}
-
-.productos-table td {
-  padding: 1.25rem 1rem;
-  border-bottom: 1px solid var(--gray-200);
-  color: var(--gray-900);
-  font-weight: 500;
-  vertical-align: middle;
-}
-
-.productos-table tr:hover {
-  background: var(--gray-50);
-}
-
-.productos-table tr:last-child td {
-  border-bottom: none;
-}
-
-/* 🔥 IMAGEN EN TABLA */
-.producto-imagen-tabla {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: var(--radius-lg);
-  border: 2px solid var(--gray-200);
+  border-radius: 6px;
   cursor: pointer;
-  transition: all var(--transition-base);
-}
-
-.producto-imagen-tabla:hover {
-  transform: scale(1.1);
-  border-color: var(--primary-green);
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-}
-
-.producto-sin-imagen-tabla {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
-  border: 2px dashed var(--gray-300);
-  border-radius: var(--radius-lg);
+  font-size: 0.8rem;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--gray-500);
-  font-size: 24px;
-}
-
-/* Estado vacío */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  background: white;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  border: 2px dashed var(--gray-300);
-  margin: 2rem 0;
-}
-
-.empty-icon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
-  opacity: 0.6;
-}
-
-.empty-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gray-700);
-  margin-bottom: 0.5rem;
-}
-
-.empty-description {
-  color: var(--gray-500);
-  font-size: 1rem;
-  margin-bottom: 2rem;
-}
-
-.btn-empty-action {
-  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-dark) 100%);
-  color: white;
-  padding: 1rem 2rem;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
+  transition: all 0.2s;
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-md);
 }
 
-.btn-empty-action:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+.btn-ver {
+  background: var(--blue);
+  color: white;
+}
+
+.btn-editar {
+  background: var(--orange);
+  color: white;
+}
+
+.btn-eliminar {
+  background: var(--red);
+  color: white;
+}
+
+.btn-accion:hover {
+  transform: scale(1.1);
   color: white;
   text-decoration: none;
 }
 
-/* Responsive Design */
-@media (max-width: 640px) {
-  .productos-container {
+/* COMBOS - Componentes */
+.componentes-mini {
+  font-size: 0.7rem;
+  color: var(--gray-600);
+  margin-top: 0.25rem;
+}
+
+.componente-item {
+  display: inline-block;
+  background: var(--gray-200);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  margin-right: 0.25rem;
+  margin-bottom: 0.1rem;
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 1024px) {
+  .tabla-header,
+  .tabla-row {
+    grid-template-columns: 60px 2fr 80px 50px 60px;
+    gap: 0.3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .inventario-container { 
+    padding: 0.5rem; 
+  }
+  
+  .filters-container {
     padding: 0.5rem;
   }
   
-  .productos-header {
-    margin-bottom: 1.5rem;
-    padding: 1.5rem 1rem;
+  .filters-row { 
+    flex-direction: column; 
+    align-items: stretch; 
+    gap: 0.3rem;
   }
   
-  .productos-toolbar {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
+  .filter-group {
+    min-width: auto;
   }
   
-  .productos-stats {
-    order: 2;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-  
-  .btn-nuevo-producto {
-    order: 1;
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .productos-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .producto-card {
-    padding: 1.25rem;
-  }
-  
-  .card-header {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: flex-start;
-  }
-  
-  .producto-nombre {
-    margin-right: 0;
-  }
-  
-  .categoria-badge {
-    align-self: flex-start;
-  }
-  
-  .metricas-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-  
-  .card-actions {
-    flex-direction: column;
+  .toolbar { 
+    flex-direction: column; 
     gap: 0.5rem;
+    padding: 0.5rem;
   }
   
-  .producto-imagen-container {
-    height: 150px;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  .productos-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  .stats-container { 
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.3rem;
   }
   
-  .productos-stats {
-    gap: 1rem;
-  }
-}
-
-@media (min-width: 1200px) {
-  .productos-table {
-    display: block;
+  .stat-card {
+    padding: 0.4rem;
   }
   
-  .productos-grid {
+  .tabla-header,
+  .tabla-row {
+    grid-template-columns: 50px 1fr 40px 50px;
+    font-size: 0.8rem;
+    gap: 0.2rem;
+  }
+  
+  .col-precio {
     display: none;
   }
   
-  .productos-container {
-    padding: 2rem;
+  .col-acciones {
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  
+  .btn-nuevo {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
   }
 }
 
-/* Animaciones */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* MEJORA ADICIONAL: Reducir altura total del header */
+.header {
+  padding: 0.75rem;
 }
 
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
+.header h1 {
+  font-size: 1.5rem;
+}
+
+/* Formulario más horizontal en pantallas medianas */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .filters-row {
+    justify-content: space-between;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+  
+  .filter-group {
+    flex: 1;
+    max-width: 180px;
   }
 }
-
-.producto-card {
-  animation: fadeInUp var(--transition-slow) ease-out;
-}
-
-.productos-toolbar {
-  animation: slideInRight var(--transition-slow) ease-out;
-}
-
-/* Utilidades */
-.d-flex { display: flex; }
-.align-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.gap-1 { gap: 0.5rem; }
-.gap-2 { gap: 0.75rem; }
-.text-center { text-align: center; }
-.font-bold { font-weight: 700; }
-.text-sm { font-size: 0.875rem; }
 </style>
 
-<div class="productos-container">
-  <!-- Header Profesional -->
-  <div class="productos-header">
-    <h1 class="productos-title">📦 Gestión de Productos</h1>
-    <p class="productos-subtitle">Control inteligente de inventario con análisis de rentabilidad</p>
+<div class="inventario-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>🍻 Inventario Completo</h1>
+    <p>Productos individuales y combos promocionales</p>
   </div>
 
-  <!-- Barra de herramientas -->
-  <div class="productos-toolbar">
-    <div class="productos-stats">
-      <div class="stat-item">
-        <div class="stat-number">{{ productos|length }}</div>
-        <div class="stat-label">Productos</div>
+  <!-- 🔍 FILTROS Y BÚSQUEDA - COMPACTO -->
+  <div class="filters-container">
+    <form method="GET" class="filters-form">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label class="filter-label">🔍 Buscar</label>
+          <input type="text" name="buscar" value="{{ busqueda }}" placeholder="Nombre..." class="filter-input" style="min-width: 150px;">
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">🏷️ Categoría</label>
+          <select name="categoria" class="filter-select">
+            <option value="todas">Todas</option>
+            {% for categoria in categorias_disponibles %}
+              <option value="{{ categoria.id }}" {% if categoria_filtro == categoria.id|stringformat:"s" %}selected{% endif %}>
+                {{ categoria.nombre }} ({{ categoria.cantidad_productos }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">📦 Tipo</label>
+          <select name="tipo" class="filter-select">
+            <option value="todos" {% if tipo_filtro == 'todos' %}selected{% endif %}>Todos</option>
+            <option value="individuales" {% if tipo_filtro == 'individuales' %}selected{% endif %}>Productos</option>
+            <option value="combos" {% if tipo_filtro == 'combos' %}selected{% endif %}>Combos</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label class="filter-label">&nbsp;</label>
+          <div style="display: flex; gap: 0.3rem;">
+            <button type="submit" class="btn-filtro">🔍</button>
+            <a href="{% url 'productos_listar' %}" class="btn-limpiar">✕</a>
+          </div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-number">{% with total=0 %}{% for p in productos %}{% widthratio p.cantidad 1 1 as temp %}{% widthratio total|add:temp 1 1 as total %}{% endfor %}{{ total }}{% endwith %}</div>
-        <div class="stat-label">Stock Total</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-number">{% regroup productos by categoria as categoria_list %}{{ categoria_list|length }}</div>
-        <div class="stat-label">Categorías</div>
-      </div>
+    </form>
+  </div>
+
+  <!-- 📊 ESTADÍSTICAS -->
+  <div class="stats-container">
+    <div class="stat-card stat-productos">
+      <div class="stat-num">{{ total_productos|default:0 }}</div>
+      <div class="stat-label">Productos</div>
+    </div>
+    <div class="stat-card stat-combos">
+      <div class="stat-num">{{ total_combos|default:0 }}</div>
+      <div class="stat-label">Combos</div>
+    </div>
+    <div class="stat-card stat-stock">
+      <div class="stat-num">{{ stock_total|default:0 }}</div>
+      <div class="stat-label">Stock Total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color: var(--orange);">{{ productos_stock_bajo|default:0 }}</div>
+      <div class="stat-label">Stock Bajo</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color: var(--red);">{{ productos_sin_stock|default:0 }}</div>
+      <div class="stat-label">Sin Stock</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color: var(--green);">{{ combos_con_stock|default:0 }}</div>
+      <div class="stat-label">Disponibles</div>
+    </div>
+  </div>
+
+  <!-- 🎯 TOOLBAR -->
+  <div class="toolbar">
+    <div class="info-resumen">
+      {% if busqueda %}
+        <span style="color: var(--gray-600); font-size: 0.8rem;">
+          📝 Resultados: "<strong>{{ busqueda }}</strong>"
+        </span>
+      {% endif %}
     </div>
     
-    <a href="{% url 'producto_crear' %}" class="btn-nuevo-producto">
-      <i class="bi bi-plus-circle-fill"></i>
-      Nuevo Producto
-    </a>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <a href="{% url 'producto_crear' %}" class="btn-nuevo">
+        <i class="bi bi-plus-circle-fill"></i>
+        Producto
+      </a>
+      <a href="{% url 'combo_crear' %}" class="btn-nuevo" style="background: linear-gradient(135deg, var(--gold), #d97706);">
+        <i class="bi bi-gift-fill"></i>
+        Combo
+      </a>
+    </div>
   </div>
 
-  {% if productos %}
-    <!-- Vista Grid (móvil y tablet) -->
-    <div class="productos-grid">
-      {% for producto in productos %}
-      <div class="producto-card">
-        <!-- 🔥 IMAGEN DEL PRODUCTO -->
-        <div class="producto-imagen-container">
-          {% if producto.imagen %}
-            <img src="{{ producto.imagen.url }}" 
-                 alt="{{ producto.nombre }}" 
-                 class="producto-imagen"
-                 onclick="verImagenCompleta('{{ producto.imagen.url }}', '{{ producto.nombre }}')"
-                 title="Haz clic para ver en tamaño completo">
-          {% else %}
-            <div class="producto-sin-imagen">
-              📷
-              <div class="sin-imagen-texto">Sin imagen</div>
+  <!-- 📋 TABLA DE INVENTARIO -->
+  {% if productos or combos %}
+    <div class="tabla-inventario">
+      <!-- Header de la tabla -->
+      <div class="tabla-header">
+        <div class="col-imagen">Imagen</div>
+        <div class="col-producto">Producto/Combo</div>
+        <div class="col-precio">Precio</div>
+        <div class="col-estado">Stock</div>
+        <div class="col-acciones">Acciones</div>
+      </div>
+
+      <!-- 🎁 COMBOS -->
+      {% for combo_info in combos %}
+        {% with combo=combo_info.objeto %}
+        <div class="tabla-row combo-row">
+          <!-- Imagen -->
+          <div class="col-imagen">
+            {% if combo.imagen %}
+              <img src="{{ combo.imagen.url }}" alt="{{ combo.nombre }}" class="producto-img" onclick="verImagen('{{ combo.imagen.url }}', '{{ combo.nombre }}')">
+            {% else %}
+              <div class="no-img-icon">🎁</div>
+            {% endif %}
+          </div>
+
+          <!-- Producto/Combo -->
+          <div class="col-producto">
+            <div class="producto-nombre">{{ combo.nombre }}</div>
+            <span class="combo-badge">🎁 {{ combo.get_tipo_combo_display }}</span>
+            {% if combo.descripcion %}
+              <div class="producto-descripcion">{{ combo.descripcion|truncatewords:6 }}</div>
+            {% endif %}
+            <div class="componentes-mini">
+              {% for comp_info in combo_info.componentes %}
+                <span class="componente-item">{{ comp_info.producto.nombre }} x{{ comp_info.cantidad }}</span>
+              {% endfor %}
             </div>
+            {% if combo_info.precio_individual_total > combo.precio_combo %}
+              <div style="font-size: 0.7rem; color: var(--green); margin-top: 0.25rem; font-weight: 600;">
+                💰 Ahorras ${{ combo_info.ahorro|floatformat:0 }} ({{ combo_info.descuento_real|floatformat:1 }}%)
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Precio -->
+          <div class="col-precio">
+            <div class="precio-combo">${{ combo.precio_combo|floatformat:0 }}</div>
+            {% if combo_info.precio_individual_total > combo.precio_combo %}
+              <div class="ahorro">-{{ combo_info.descuento_real|floatformat:1 }}%</div>
+            {% endif %}
+          </div>
+
+          <!-- Estado/Stock -->
+          <div class="col-estado">
+            {% if not combo.activo %}
+              <span class="stock-badge no-disponible">OFF</span>
+            {% elif combo_info.puede_venderse %}
+              <span class="stock-badge disponible">OK</span>
+            {% else %}
+              <span class="stock-badge no-disponible">0</span>
+            {% endif %}
+          </div>
+
+          <!-- Acciones -->
+          <div class="col-acciones">
+            <a href="{% url 'combo_detalle' combo.id %}" class="btn-accion btn-ver" title="Ver detalle">
+              <i class="bi bi-eye"></i>
+            </a>
+            <a href="{% url 'combo_detalle' combo.id %}" class="btn-accion btn-editar" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+          </div>
+        </div>
+        {% endwith %}
+      {% endfor %}
+
+      <!-- 📦 PRODUCTOS INDIVIDUALES -->
+      {% for producto in productos %}
+      <div class="tabla-row">
+        <!-- Imagen -->
+        <div class="col-imagen">
+          {% if producto.imagen %}
+            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="producto-img" onclick="verImagen('{{ producto.imagen.url }}', '{{ producto.nombre }}')">
+          {% else %}
+            <div class="no-img-icon">📦</div>
           {% endif %}
         </div>
 
-        <!-- Header -->
-        <div class="card-header">
-          <h3 class="producto-nombre">{{ producto.nombre }}</h3>
-          <span class="categoria-badge">{{ producto.categoria.nombre }}</span>
+        <!-- Producto -->
+        <div class="col-producto">
+          <div class="producto-nombre">{{ producto.nombre }}</div>
+          {% if producto.categoria %}
+            <span class="producto-categoria">{{ producto.categoria.nombre }}</span>
+          {% else %}
+            <span class="producto-categoria" style="background: var(--gray-500);">Sin categoría</span>
+          {% endif %}
+          {% if producto.descripcion %}
+            <div class="producto-descripcion">{{ producto.descripcion|truncatewords:6 }}</div>
+          {% endif %}
+          <div style="font-size: 0.7rem; color: var(--gray-600); margin-top: 0.25rem;">
+            💰 Costo: ${{ producto.precio_costo|floatformat:0 }} | 
+            <span style="color: {% if producto.ganancia_unitaria >= 0 %}var(--green){% else %}var(--red){% endif %}; font-weight: 600;">
+              Ganancia: ${{ producto.ganancia_unitaria|floatformat:0 }}
+            </span>
+          </div>
         </div>
 
-        <!-- Métricas -->
-        <div class="metricas-grid">
-          <div class="metrica-item">
-            <div class="metrica-label">
-              <i class="bi bi-wallet2"></i>
-              Costo
-            </div>
-            <div class="metrica-valor">${{ producto.precio_costo|floatformat:0 }}</div>
-          </div>
-          
-          <div class="metrica-item">
-            <div class="metrica-label">
-              <i class="bi bi-tag-fill"></i>
-              Venta
-            </div>
-            <div class="metrica-valor precio">${{ producto.precio|floatformat:0 }}</div>
-          </div>
-          
-          <div class="metrica-item">
-            <div class="metrica-label">
-              <i class="bi bi-graph-up-arrow"></i>
-              Ganancia
-            </div>
-            <div class="metrica-valor ganancia {% if producto.ganancia_unitaria >= 0 %}positive{% else %}negative{% endif %}">
-              ${{ producto.ganancia_unitaria|floatformat:0 }}
-            </div>
-          </div>
-          
-          <div class="metrica-item">
-            <div class="metrica-label">
-              <i class="bi bi-boxes"></i>
-              Stock
-            </div>
-            <div class="metrica-valor stock">{{ producto.cantidad }}</div>
-          </div>
+        <!-- Precio -->
+        <div class="col-precio">
+          <div class="precio-venta">${{ producto.precio|floatformat:0 }}</div>
+          <div class="precio-costo">Costo: ${{ producto.precio_costo|floatformat:0 }}</div>
+        </div>
+
+        <!-- Estado/Stock -->
+        <div class="col-estado">
+          <span class="stock-numero">{{ producto.cantidad }}</span>
         </div>
 
         <!-- Acciones -->
-        <div class="card-actions">
-          <a href="{% url 'producto_editar' producto.id %}" class="btn-accion btn-editar">
-            <i class="bi bi-pencil-square"></i>
-            Editar
+        <div class="col-acciones">
+          <a href="{% url 'producto_editar' producto.id %}" class="btn-accion btn-editar" title="Editar">
+            <i class="bi bi-pencil"></i>
           </a>
-          <a href="{% url 'producto_eliminar' producto.id %}" class="btn-accion btn-eliminar">
-            <i class="bi bi-trash3-fill"></i>
-            Eliminar
+          <a href="{% url 'producto_eliminar' producto.id %}" class="btn-accion btn-eliminar" 
+             onclick="return confirm('¿Eliminar {{ producto.nombre }}?')" title="Eliminar">
+            <i class="bi bi-trash"></i>
           </a>
         </div>
       </div>
       {% endfor %}
     </div>
-
-    <!-- Vista Tabla (desktop grande) -->
-    <div class="productos-table">
-      <table>
-        <thead>
-          <tr>
-            <th><i class="bi bi-image"></i> Imagen</th>
-            <th><i class="bi bi-tag-fill"></i> Producto</th>
-            <th><i class="bi bi-folder2"></i> Categoría</th>
-            <th><i class="bi bi-wallet2"></i> Costo</th>
-            <th><i class="bi bi-currency-dollar"></i> Venta</th>
-            <th><i class="bi bi-graph-up-arrow"></i> Ganancia</th>
-            <th><i class="bi bi-boxes"></i> Stock</th>
-            <th><i class="bi bi-gear-fill"></i> Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for producto in productos %}
-          <tr>
-            <td>
-              {% if producto.imagen %}
-                <img src="{{ producto.imagen.url }}" 
-                     alt="{{ producto.nombre }}" 
-                     class="producto-imagen-tabla"
-                     onclick="verImagenCompleta('{{ producto.imagen.url }}', '{{ producto.nombre }}')"
-                     title="Haz clic para ver en tamaño completo">
-              {% else %}
-                <div class="producto-sin-imagen-tabla">
-                  📷
-                </div>
-              {% endif %}
-            </td>
-            <td>
-              <div class="font-bold">{{ producto.nombre }}</div>
-            </td>
-            <td>
-              <span class="categoria-badge">{{ producto.categoria.nombre }}</span>
-            </td>
-            <td class="font-bold">${{ producto.precio_costo|floatformat:0 }}</td>
-            <td class="font-bold" style="color: var(--primary-green);">${{ producto.precio|floatformat:0 }}</td>
-            <td>
-              <span class="metrica-valor ganancia {% if producto.ganancia_unitaria >= 0 %}positive{% else %}negative{% endif %}">
-                ${{ producto.ganancia_unitaria|floatformat:0 }}
-              </span>
-            </td>
-            <td>
-              <span class="metrica-valor stock">{{ producto.cantidad }}</span>
-            </td>
-            <td>
-              <div class="d-flex gap-1">
-                <a href="{% url 'producto_editar' producto.id %}" class="btn-accion btn-editar" style="flex: none; padding: 0.5rem 0.75rem;">
-                  <i class="bi bi-pencil-square"></i>
-                </a>
-                <a href="{% url 'producto_eliminar' producto.id %}" class="btn-accion btn-eliminar" style="flex: none; padding: 0.5rem 0.75rem;">
-                  <i class="bi bi-trash3-fill"></i>
-                </a>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
   {% else %}
     <!-- Estado vacío -->
-    <div class="empty-state">
-      <div class="empty-icon">📦</div>
-      <div class="empty-title">No hay productos registrados</div>
-      <div class="empty-description">
-        Comienza agregando tu primer producto para gestionar tu inventario
+    <div class="tabla-inventario">
+      <div style="text-align: center; padding: 2rem;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.6;">
+          {% if busqueda %}🔍{% else %}📦{% endif %}
+        </div>
+        <div style="font-size: 1.1rem; font-weight: 700; color: var(--gray-700); margin-bottom: 0.4rem;">
+          {% if busqueda %}
+            No se encontraron resultados
+          {% else %}
+            No hay productos
+          {% endif %}
+        </div>
+        <div style="color: var(--gray-500); margin-bottom: 1rem; font-size: 0.9rem;">
+          {% if busqueda %}
+            Intenta con otros términos
+          {% else %}
+            Comienza agregando tu primer producto o combo
+          {% endif %}
+        </div>
+        {% if not busqueda %}
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{% url 'producto_crear' %}" class="btn-nuevo">
+              <i class="bi bi-plus-circle-fill"></i>
+              Primer Producto
+            </a>
+            <a href="{% url 'combo_crear' %}" class="btn-nuevo" style="background: linear-gradient(135deg, var(--gold), #d97706);">
+              <i class="bi bi-gift-fill"></i>
+              Primer Combo
+            </a>
+          </div>
+        {% endif %}
       </div>
-      <a href="{% url 'producto_crear' %}" class="btn-empty-action">
-        <i class="bi bi-plus-circle-fill"></i>
-        Crear Primer Producto
-      </a>
     </div>
   {% endif %}
 </div>
 
+<!-- 🖼️ MODAL PARA VER IMÁGENES -->
+<div id="imageModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%;">
+    <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; background: var(--gray-100); border-bottom: 1px solid var(--gray-200);">
+        <h5 id="modalTitle" style="margin: 0; font-weight: 700;"></h5>
+        <button onclick="cerrarModal()" style="background: var(--red); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div style="padding: 1rem; text-align: center;">
+        <img id="modalImage" style="max-width: 100%; max-height: 70vh; border-radius: 8px;">
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Animaciones progresivas (SIN CAMBIOS)
-  const cards = document.querySelectorAll('.producto-card');
-  const toolbar = document.querySelector('.productos-toolbar');
+// 🖼️ FUNCIÓN PARA VER IMÁGENES
+function verImagen(url, nombre) {
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalTitle = document.getElementById('modalTitle');
   
-  // Animar toolbar
-  if (toolbar) {
-    toolbar.style.opacity = '0';
-    toolbar.style.transform = 'translateY(-20px)';
-    setTimeout(() => {
-      toolbar.style.transition = 'all 0.6s ease';
-      toolbar.style.opacity = '1';
-      toolbar.style.transform = 'translateY(0)';
-    }, 200);
-  }
+  modalImage.src = url;
+  modalTitle.textContent = nombre;
+  modal.style.display = 'block';
   
-  // Animar cards con delay escalonado
-  cards.forEach((card, index) => {
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(30px)';
-    setTimeout(() => {
-      card.style.transition = 'all 0.5s ease';
-      card.style.opacity = '1';
-      card.style.transform = 'translateY(0)';
-    }, 300 + (index * 100));
+  // Cerrar con escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      cerrarModal();
+    }
   });
   
-  // Efecto parallax sutil en el header
-  const header = document.querySelector('.productos-header');
-  if (header && window.innerWidth > 768) {
-    window.addEventListener('scroll', () => {
-      const scrolled = window.pageYOffset;
-      const rate = scrolled * -0.5;
-      header.style.transform = `translateY(${rate}px)`;
+  // Cerrar clickeando fuera
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      cerrarModal();
+    }
+  });
+}
+
+function cerrarModal() {
+  document.getElementById('imageModal').style.display = 'none';
+}
+
+// 🔍 FILTROS INTELIGENTES
+document.addEventListener('DOMContentLoaded', function() {
+  const filtros = document.querySelectorAll('.filter-select, .filter-input');
+  
+  filtros.forEach(filtro => {
+    if (filtro.type === 'text') {
+      let timeout;
+      filtro.addEventListener('input', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          if (this.value.length >= 2 || this.value.length === 0) {
+            this.form.submit();
+          }
+        }, 500);
+      });
+    } else {
+      filtro.addEventListener('change', function() {
+        this.form.submit();
+      });
+    }
+  });
+  
+  // Animaciones de entrada
+  const rows = document.querySelectorAll('.tabla-row');
+  rows.forEach((row, index) => {
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(-20px)';
+    row.style.transition = 'all 0.3s ease-out';
+    
+    setTimeout(() => {
+      row.style.opacity = '1';
+      row.style.transform = 'translateX(0)';
+    }, index * 30); // Más rápido
+  });
+  
+  // Contador de productos visible
+  const totalRows = rows.length;
+  if (totalRows > 0) {
+    const toolbar = document.querySelector('.toolbar .info-resumen');
+    if (toolbar && !toolbar.innerHTML.includes('Mostrando')) {
+      toolbar.innerHTML = `<span style="color: var(--gray-600); font-size: 0.8rem;">📊 ${totalRows} elementos</span>`;
+    }
+  }
+});
+
+// 📱 RESPONSIVE MEJORADO
+function ajustarResponsive() {
+  const isMobile = window.innerWidth < 768;
+  const isTablet = window.innerWidth < 1024;
+  
+  if (isMobile) {
+    document.querySelectorAll('.tabla-row').forEach(row => {
+      row.style.fontSize = '0.75rem';
+    });
+    
+    document.querySelectorAll('.producto-img').forEach(img => {
+      img.style.width = '40px';
+      img.style.height = '40px';
+    });
+  } else if (isTablet) {
+    document.querySelectorAll('.producto-img').forEach(img => {
+      img.style.width = '45px';
+      img.style.height = '45px';
     });
   }
+}
+
+window.addEventListener('resize', ajustarResponsive);
+document.addEventListener('DOMContentLoaded', ajustarResponsive);
+
+// ⚡ PERFORMANCE: Lazy loading para imágenes
+document.addEventListener('DOMContentLoaded', function() {
+  const images = document.querySelectorAll('.producto-img');
   
-  // Tooltip simple para los botones
-  const buttons = document.querySelectorAll('[data-tooltip]');
-  buttons.forEach(button => {
-    button.addEventListener('mouseenter', function() {
-      // Implementar tooltip si es necesario
+  if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.style.transition = 'opacity 0.3s';
+          imageObserver.unobserve(img);
+        }
+      });
+    });
+    
+    images.forEach(img => imageObserver.observe(img));
+  }
+});
+
+// 🎯 TOOLTIP SIMPLE PARA ACCIONES
+document.addEventListener('DOMContentLoaded', function() {
+  const buttons = document.querySelectorAll('.btn-accion[title]');
+  
+  buttons.forEach(btn => {
+    btn.addEventListener('mouseenter', function(e) {
+      const tooltip = document.createElement('div');
+      tooltip.className = 'simple-tooltip';
+      tooltip.textContent = this.getAttribute('title');
+      tooltip.style.cssText = `
+        position: absolute;
+        background: var(--gray-900);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        z-index: 1000;
+        pointer-events: none;
+        white-space: nowrap;
+        transform: translateX(-50%);
+      `;
+      
+      const rect = this.getBoundingClientRect();
+      tooltip.style.left = rect.left + rect.width / 2 + 'px';
+      tooltip.style.top = rect.top - 35 + 'px';
+      
+      document.body.appendChild(tooltip);
+      
+      this.addEventListener('mouseleave', () => {
+        if (tooltip.parentElement) {
+          tooltip.parentElement.removeChild(tooltip);
+        }
+      });
     });
   });
 });
 
-// 🔥 NUEVA FUNCIÓN PARA VER IMAGEN COMPLETA
-function verImagenCompleta(imagenUrl, nombreProducto) {
-  const modal = document.createElement('div');
-  modal.className = 'modal fade';
-  modal.tabIndex = -1;
-  modal.innerHTML = `
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-zoom-in"></i>
-            ${nombreProducto}
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body text-center">
-          <img src="${imagenUrl}" 
-               alt="${nombreProducto}" 
-               class="img-fluid rounded shadow"
-               style="max-height: 70vh; cursor: zoom-in;"
-               onclick="window.open('${imagenUrl}', '_blank')">
-          <p class="text-muted mt-2">
-            <small>Haz clic en la imagen para verla en tamaño original</small>
-          </p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            Cerrar
-          </button>
-          <a href="${imagenUrl}" target="_blank" class="btn btn-primary">
-            <i class="bi bi-download"></i>
-            Abrir en nueva pestaña
-          </a>
-        </div>
-      </div>
-    </div>
-  `;
+// 🎯 BÚSQUEDA RÁPIDA CON TECLADO
+document.addEventListener('keydown', function(e) {
+  // Ctrl + F para enfocar búsqueda
+  if (e.ctrlKey && e.key === 'f') {
+    e.preventDefault();
+    const searchInput = document.querySelector('input[name="buscar"]');
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.select();
+    }
+  }
   
-  document.body.appendChild(modal);
-  const bsModal = new bootstrap.Modal(modal);
-  bsModal.show();
-  
-  modal.addEventListener('hidden.bs.modal', function() {
-    document.body.removeChild(modal);
+  // Escape para limpiar búsqueda
+  if (e.key === 'Escape') {
+    const searchInput = document.querySelector('input[name="buscar"]');
+    if (searchInput && searchInput === document.activeElement) {
+      searchInput.value = '';
+      searchInput.form.submit();
+    }
+  }
+});
+
+// ⚡ OPTIMIZACIONES ADICIONALES
+document.addEventListener('DOMContentLoaded', function() {
+  // Contador dinámico más rápido en estadísticas
+  const statNumbers = document.querySelectorAll('.stat-num');
+  statNumbers.forEach(stat => {
+    const finalValue = parseInt(stat.textContent);
+    if (finalValue <= 10) return; // No animar números pequeños
+    
+    let currentValue = 0;
+    const increment = Math.ceil(finalValue / 20); // Más rápido
+    
+    const counter = setInterval(() => {
+      currentValue += increment;
+      if (currentValue >= finalValue) {
+        stat.textContent = finalValue;
+        clearInterval(counter);
+      } else {
+        stat.textContent = currentValue;
+      }
+    }, 30); // Más rápido
   });
-}
+  
+  // Mejorar hover en filas
+  const rows = document.querySelectorAll('.tabla-row');
+  rows.forEach(row => {
+    row.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateX(2px)';
+    });
+    
+    row.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateX(0)';
+    });
+  });
+});
 </script>
+
 {% endblock %}

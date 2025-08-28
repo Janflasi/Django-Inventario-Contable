@@ -1,0 +1,1025 @@
+<!-- core/templates/core/facturas/dashboard.html -->
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Facturas{% endblock %}
+
+{% block content %}
+<style>
+/* DISEÑO MINIMALISTA Y PROFESIONAL */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.f-container {
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 2rem;
+    min-height: calc(100vh - 70px);
+    color: #2d3748;
+}
+
+/* HEADER LIMPIO */
+.f-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.f-title {
+    color: #1a202c;
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.f-title i {
+    color: #718096;
+    font-size: 1.5rem;
+}
+
+.f-breadcrumb {
+    color: #718096;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.f-breadcrumb a {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+.f-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.f-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.f-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.f-btn.primary {
+    background: #4299e1;
+    color: white;
+}
+
+.f-btn.primary:hover {
+    background: #3182ce;
+    transform: translateY(-1px);
+}
+
+.f-btn.success {
+    background: #48bb78;
+    color: white;
+}
+
+.f-btn.success:hover {
+    background: #38a169;
+    transform: translateY(-1px);
+}
+
+.f-btn.info {
+    background: #f7fafc;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+}
+
+.f-btn.info:hover {
+    background: #edf2f7;
+}
+
+/* ESTADÍSTICAS MINIMALISTAS */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.stat-info h6 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin: 0 0 0.5rem 0;
+    color: #718096;
+    letter-spacing: 0.05em;
+}
+
+.stat-info h3 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+    color: #1a202c;
+}
+
+.stat-info small {
+    font-size: 0.75rem;
+    color: #a0aec0;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: #e2e8f0;
+}
+
+/* Colores específicos para cada tipo de estadística */
+.stat-card.danger .stat-info h3 { color: #e53e3e; }
+.stat-card.danger .stat-icon { color: #fed7d7; }
+
+.stat-card.warning .stat-info h3 { color: #dd6b20; }
+.stat-card.warning .stat-icon { color: #feebc8; }
+
+.stat-card.info .stat-info h3 { color: #3182ce; }
+.stat-card.info .stat-icon { color: #bee3f8; }
+
+.stat-card.success .stat-info h3 { color: #38a169; }
+.stat-card.success .stat-icon { color: #c6f6d5; }
+
+.stat-card.purple .stat-info h3 { color: #805ad5; }
+.stat-card.purple .stat-icon { color: #e9d8fd; }
+
+.stat-card.teal .stat-info h3 { color: #319795; }
+.stat-card.teal .stat-icon { color: #b2f5ea; }
+
+/* ALERTAS LIMPIAS */
+.alert-box {
+    background: #fff5f5;
+    border: 1px solid #feb2b2;
+    border-left: 4px solid #e53e3e;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.alert-box.warning {
+    background: #fffaf0;
+    border-color: #fbd38d;
+    border-left-color: #dd6b20;
+}
+
+.alert-title {
+    font-weight: 600;
+    color: #c53030;
+    margin: 0 0 0.25rem 0;
+}
+
+.alert-text {
+    color: #742a2a;
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.alert-btn {
+    padding: 0.5rem 1rem;
+    background: #e53e3e;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-btn:hover {
+    background: #c53030;
+}
+
+/* LAYOUT PRINCIPAL */
+.main-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.section-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0 0 1.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-title i {
+    color: #718096;
+}
+
+/* ACCIONES RÁPIDAS */
+.quick-actions {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.actions-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.action-btn {
+    background: white;
+    color: #4a5568;
+    padding: 0.875rem;
+    border-radius: 8px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+    border: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+}
+
+.action-btn:hover {
+    background: #edf2f7;
+    color: #2d3748;
+    transform: translateX(4px);
+}
+
+.action-btn i {
+    color: #718096;
+    width: 16px;
+}
+
+/* PROVEEDORES */
+.proveedores-section {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.proveedor-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.proveedor-item:last-child {
+    border-bottom: none;
+}
+
+.proveedor-nombre {
+    font-size: 0.875rem;
+    color: #4a5568;
+}
+
+.proveedor-btn {
+    background: white;
+    color: #718096;
+    border: 1px solid #e2e8f0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.proveedor-btn:hover {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+/* TABLA LIMPIA */
+.table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.table-header {
+    background: #f7fafc;
+    color: #1a202c;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table-header h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.table-content {
+    overflow-x: auto;
+}
+
+.f-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.f-table th {
+    background: #fafafa;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.f-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f7fafc;
+    font-size: 0.875rem;
+}
+
+.f-table tr:hover {
+    background: #fafafa;
+}
+
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge.warning {
+    background: #faf089;
+    color: #744210;
+}
+
+.badge.info {
+    background: #90cdf4;
+    color: #1e3a8a;
+}
+
+.badge.success {
+    background: #9ae6b4;
+    color: #1a202c;
+}
+
+.badge.danger {
+    background: #feb2b2;
+    color: #742a2a;
+}
+
+.btn-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+;
+    background: white;
+}
+
+.btn-outline-success:hover {
+    background: #f0fff4;
+    border-color: #38a169;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    border: 1px solid;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-outline-primary {
+    color: #3182ce;
+    border-color: #bee3f8;
+    background: white;
+}
+
+.btn-outline-primary:hover {
+    background: #ebf8ff;
+    border-color: #3182ce;
+}
+
+.btn-outline-warning {
+    color: #d69e2e;
+    border-color: #fbd38d;
+    background: white;
+}
+
+.btn-outline-warning:hover {
+    background: #fffaf0;
+    border-color: #d69e2e;
+}
+
+.btn-outline-success {
+    color: #38a169;
+    border-color: #9ae6b4;
+    background: white;
+}
+
+.btn-outline-success:hover {
+    background: #f0fff4;
+    border-color: #38a169;
+}
+
+/* HERRAMIENTAS */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.tool-card {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.tool-header {
+    background: #f7fafc;
+    color: #1a202c;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tool-header i {
+    color: #718096;
+}
+
+.tool-header.success {
+    background: #f0fff4;
+    color: #1a202c;
+}
+
+.tools-list {
+    padding: 1.5rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.tool-btn {
+    padding: 0.875rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    color: #4a5568;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.tool-btn:hover {
+    border-color: #cbd5e0;
+    color: #2d3748;
+    transform: translateX(2px);
+}
+
+/* ESTADO VACÍO */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #718096;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #e2e8f0;
+}
+
+.empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+.empty-text {
+    margin-bottom: 2rem;
+    color: #718096;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .f-container { padding: 1rem; }
+    .f-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .f-actions { width: 100%; justify-content: stretch; }
+    .f-btn { flex: 1; justify-content: center; }
+    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+    .main-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .tools-grid { grid-template-columns: 1fr; }
+    .stat-card { padding: 1rem; }
+    .stat-info h3 { font-size: 1.5rem; }
+    .btn-group { flex-wrap: wrap; gap: 0.25rem; }
+    .btn-sm { font-size: 0.7rem; padding: 0.4rem 0.8rem; }
+}
+
+/* ANIMACIONES */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.stats-grid, .main-grid, .tools-grid { animation: fadeIn 0.4s ease forwards; }
+
+/* FOCUS STATES */
+.f-btn:focus, .action-btn:focus, .tool-btn:focus, .btn-sm:focus { outline: 2px solid #4299e1; outline-offset: 2px; }
+</style>
+
+<div class="f-container">
+    <!-- Header -->
+    <div class="f-header">
+        <div>
+            <h1 class="f-title">
+                <i class="fas fa-receipt"></i>Dashboard de Facturas
+            </h1>
+            <div class="f-breadcrumb">
+                <a href="{% url 'admin_dashboard' %}">Panel Principal</a> → Sistema de Facturas
+            </div>
+        </div>
+        <div class="f-actions">
+            <button class="f-btn info" onclick="actualizarStats()">
+                <i class="fas fa-sync-alt"></i>Actualizar
+            </button>
+            <a href="{% url 'factura_crear' %}" class="f-btn success">
+                <i class="fas fa-plus"></i>Nueva Factura
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stats-grid">
+        <div class="stat-card danger">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6>Pendientes</h6>
+                    <h3>{{ stats.facturas_pendientes|default:0 }}</h3>
+                    <small>Por procesar</small>
+                </div>
+                <i class="fas fa-clock stat-icon"></i>
+            </div>
+        </div>
+
+        <div class="stat-card warning">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6>Vencidas</h6>
+                    <h3>{{ stats.facturas_vencidas|default:0 }}</h3>
+                    <small>Urgente</small>
+                </div>
+                <i class="fas fa-exclamation-triangle stat-icon"></i>
+            </div>
+        </div>
+
+        <div class="stat-card info">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6>Recibidas</h6>
+                    <h3>{{ stats.facturas_recibidas|default:0 }}</h3>
+                    <small>Listas</small>
+                </div>
+                <i class="fas fa-truck stat-icon"></i>
+            </div>
+        </div>
+
+        <div class="stat-card success">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6>Pagadas</h6>
+                    <h3>{{ stats.facturas_pagadas|default:0 }}</h3>
+                    <small>Completas</small>
+                </div>
+                <i class="fas fa-check-circle stat-icon"></i>
+            </div>
+        </div>
+
+        <div class="stat-card purple">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6>Por Pagar</h6>
+                    <h3>${{ stats.total_por_pagar|default:0|floatformat:0 }}</h3>
+                    <small>COP</small>
+                </div>
+                <i class="fas fa-money-bill-wave stat-icon"></i>
+            </div>
+        </div>
+
+        <div class="stat-card teal">
+            <div class="stat-content">
+                <div class="stat-info">
+                    <h6>Este Mes</h6>
+                    <h3>{{ stats.facturas_mes|default:0 }}</h3>
+                    <small>Facturas</small>
+                </div>
+                <i class="fas fa-chart-line stat-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    {% if facturas_vencidas %}
+    <div class="alert-box">
+        <i class="fas fa-exclamation-triangle" style="font-size:2rem;color:#e53e3e"></i>
+        <div style="flex:1">
+            <h4 class="alert-title">Facturas Vencidas Detectadas</h4>
+            <p class="alert-text">Tienes <strong>{{ facturas_vencidas|length }}</strong> facturas vencidas que requieren atención inmediata.</p>
+        </div>
+        <a href="{% url 'facturas_listar' %}?estado=vencida" class="alert-btn">
+            <i class="fas fa-eye"></i> Ver Facturas
+        </a>
+    </div>
+    {% endif %}
+
+    {% if stock_bajo %}
+    <div class="alert-box warning">
+        <i class="fas fa-boxes" style="font-size:2rem;color:#dd6b20"></i>
+        <div style="flex:1">
+            <h4 class="alert-title" style="color:#9c4221">Stock Bajo Detectado</h4>
+            <p class="alert-text" style="color:#744210">Hay <strong>{{ stock_bajo|length }}</strong> productos con stock bajo que necesitan reabastecimiento.</p>
+        </div>
+        <a href="{% url 'productos_listar' %}" class="alert-btn" style="background:#dd6b20">
+            <i class="fas fa-warehouse"></i> Ver Inventario
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Contenido Principal -->
+    <div class="main-grid">
+        <!-- Columna Izquierda: Acciones -->
+        <div>
+            <!-- Acciones Rápidas -->
+            <div class="quick-actions">
+                <h3 class="section-title">
+                    <i class="fas fa-bolt"></i>Gestión de Facturas
+                </h3>
+                <div class="actions-grid">
+                    <a href="{% url 'factura_crear' %}" class="action-btn">
+                        <i class="fas fa-plus"></i>Nueva Factura
+                    </a>
+                    <a href="{% url 'facturas_listar' %}" class="action-btn">
+                        <i class="fas fa-list"></i>Ver Todas las Facturas
+                    </a>
+                    <a href="{% url 'facturas_listar' %}?estado=pendiente" class="action-btn">
+                        <i class="fas fa-clock"></i>Facturas Pendientes
+                    </a>
+                    <a href="{% url 'facturas_listar' %}?estado=vencida" class="action-btn">
+                        <i class="fas fa-exclamation-triangle"></i>Facturas Vencidas
+                    </a>
+                </div>
+            </div>
+
+            <!-- Proveedores -->
+            <div class="proveedores-section">
+                <h3 class="section-title">
+                    <i class="fas fa-truck"></i>Gestión de Proveedores
+                </h3>
+                <div class="actions-grid">
+                    <a href="{% url 'proveedores_listar' %}" class="action-btn">
+                        <i class="fas fa-building"></i>Ver Proveedores
+                    </a>
+                    <a href="{% url 'proveedor_crear' %}" class="action-btn">
+                        <i class="fas fa-plus"></i>Nuevo Proveedor
+                    </a>
+                </div>
+                
+                {% if proveedores_recientes %}
+                <div style="margin-top:1.5rem">
+                    <h6 style="color:#4a5568;margin-bottom:0.75rem;font-size:0.75rem;text-transform:uppercase;font-weight:600">Proveedores Recientes:</h6>
+                    {% for proveedor in proveedores_recientes %}
+                    <div class="proveedor-item">
+                        <span class="proveedor-nombre">{{ proveedor.nombre|truncatechars:20 }}</span>
+                        <a href="{% url 'proveedor_detalle' proveedor.pk %}" class="proveedor-btn">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Facturas Recientes -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3>
+                    <i class="fas fa-receipt"></i>Facturas Recientes
+                </h3>
+                <div style="display:flex;gap:0.5rem">
+                    <a href="{% url 'facturas_listar' %}" class="f-btn info">
+                        <i class="fas fa-list"></i>Ver Todas
+                    </a>
+                    <a href="{% url 'factura_crear' %}" class="f-btn success">
+                        <i class="fas fa-plus"></i>Nueva
+                    </a>
+                </div>
+            </div>
+            
+            <div class="table-content">
+                {% if facturas_recientes %}
+                    <table class="f-table">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Proveedor</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for factura in facturas_recientes %}
+                            <tr>
+                                <td>
+                                    <strong>{{ factura.numero_factura }}</strong>
+                                    <br><small style="color:#718096">{{ factura.tipo_factura|upper }}</small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'proveedor_detalle' factura.proveedor.pk %}" style="color:#4299e1;text-decoration:none">
+                                        {{ factura.proveedor.nombre|truncatechars:25 }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <strong style="color:#1a202c">${{ factura.total|floatformat:0 }}</strong>
+                                    {% if factura.descuento > 0 %}
+                                        <br><small style="color:#38a169">Desc: ${{ factura.descuento|floatformat:0 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if factura.estado == 'pendiente' %}
+                                        <span class="badge warning">Pendiente</span>
+                                    {% elif factura.estado == 'recibida' %}
+                                        <span class="badge info">Recibida</span>
+                                    {% elif factura.estado == 'pagada' %}
+                                        <span class="badge success">Pagada</span>
+                                    {% elif factura.estado == 'anulada' %}
+                                        <span class="badge danger">Anulada</span>
+                                    {% else %}
+                                        <span class="badge" style="background:#e2e8f0;color:#4a5568">{{ factura.get_estado_display|default:factura.estado }}</span>
+                                    {% endif %}
+                                    
+                                    {% if factura.fecha_vencimiento < hoy and factura.estado != 'pagada' %}
+                                        <br><small style="color:#e53e3e"><i class="fas fa-exclamation-triangle"></i> Vencida</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ factura.fecha_factura|date:"d/m/Y" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'factura_detalle' factura.pk %}" class="btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>Ver Detalles
+                                        </a>
+                                        
+                                        {% if factura.estado == 'pendiente' %}
+                                        <a href="{% url 'factura_editar' factura.pk %}" class="btn-sm btn-outline-warning">
+                                            <i class="fas fa-edit"></i>Editar
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if factura.estado == 'recibida' and not factura.inventario_actualizado %}
+                                        <button onclick="aplicarInventario({{ factura.pk }})" class="btn-sm btn-outline-success">
+                                            <i class="fas fa-boxes"></i>Aplicar
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <h3 class="empty-title">No hay facturas registradas aún</h3>
+                        <p class="empty-text">Comienza creando tu primera factura de compra.</p>
+                        <a href="{% url 'factura_crear' %}" class="f-btn success">
+                            <i class="fas fa-plus"></i>Crear Primera Factura
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Herramientas del Sistema -->
+    <div class="tools-grid">
+        <div class="tool-card">
+            <div class="tool-header">
+                <i class="fas fa-tools"></i>Herramientas del Sistema
+            </div>
+            <div class="tools-list">
+                <button onclick="sincronizarSistema()" class="tool-btn">
+                    <i class="fas fa-sync"></i>Sincronizar Sistema
+                </button>
+                <a href="{% url 'reporte_ventas_facturas' %}" class="tool-btn">
+                    <i class="fas fa-chart-bar"></i>Reporte de Rentabilidad
+                </a>
+                <a href="{% url 'productos_listar' %}" class="tool-btn">
+                    <i class="fas fa-warehouse"></i>Gestión de Inventario
+                </a>
+            </div>
+        </div>
+
+        <div class="tool-card">
+            <div class="tool-header success">
+                <i class="fas fa-chart-pie"></i>Resumen Rápido
+            </div>
+            <div style="padding:1.5rem">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+                    <div style="text-align:center">
+                        <h4 style="color:#4299e1;margin:0;font-size:1.5rem">{{ proveedores_recientes|length|default:0 }}</h4>
+                        <small style="color:#718096">Proveedores Activos</small>
+                    </div>
+                    <div style="text-align:center">
+                        <h4 style="color:#48bb78;margin:0;font-size:1.5rem">{{ facturas_recientes|length|default:0 }}</h4>
+                        <small style="color:#718096">Facturas Recientes</small>
+                    </div>
+                </div>
+                <hr style="border:1px solid #e2e8f0;margin:1rem 0">
+                <div style="text-align:center">
+                    <p style="color:#718096;margin:0 0 0.25rem 0;font-size:0.875rem">Última sincronización:</p>
+                    <small style="color:#4299e1;font-weight:500">{% now "d/m/Y H:i" %}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Dashboard cargado');
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+    });
+});
+
+async function actualizarStats() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+        btn.disabled = true;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        mostrarAlerta('✅ Estadísticas actualizadas', 'success');
+    } catch (error) {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        mostrarAlerta('❌ Error al actualizar', 'error');
+    }
+}
+
+async function sincronizarSistema() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...';
+        btn.disabled = true;
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        mostrarAlerta('✅ Sistema sincronizado', 'success');
+    } catch (error) {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        mostrarAlerta('❌ Error al sincronizar', 'error');
+    }
+}
+
+async function aplicarInventario(facturaId) {
+    try {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        mostrarAlerta('✅ Inventario aplicado', 'success');
+        setTimeout(() => window.location.reload(), 1500);
+    } catch (error) {
+        mostrarAlerta('❌ Error al aplicar inventario', 'error');
+    }
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const alerta = document.createElement('div');
+    alerta.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 9999;
+        padding: 1rem 1.5rem; border-radius: 8px; color: white; font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateX(100%);
+        transition: all 0.3s ease; max-width: 400px;
+        background: ${tipo === 'success' ? '#48bb78' : '#e53e3e'};
+    `;
+    alerta.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>${mensaje}</span>
+            <button onclick="this.parentElement.parentElement.remove()" 
+                style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; margin-left: auto;">×</button>
+        </div>
+    `;
+    document.body.appendChild(alerta);
+    setTimeout(() => alerta.style.transform = 'translateX(0)', 100);
+    setTimeout(() => {
+        if (alerta.parentElement) {
+            alerta.style.transform = 'translateX(100%)';
+            setTimeout(() => alerta.remove(), 300);
+        }
+    }, 5000);
+}
+
+// Atajos de teclado
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        window.location.href = "{% url 'factura_crear' %}";
+    }
+    if (e.ctrlKey && e.key === 'r') {
+        e.preventDefault();
+        actualizarStats();
+    }
+});
+
+// Bienvenida para nuevos usuarios
+const esNuevoUsuario = localStorage.getItem('factura_dashboard_visited');
+if (!esNuevoUsuario) {
+    setTimeout(() => {
+        mostrarAlerta('👋 ¡Bienvenido! Usa Ctrl+N para crear factura.', 'success');
+        localStorage.setItem('factura_dashboard_visited', 'true');
+    }, 1000);
+}
+</script>
+
+{% endblock %}

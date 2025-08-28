@@ -1,0 +1,289 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ proveedor.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .proveedor-header {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        border-left: 5px solid;
+    }
+    
+    .stat-card.facturas { border-left-color: #007bff; }
+    .stat-card.total { border-left-color: #28a745; }
+    .stat-card.pendiente { border-left-color: #ffc107; }
+    .stat-card.promedio { border-left-color: #17a2b8; }
+    
+    .table-facturas {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .table-facturas thead {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header del proveedor -->
+    <div class="proveedor-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">
+                    <i class="fas fa-building me-3"></i>
+                    {{ proveedor.nombre }}
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb text-white-50">
+                        <li class="breadcrumb-item"><a href="{% url 'facturas_dashboard' %}" class="text-white">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'proveedores_listar' %}" class="text-white">Proveedores</a></li>
+                        <li class="breadcrumb-item active text-white">{{ proveedor.nombre }}</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'proveedor_editar' proveedor.pk %}" class="btn btn-light me-2">
+                    <i class="fas fa-edit me-2"></i>Editar
+                </a>
+                <a href="{% url 'proveedores_listar' %}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del proveedor -->
+        <div class="col-lg-4">
+            <div class="info-card">
+                <h5 class="mb-4">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    Información de Contacto
+                </h5>
+                
+                <div class="mb-3">
+                    <strong>Email:</strong>
+                    <p class="mb-1">
+                        {% if proveedor.email %}
+                            <a href="mailto:{{ proveedor.email }}">{{ proveedor.email }}</a>
+                        {% else %}
+                            <span class="text-muted">No registrado</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Teléfono:</strong>
+                    <p class="mb-1">
+                        {% if proveedor.telefono %}
+                            <a href="tel:{{ proveedor.telefono }}">{{ proveedor.telefono }}</a>
+                        {% else %}
+                            <span class="text-muted">No registrado</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Dirección:</strong>
+                    <p class="mb-1">
+                        {% if proveedor.direccion %}
+                            {{ proveedor.direccion }}
+                        {% else %}
+                            <span class="text-muted">No registrada</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>NIT/CC:</strong>
+                    <p class="mb-1">
+                        {% if proveedor.nit %}
+                            {{ proveedor.nit }}
+                        {% else %}
+                            <span class="text-muted">No registrado</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Estado:</strong>
+                    <p class="mb-1">
+                        {% if proveedor.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if proveedor.observaciones %}
+                <div class="mb-3">
+                    <strong>Observaciones:</strong>
+                    <p class="text-muted">{{ proveedor.observaciones }}</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Acciones rápidas -->
+            <div class="info-card">
+                <h5 class="mb-4">
+                    <i class="fas fa-cogs text-primary me-2"></i>
+                    Acciones Rápidas
+                </h5>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'factura_crear' %}?proveedor={{ proveedor.pk }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Nueva Factura
+                    </a>
+                    <a href="{% url 'proveedor_editar' proveedor.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>Editar Información
+                    </a>
+                    {% if proveedor.email %}
+                    <a href="mailto:{{ proveedor.email }}" class="btn btn-outline-info">
+                        <i class="fas fa-envelope me-2"></i>Enviar Email
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas y facturas -->
+        <div class="col-lg-8">
+            <!-- Estadísticas -->
+            <div class="stats-grid">
+                <div class="stat-card facturas">
+                    <i class="fas fa-file-invoice fa-2x text-primary mb-2"></i>
+                    <h3 class="text-primary">{{ total_facturas }}</h3>
+                    <p class="mb-0">Total Facturas</p>
+                </div>
+                <div class="stat-card total">
+                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                    <h3 class="text-success">${{ total_comprado|floatformat:0 }}</h3>
+                    <p class="mb-0">Total Comprado</p>
+                </div>
+                <div class="stat-card pendiente">
+                    <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                    <h3 class="text-warning">
+                        {{ facturas_pendientes|default:0 }}
+                    </h3>
+                    <p class="mb-0">Fact. Pendientes</p>
+                </div>
+                <div class="stat-card promedio">
+                    <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                    <h3 class="text-info">
+                        ${{ promedio_por_factura|floatformat:0 }}
+                    </h3>
+                    <p class="mb-0">Promedio/Factura</p>
+                </div>
+            </div>
+
+            <!-- Últimas facturas -->
+            <div class="info-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list text-primary me-2"></i>
+                        Últimas Facturas
+                    </h5>
+                    <a href="{% url 'facturas_listar' %}?proveedor={{ proveedor.pk }}" class="btn btn-sm btn-outline-primary">
+                        Ver Todas
+                    </a>
+                </div>
+
+                {% if facturas %}
+                <div class="table-responsive">
+                    <table class="table table-facturas mb-0">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for factura in facturas %}
+                            <tr>
+                                <td>
+                                    <strong>{{ factura.numero_factura }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ factura.get_tipo_factura_display }}</small>
+                                </td>
+                                <td>
+                                    {{ factura.fecha_factura|date:"d/m/Y" }}
+                                    <br>
+                                    <small class="text-muted">{{ factura.fecha_factura|date:"H:i" }}</small>
+                                </td>
+                                <td>
+                                    <strong>${{ factura.total|floatformat:0 }}</strong>
+                                    {% if factura.descuento > 0 %}
+                                        <br><small class="text-success">Desc: ${{ factura.descuento|floatformat:0 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if factura.estado == 'pendiente' %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                    {% elif factura.estado == 'recibida' %}
+                                        <span class="badge bg-info">Recibida</span>
+                                    {% elif factura.estado == 'pagada' %}
+                                        <span class="badge bg-success">Pagada</span>
+                                    {% elif factura.estado == 'anulada' %}
+                                        <span class="badge bg-danger">Anulada</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'factura_detalle' factura.pk %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">No hay facturas registradas</h6>
+                    <p class="text-muted">Este proveedor aún no tiene facturas asociadas.</p>
+                    <a href="{% url 'factura_crear' %}?proveedor={{ proveedor.pk }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Crear primera factura
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

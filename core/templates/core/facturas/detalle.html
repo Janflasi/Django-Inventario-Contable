@@ -1,0 +1,652 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Factura{% endblock %}
+
+{% block content %}
+<div class="invoice-container">
+    <!-- Header Compacto -->
+    <div class="invoice-header">
+        <div class="header-content">
+            <div class="invoice-info">
+                <div class="invoice-badge">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <div class="invoice-details">
+                    <h1>{{ factura.numero_factura }}</h1>
+                    <p>{{ factura.proveedor.nombre }}</p>
+                </div>
+            </div>
+            
+            <div class="status-badge {% if factura.estado == 'pendiente' %}warning{% elif factura.estado == 'recibida' %}info{% elif factura.estado == 'pagada' %}success{% else %}danger{% endif %}">
+                <div class="status-dot"></div>
+                <span>{{ factura.get_estado_display }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards Principales -->
+    <div class="main-grid">
+        <!-- Información General -->
+        <div class="info-card">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i>
+                <h3>Información</h3>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Proveedor</span>
+                    <span class="value">{{ factura.proveedor.nombre }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Registrada por</span>
+                    <span class="value">{{ factura.registrada_por.username }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Fecha Factura</span>
+                    <span class="value">
+                        <i class="fas fa-calendar"></i>
+                        {{ factura.fecha_factura|date:"d/m/Y" }}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Vencimiento</span>
+                    <span class="value">
+                        <i class="fas fa-calendar-times"></i>
+                        {{ factura.fecha_vencimiento|date:"d/m/Y" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen Financiero -->
+        <div class="financial-card">
+            <div class="card-header">
+                <i class="fas fa-chart-line"></i>
+                <h3>Totales</h3>
+            </div>
+            <div class="totals-list">
+                <div class="total-row">
+                    <span>Subtotal</span>
+                    <span>${{ factura.subtotal|floatformat:0 }}</span>
+                </div>
+                <div class="total-row">
+                    <span>IVA</span>
+                    <span>${{ factura.iva|floatformat:0 }}</span>
+                </div>
+                <div class="total-row">
+                    <span>Descuento</span>
+                    <span class="discount">-${{ factura.descuento|floatformat:0 }}</span>
+                </div>
+                <div class="total-main">
+                    <span>Total</span>
+                    <span>${{ factura.total|floatformat:0 }}</span>
+                </div>
+                <div class="total-row">
+                    <span>Pagado</span>
+                    <span class="paid">${{ total_pagos|floatformat:0 }}</span>
+                </div>
+                <div class="balance-row {% if saldo_pendiente > 0 %}pending{% else %}complete{% endif %}">
+                    <span>Pendiente</span>
+                    <span>${{ saldo_pendiente|floatformat:0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Productos -->
+    <div class="products-card">
+        <div class="card-header">
+            <i class="fas fa-boxes"></i>
+            <h3>Productos</h3>
+        </div>
+
+        {% if puede_editar %}
+        <!-- Formulario Agregar -->
+        <div class="add-form">
+            <div class="form-header">
+                <i class="fas fa-plus"></i>
+                <span>Agregar Producto</span>
+            </div>
+            <form method="post" action="{% url 'factura_agregar_detalle' factura.pk %}">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>{{ form_detalle.nombre_producto.label }}</label>
+                        {{ form_detalle.nombre_producto }}
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>{{ form_detalle.cantidad.label }}</label>
+                            {{ form_detalle.cantidad }}
+                        </div>
+                        <div class="form-field">
+                            <label>{{ form_detalle.precio_unitario.label }}</label>
+                            {{ form_detalle.precio_unitario }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-add">
+                        <i class="fas fa-plus"></i>
+                        Agregar
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Lista de Productos -->
+        <div class="products-list">
+            {% for detalle in detalles %}
+            <div class="product-item">
+                <div class="product-main">
+                    <div class="product-name">{{ detalle.nombre_producto }}</div>
+                    <div class="product-details">
+                        <span class="qty">{{ detalle.cantidad }} × ${{ detalle.precio_unitario|floatformat:0 }}</span>
+                        <span class="subtotal">${{ detalle.subtotal|floatformat:0 }}</span>
+                    </div>
+                </div>
+                
+                <div class="product-status">
+                    {% if detalle.producto %}
+                        <div class="status linked">
+                            <i class="fas fa-check"></i>
+                            <div class="status-info">
+                                <span>{{ detalle.producto.nombre }}</span>
+                                <small>Stock: {{ detalle.producto.cantidad }}</small>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="status unlinked">
+                            <i class="fas fa-unlink"></i>
+                            <span>Sin enlazar</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="product-actions">
+                    {% if not detalle.producto %}
+                        <button class="action-btn link" onclick="toggleEnlazarForm({{ detalle.id }})">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    {% else %}
+                        <button class="action-btn stock" onclick="toggleActualizarStock({{ detalle.id }})">
+                            <i class="fas fa-plus-circle"></i>
+                        </button>
+                    {% endif %}
+                    
+                    <!-- 🔄 NUEVO: Botón de devolución al proveedor (solo admin) -->
+                    {% if user.perfil.rol == 'admin' and detalle.producto and factura.estado == 'recibida' %}
+                        <button class="action-btn return" onclick="toggleDevolucionForm({{ detalle.id }})" 
+                                title="Devolver al proveedor">
+                            <i class="fas fa-undo-alt"></i>
+                        </button>
+                    {% endif %}
+                    
+                    {% if puede_editar %}
+                        <form method="post" action="{% url 'factura_eliminar_detalle' detalle.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn delete" onclick="return confirm('¿Eliminar?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Historial de Pagos -->
+    {% if pagos %}
+    <div class="payments-card">
+        <div class="card-header">
+            <i class="fas fa-credit-card"></i>
+            <h3>Pagos</h3>
+        </div>
+        <div class="payments-list">
+            {% for pago in pagos %}
+            <div class="payment-item">
+                <div class="payment-info">
+                    <div class="payment-date">
+                        <i class="fas fa-calendar"></i>
+                        {{ pago.fecha_pago|date:"d/m/Y" }}
+                    </div>
+                    <div class="payment-method">{{ pago.get_metodo_pago_display }}</div>
+                </div>
+                <div class="payment-amount">${{ pago.monto|floatformat:0 }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Acciones -->
+    <div class="actions-card">
+        <div class="card-header">
+            <i class="fas fa-tools"></i>
+            <h3>Acciones</h3>
+        </div>
+        
+        <div class="actions-grid">
+            {% if factura.estado == 'pendiente' %}
+                <form method="post" action="{% url 'factura_cambiar_estado' factura.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="nuevo_estado" value="recibida">
+                    <button type="submit" class="action-card success">
+                        <i class="fas fa-check"></i>
+                        <span>Marcar Recibida</span>
+                    </button>
+                </form>
+            {% endif %}
+            
+            {% if factura.estado == 'recibida' and saldo_pendiente > 0 %}
+                <button class="action-card info" onclick="togglePagoForm()">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Registrar Pago</span>
+                </button>
+            {% endif %}
+            
+            {% if factura.estado == 'recibida' and not factura.inventario_actualizado %}
+                <form method="post" action="{% url 'factura_aplicar_inventario' factura.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="action-card warning" onclick="return confirm('¿Aplicar al inventario?')">
+                        <i class="fas fa-boxes"></i>
+                        <span>Aplicar Inventario</span>
+                    </button>
+                </form>
+            {% endif %}
+            
+            <a href="{% url 'facturas_listar' %}" class="action-card neutral">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver</span>
+            </a>
+            
+            {% if puede_editar %}
+                <a href="{% url 'factura_editar' factura.pk %}" class="action-card primary">
+                    <i class="fas fa-edit"></i>
+                    <span>Editar</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal Pago -->
+    <div id="pagoForm" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4><i class="fas fa-dollar-sign"></i> Registrar Pago</h4>
+                <button type="button" class="modal-close" onclick="togglePagoForm()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form method="post" action="{% url 'factura_registrar_pago' factura.pk %}">
+                {% csrf_token %}
+                <div class="modal-form">
+                    <div class="form-field">
+                        <label>Monto</label>
+                        <input type="number" name="monto" step="0.01" max="{{ saldo_pendiente }}" required>
+                        <small>Máximo: ${{ saldo_pendiente|floatformat:0 }}</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Método</label>
+                        <select name="metodo_pago" required>
+                            <option value="">Seleccionar</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="cheque">Cheque</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Referencia</label>
+                        <input type="text" name="referencia" placeholder="Número de transacción...">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>Observaciones</label>
+                        <textarea name="observaciones" rows="2" placeholder="Comentarios..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="togglePagoForm()">Cancelar</button>
+                    <button type="submit" class="btn-submit">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modales de Enlace -->
+{% for detalle in detalles %}
+{% if not detalle.producto %}
+<div id="enlazarForm{{ detalle.id }}" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4><i class="fas fa-link"></i> Enlazar Producto</h4>
+            <button type="button" class="modal-close" onclick="toggleEnlazarForm({{ detalle.id }})">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="post" action="{% url 'enlazar_producto_factura' detalle.id %}">
+            {% csrf_token %}
+            <div class="modal-form">
+                <div class="form-field">
+                    <label>Producto: "{{ detalle.nombre_producto }}"</label>
+                    <select name="producto_id" required>
+                        <option value="">Seleccionar del inventario</option>
+                        {% for producto in productos_disponibles %}
+                            <option value="{{ producto.id }}">{{ producto.nombre }} ({{ producto.cantidad }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="toggleEnlazarForm({{ detalle.id }})">Cancelar</button>
+                <button type="submit" class="btn-submit">Enlazar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- 🔄 NUEVO: Modales de Devolución al Proveedor -->
+{% for detalle in detalles %}
+{% if user.perfil.rol == 'admin' and detalle.producto and factura.estado == 'recibida' %}
+<div id="devolucionForm{{ detalle.id }}" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4><i class="fas fa-undo-alt"></i> Devolver al Proveedor</h4>
+            <button type="button" class="modal-close" onclick="toggleDevolucionForm({{ detalle.id }})">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="post" action="{% url 'devolver_desde_factura' detalle.id %}">
+            {% csrf_token %}
+            <div class="modal-form">
+                <div class="devolucion-info">
+                    <div class="info-item">
+                        <span class="label">Producto</span>
+                        <span class="value">{{ detalle.nombre_producto }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Proveedor</span>
+                        <span class="value">{{ factura.proveedor.nombre }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Precio Unitario</span>
+                        <span class="value">${{ detalle.precio_unitario|floatformat:0 }}</span>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label>Cantidad a devolver</label>
+                    <input type="number" name="cantidad" min="1" max="{{ detalle.cantidad }}" value="1" required>
+                    <small>Máximo disponible: {{ detalle.cantidad }} unidades</small>
+                </div>
+                
+                <div class="form-field">
+                    <label>Razón de devolución</label>
+                    <select name="razon" required>
+                        <option value="">Seleccionar razón</option>
+                        <option value="defectuoso">Producto defectuoso</option>
+                        <option value="vencido">Producto vencido/caducado</option>
+                        <option value="incompleto">Entrega incompleta</option>
+                        <option value="no_conforme">No conforme a especificaciones</option>
+                        <option value="dañado_transporte">Dañado en transporte</option>
+                        <option value="otro">Otro motivo</option>
+                    </select>
+                </div>
+                
+                <div class="form-field">
+                    <label>Observaciones</label>
+                    <textarea name="observaciones" rows="3" 
+                              placeholder="Describe el problema del producto..."></textarea>
+                </div>
+                
+                <div class="devolucion-preview">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Se creará una nota de crédito automáticamente</span>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="toggleDevolucionForm({{ detalle.id }})">Cancelar</button>
+                <button type="submit" class="btn-submit btn-warning" 
+                        onclick="return confirm('¿Confirmar devolución al proveedor?')">
+                    Devolver
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- Modales de Stock -->
+{% for detalle in detalles %}
+{% if detalle.producto %}
+<div id="actualizarStockForm{{ detalle.id }}" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4><i class="fas fa-plus-circle"></i> Actualizar Stock</h4>
+            <button type="button" class="modal-close" onclick="toggleActualizarStock({{ detalle.id }})">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="post" action="{% url 'factura_aplicar_inventario' factura.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="detalle_id" value="{{ detalle.id }}">
+            <input type="hidden" name="accion" value="actualizar_stock_individual">
+            
+            <div class="modal-form">
+                <div class="stock-calc">
+                    <div class="calc-item">
+                        <span>Stock Actual</span>
+                        <span>{{ detalle.producto.cantidad }}</span>
+                    </div>
+                    <div class="calc-operator">+</div>
+                    <div class="calc-item">
+                        <span>Cantidad</span>
+                        <span>{{ detalle.cantidad }}</span>
+                    </div>
+                    <div class="calc-operator">=</div>
+                    <div class="calc-item total">
+                        <span>Nuevo Total</span>
+                        <span>{{ detalle.producto.cantidad|add:detalle.cantidad }}</span>
+                    </div>
+                </div>
+                
+                <div class="stock-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Se añadirán {{ detalle.cantidad }} unidades al producto "{{ detalle.producto.nombre }}"</span>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="toggleActualizarStock({{ detalle.id }})">Cancelar</button>
+                <button type="submit" class="btn-submit" onclick="return confirm('¿Confirmar?')">Actualizar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<style>
+:root{--primary:#6366f1;--primary-light:#a5b4fc;--success:#10b981;--success-light:#6ee7b7;--warning:#f59e0b;--danger:#ef4444;--info:#3b82f6;--neutral-50:#fafafa;--neutral-100:#f5f5f5;--neutral-200:#e5e5e5;--neutral-300:#d4d4d4;--neutral-400:#a3a3a3;--neutral-500:#737373;--neutral-600:#525252;--neutral-700:#404040;--neutral-800:#262626;--neutral-900:#171717}*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;color:var(--neutral-800);line-height:1.4;font-size:14px}.invoice-container{max-width:100%;padding:0.75rem}.invoice-header{background:linear-gradient(135deg,var(--primary),#4f46e5);border-radius:12px;padding:1rem;margin-bottom:1rem;color:white;box-shadow:0 4px 12px rgba(99,102,241,0.15)}.header-content{display:flex;align-items:center;justify-content:space-between;gap:1rem}.invoice-info{display:flex;align-items:center;gap:0.75rem}.invoice-badge{width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.25rem}.invoice-details h1{font-size:1.25rem;font-weight:700;margin-bottom:0.125rem}.invoice-details p{font-size:0.875rem;opacity:0.9}.status-badge{display:flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.15);padding:0.5rem 0.75rem;border-radius:8px;font-size:0.75rem;font-weight:600;backdrop-filter:blur(10px)}.status-dot{width:6px;height:6px;border-radius:50%;animation:pulse 2s infinite}.warning .status-dot{background:var(--warning)}.info .status-dot{background:var(--info)}.success .status-dot{background:var(--success)}.danger .status-dot{background:var(--danger)}.main-grid{display:grid;gap:1rem;margin-bottom:1rem}.info-card,.financial-card,.products-card,.payments-card,.actions-card{background:white;border-radius:12px;padding:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.04);border:1px solid var(--neutral-200)}.card-header{display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--neutral-200)}.card-header i{color:var(--primary);font-size:1rem}.card-header h3{font-size:1rem;font-weight:600;color:var(--neutral-800)}.info-grid{display:grid;gap:0.75rem}.info-item{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0}.info-item .label{color:var(--neutral-600);font-size:0.8rem;font-weight:500}.info-item .value{color:var(--neutral-800);font-weight:600;font-size:0.85rem;display:flex;align-items:center;gap:0.25rem}.info-item .value i{color:var(--primary);font-size:0.75rem}.totals-list{display:flex;flex-direction:column;gap:0.5rem}.total-row,.balance-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;font-size:0.9rem}.total-row span:first-child,.balance-row span:first-child{color:var(--neutral-600);font-weight:500}.total-row span:last-child,.balance-row span:last-child{color:var(--neutral-800);font-weight:600}.discount{color:var(--danger)!important}.paid{color:var(--success)!important}.total-main{background:linear-gradient(135deg,var(--primary),#4f46e5);color:white;border-radius:8px;padding:0.75rem;margin:0.5rem 0;display:flex;justify-content:space-between;align-items:center;font-weight:700}.balance-row{border-radius:6px;padding:0.75rem}.pending{background:linear-gradient(135deg,#fef3c7,#fde68a)}.complete{background:linear-gradient(135deg,var(--success-light),#a7f3d0)}.add-form{background:var(--neutral-50);border:1px dashed var(--neutral-300);border-radius:8px;padding:1rem;margin-bottom:1rem}.form-header{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;color:var(--neutral-700);font-weight:600;font-size:0.875rem}.form-header i{color:var(--primary)}.form-grid{display:flex;flex-direction:column;gap:0.75rem}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}.form-field{display:flex;flex-direction:column}.form-field label{color:var(--neutral-600);font-size:0.75rem;font-weight:500;margin-bottom:0.25rem}.form-field input,.form-field select,.form-field textarea{background:white;border:1px solid var(--neutral-300);border-radius:6px;padding:0.5rem;font-size:0.875rem;transition:border-color 0.2s}.form-field input:focus,.form-field select:focus,.form-field textarea:focus{outline:none;border-color:var(--primary)}.btn-add{background:var(--primary);color:white;border:none;border-radius:6px;padding:0.625rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;font-size:0.875rem;transition:all 0.2s}.btn-add:hover{background:#4f46e5;transform:translateY(-1px)}.products-list{display:flex;flex-direction:column;gap:0.75rem}.product-item{background:var(--neutral-50);border:1px solid var(--neutral-200);border-radius:8px;padding:0.75rem;transition:all 0.2s}.product-item:hover{background:white;transform:translateX(2px)}.product-main{margin-bottom:0.75rem}.product-name{font-weight:600;color:var(--neutral-800);margin-bottom:0.25rem;font-size:0.9rem}.product-details{display:flex;justify-content:space-between;align-items:center}.qty{color:var(--neutral-600);font-size:0.8rem}.subtotal{color:var(--neutral-800);font-weight:700}.product-status{margin-bottom:0.75rem}.status{display:flex;align-items:center;gap:0.5rem;padding:0.5rem;border-radius:6px;font-size:0.8rem}.linked{background:linear-gradient(135deg,#ecfdf5,#d1fae5);color:var(--neutral-800)}.unlinked{background:linear-gradient(135deg,#fefce8,#fef3c7);color:var(--neutral-800)}.status i{font-size:0.75rem}.linked i{color:var(--success)}.unlinked i{color:var(--warning)}.status-info{display:flex;flex-direction:column}.status-info span{font-weight:600}.status-info small{color:var(--neutral-600);font-size:0.7rem}.product-actions{display:flex;gap:0.5rem;justify-content:flex-end}.action-btn{width:32px;height:32px;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.8rem;transition:all 0.2s}.link{background:var(--info);color:white}.stock{background:var(--success);color:white}.return{background:var(--warning);color:white}.delete{background:var(--danger);color:white}.action-btn:hover{transform:scale(1.05)}.payments-list{display:flex;flex-direction:column;gap:0.75rem}.payment-item{display:flex;justify-content:space-between;align-items:center;padding:0.75rem;background:var(--neutral-50);border-radius:8px;border-left:3px solid var(--primary)}.payment-info{display:flex;flex-direction:column;gap:0.25rem}.payment-date{display:flex;align-items:center;gap:0.375rem;color:var(--neutral-600);font-size:0.8rem}.payment-date i{color:var(--primary);font-size:0.7rem}.payment-method{background:var(--primary);color:white;padding:0.125rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600;align-self:flex-start}.payment-amount{color:var(--neutral-800);font-weight:700;font-size:1rem}.actions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem}.action-card{display:flex;flex-direction:column;align-items:center;gap:0.5rem;padding:1rem;border:none;border-radius:8px;cursor:pointer;text-decoration:none;font-weight:600;font-size:0.85rem;transition:all 0.2s;background:white;border:2px solid transparent}.action-card i{font-size:1.25rem;margin-bottom:0.25rem}.success{border-color:var(--success);color:var(--success)}.success:hover{background:var(--success);color:white}.info{border-color:var(--info);color:var(--info)}.info:hover{background:var(--info);color:white}.warning{border-color:var(--warning);color:var(--warning)}.warning:hover{background:var(--warning);color:white}.primary{border-color:var(--primary);color:var(--primary)}.primary:hover{background:var(--primary);color:white}.neutral{border-color:var(--neutral-400);color:var(--neutral-600)}.neutral:hover{background:var(--neutral-400);color:white}.action-card:hover{transform:translateY(-2px)}.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}.modal-content{background:white;border-radius:12px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto}.modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem;border-bottom:1px solid var(--neutral-200)}.modal-header h4{font-size:1rem;font-weight:600;color:var(--neutral-800);display:flex;align-items:center;gap:0.5rem}.modal-header i{color:var(--primary)}.modal-close{background:var(--danger);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.8rem}.modal-form{padding:1rem;display:flex;flex-direction:column;gap:0.75rem}.modal-form .form-field{display:flex;flex-direction:column}.modal-form label{color:var(--neutral-600);font-size:0.8rem;font-weight:500;margin-bottom:0.25rem}.modal-form input,.modal-form select,.modal-form textarea{background:white;border:1px solid var(--neutral-300);border-radius:6px;padding:0.5rem;font-size:0.875rem}.modal-form small{color:var(--neutral-500);font-size:0.7rem;margin-top:0.25rem}.modal-actions{display:flex;gap:0.75rem;padding:1rem;border-top:1px solid var(--neutral-200)}.btn-cancel{background:var(--neutral-300);color:var(--neutral-700);border:none;border-radius:6px;padding:0.625rem 1rem;font-weight:600;cursor:pointer;flex:1}.btn-submit{background:var(--primary);color:white;border:none;border-radius:6px;padding:0.625rem 1rem;font-weight:600;cursor:pointer;flex:1}.btn-warning{background:var(--warning);color:white}.stock-calc{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:0.5rem;align-items:center;margin-bottom:1rem;padding:0.75rem;background:var(--neutral-50);border-radius:8px}.calc-item{text-align:center}.calc-item span:first-child{display:block;color:var(--neutral-600);font-size:0.7rem;margin-bottom:0.25rem}.calc-item span:last-child{font-weight:700;color:var(--neutral-800)}.calc-operator{font-size:1.2rem;font-weight:700;color:var(--neutral-600)}.total{background:var(--success);color:white;border-radius:6px;padding:0.5rem}.stock-info{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid var(--info);border-radius:6px;padding:0.75rem;display:flex;align-items:center;gap:0.5rem;color:var(--neutral-700);font-size:0.8rem}.stock-info i{color:var(--info)}.devolucion-info{background:var(--neutral-50);border-radius:8px;padding:0.75rem;margin-bottom:1rem}.devolucion-info .info-item{display:flex;justify-content:space-between;align-items:center;padding:0.375rem 0;font-size:0.85rem}.devolucion-info .label{color:var(--neutral-600);font-weight:500}.devolucion-info .value{color:var(--neutral-800);font-weight:600}.devolucion-preview{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid var(--warning);border-radius:6px;padding:0.75rem;display:flex;align-items:center;gap:0.5rem;color:var(--neutral-700);font-size:0.8rem}.devolucion-preview i{color:var(--warning)}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}@media(min-width:640px){.invoice-container{padding:1rem}.main-grid{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr 1fr}.actions-grid{grid-template-columns:repeat(2,1fr)}}@media(min-width:768px){.invoice-container{padding:1.5rem;max-width:900px;margin:0 auto}.header-content{gap:1.5rem}.invoice-details h1{font-size:1.5rem}.card-header h3{font-size:1.125rem}.form-grid{flex-direction:row;align-items:end}.form-grid .form-field:first-child{flex:2}.form-row{grid-template-columns:1fr 1.5fr}.actions-grid{grid-template-columns:repeat(3,1fr)}.modal{padding:2rem}.modal-content{max-width:500px}}@media(min-width:1024px){.invoice-container{max-width:1200px}.main-grid{grid-template-columns:1.2fr 0.8fr}.product-item{display:grid;grid-template-columns:2fr 1.5fr auto;gap:1rem;align-items:center}.product-main{margin-bottom:0}.product-status{margin-bottom:0}.actions-grid{grid-template-columns:repeat(4,1fr)}}@media(max-width:480px){.invoice-container{padding:0.5rem}.invoice-header{padding:0.75rem}.card-header{margin-bottom:0.75rem}.info-card,.financial-card,.products-card,.payments-card,.actions-card{padding:0.75rem}.form-grid{gap:0.5rem}.product-item{padding:0.5rem}.modal{padding:0.5rem}.modal-content{margin:0.5rem}}.fade-in{animation:fadeIn 0.3s ease}.slide-up{animation:slideUp 0.4s ease}@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+
+<script>
+// Animaciones de entrada
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.info-card, .financial-card, .products-card, .payments-card, .actions-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 100 * index);
+    });
+
+    const products = document.querySelectorAll('.product-item');
+    products.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-10px)';
+        setTimeout(() => {
+            item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0)';
+        }, 150 + (50 * index));
+    });
+});
+
+// Funciones de modales
+function togglePagoForm() {
+    const modal = document.getElementById('pagoForm');
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        const input = modal.querySelector('input[name="monto"]');
+        if (input) setTimeout(() => input.focus(), 100);
+    } else {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function toggleEnlazarForm(detalleId) {
+    const modal = document.getElementById('enlazarForm' + detalleId);
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    } else {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function toggleActualizarStock(detalleId) {
+    const modal = document.getElementById('actualizarStockForm' + detalleId);
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    } else {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// 🔄 NUEVA FUNCIÓN: Toggle modal de devolución
+function toggleDevolucionForm(detalleId) {
+    const modal = document.getElementById('devolucionForm' + detalleId);
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    } else {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Cerrar modales con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modals = document.querySelectorAll('.modal[style*="flex"]');
+        modals.forEach(modal => {
+            modal.style.display = 'none';
+        });
+        document.body.style.overflow = 'auto';
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+});
+
+// Efectos ripple para botones
+function createRipple(event) {
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    const size = Math.max(rect.width, rect.height);
+    const x = event.clientX - rect.left - size / 2;
+    const y = event.clientY - rect.top - size / 2;
+    
+    ripple.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size}px;
+        left: ${x}px;
+        top: ${y}px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.6);
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        pointer-events: none;
+    `;
+    
+    button.style.position = 'relative';
+    button.style.overflow = 'hidden';
+    button.appendChild(ripple);
+    
+    setTimeout(() => ripple.remove(), 600);
+}
+
+// Agregar ripple a botones
+document.querySelectorAll('.btn-add, .btn-submit, .action-card').forEach(btn => {
+    btn.addEventListener('click', createRipple);
+});
+
+// Validación de formularios
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const required = this.querySelectorAll('[required]');
+        let valid = true;
+        
+        required.forEach(field => {
+            if (!field.value.trim()) {
+                field.style.borderColor = 'var(--danger)';
+                valid = false;
+            } else {
+                field.style.borderColor = 'var(--neutral-300)';
+            }
+        });
+        
+        if (!valid) {
+            e.preventDefault();
+            const first = this.querySelector('[required][style*="danger"]');
+            if (first) first.focus();
+        }
+    });
+});
+
+// CSS para ripple
+const rippleCSS = `
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+`;
+
+const style = document.createElement('style');
+style.textContent = rippleCSS;
+document.head.appendChild(style);
+</script>
+
+{% endblock %}

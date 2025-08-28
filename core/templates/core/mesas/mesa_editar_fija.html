@@ -1,0 +1,616 @@
+{% extends 'core/base.html' %}
+{% block title %}Editar Mesa {{ mesa.numero }}{% endblock %}
+
+{% block content %}
+<style>
+/* Variables CSS - Misma paleta suave */
+:root {
+  /* Colores principales suaves */
+  --primary-soft: #6366f1;
+  --primary-light: #a5b4fc;
+  --primary-dark: #4f46e5;
+  
+  /* Verdes suaves */
+  --success-soft: #10b981;
+  --success-light: #6ee7b7;
+  --success-dark: #059669;
+  
+  /* Tonos neutros elegantes */
+  --neutral-50: #fafafa;
+  --neutral-100: #f5f5f5;
+  --neutral-200: #e5e5e5;
+  --neutral-300: #d4d4d4;
+  --neutral-400: #a3a3a3;
+  --neutral-500: #737373;
+  --neutral-600: #525252;
+  --neutral-700: #404040;
+  --neutral-800: #262626;
+  --neutral-900: #171717;
+  
+  /* Colores de estado suaves */
+  --warning-soft: #f59e0b;
+  --danger-soft: #ef4444;
+  --info-soft: #3b82f6;
+  
+  /* Sombras suaves */
+  --shadow-soft: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  
+  /* Transiciones suaves */
+  --transition-soft: all 0.2s ease-in-out;
+  --transition-medium: all 0.3s ease-in-out;
+  
+  /* Bordes suaves */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--neutral-50);
+  color: var(--neutral-800);
+  line-height: 1.6;
+}
+
+.editar-mesa-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: calc(100vh - 80px);
+}
+
+/* Alert informativo suave */
+.alert-info {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid var(--neutral-200);
+  color: var(--neutral-700);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-lg);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.alert-info .icon {
+  font-size: 1.25rem;
+  color: var(--info-soft);
+}
+
+/* Preview de la mesa */
+.mesa-card-preview {
+  background: white;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.mesa-card-preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--success-soft);
+  opacity: 0;
+  transition: opacity var(--transition-soft);
+}
+
+.mesa-card-preview.activa::before {
+  opacity: 1;
+}
+
+.mesa-numero-preview {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  color: var(--success-dark);
+  font-size: 2rem;
+  font-weight: 700;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  transition: var(--transition-soft);
+}
+
+.mesa-numero-preview.inactiva {
+  background: var(--neutral-100);
+  border-color: var(--neutral-300);
+  color: var(--neutral-400);
+}
+
+.preview-titulo {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--neutral-800);
+  margin-bottom: 0.5rem;
+}
+
+.preview-ubicacion {
+  color: var(--neutral-600);
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.preview-estado {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.preview-estado.activa {
+  background: #f0fdf4;
+  color: var(--success-dark);
+  border: 1px solid #bbf7d0;
+}
+
+.preview-estado.inactiva {
+  background: var(--neutral-100);
+  color: var(--neutral-600);
+  border: 1px solid var(--neutral-300);
+}
+
+/* Formulario elegante */
+.form-mesa-fija {
+  background: white;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.form-titulo {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--neutral-800);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 500;
+  color: var(--neutral-700);
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  transition: var(--transition-soft);
+  background: white;
+  color: var(--neutral-800);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-soft);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-control::placeholder {
+  color: var(--neutral-400);
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: var(--neutral-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--neutral-200);
+}
+
+.form-check-input {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--neutral-400);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  margin: 0;
+  appearance: none;
+  transition: var(--transition-soft);
+}
+
+.form-check-input:checked {
+  background: var(--success-soft);
+  border-color: var(--success-soft);
+}
+
+.form-check-input:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.form-check-label {
+  font-weight: 500;
+  color: var(--neutral-700);
+  cursor: pointer;
+  margin: 0;
+}
+
+.form-help {
+  background: var(--neutral-50);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--neutral-600);
+}
+
+.form-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin: 1.5rem 0;
+}
+
+.form-info h6 {
+  margin: 0 0 0.5rem 0;
+  color: var(--neutral-700);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.form-info-content {
+  font-size: 0.75rem;
+  color: var(--neutral-600);
+  line-height: 1.5;
+}
+
+.form-info-content div {
+  margin-bottom: 0.25rem;
+}
+
+.form-info-content strong {
+  color: var(--neutral-700);
+}
+
+/* Botones elegantes */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.btn-primary {
+  background: var(--primary-soft);
+  color: white;
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-secondary {
+  background: var(--neutral-500);
+  color: white;
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-secondary:hover {
+  background: var(--neutral-600);
+  transform: translateY(-1px);
+  text-decoration: none;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .editar-mesa-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .mesa-card-preview,
+  .form-mesa-fija {
+    padding: 1.5rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .mesa-numero-preview {
+    width: 70px;
+    height: 70px;
+    font-size: 1.75rem;
+  }
+}
+
+/* Animaciones suaves */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mesa-card-preview,
+.form-mesa-fija {
+  animation: fadeInUp 0.3s ease-out;
+}
+</style>
+
+<div class="editar-mesa-container">
+  <!-- Alert informativo -->
+  <div class="alert-info">
+    <div class="icon">ℹ️</div>
+    <div>
+      <strong>Mesa del Sistema Fijo:</strong> Solo puedes modificar la ubicación y el estado. 
+      El número de mesa es permanente en el sistema.
+    </div>
+  </div>
+
+  <!-- Preview de la mesa -->
+  <div class="mesa-card-preview {% if mesa.activa %}activa{% else %}inactiva{% endif %}">
+    <div class="mesa-numero-preview {% if mesa.activa %}activa{% else %}inactiva{% endif %}">
+      {{ mesa.numero }}
+    </div>
+    <h3 class="preview-titulo">Mesa {{ mesa.numero }}</h3>
+    <p class="preview-ubicacion">
+      📍 <span id="preview-ubicacion-text">{{ mesa.ubicacion|default:"Sin ubicación" }}</span>
+    </p>
+    <div>
+      <span id="preview-estado" class="preview-estado {% if mesa.activa %}activa{% else %}inactiva{% endif %}">
+        {% if mesa.activa %}
+          <span style="color: var(--success-soft);">●</span> Activa
+        {% else %}
+          <span style="color: var(--neutral-400);">●</span> Inactiva
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="form-mesa-fija">
+    <h4 class="form-titulo">
+      ✏️ Editar Mesa {{ mesa.numero }}
+    </h4>
+
+    <form method="post">
+      {% csrf_token %}
+      
+      <!-- Ubicación -->
+      <div class="form-group">
+        <label for="ubicacion" class="form-label">
+          📍 Ubicación de la Mesa
+        </label>
+        <input 
+          type="text" 
+          id="ubicacion" 
+          name="ubicacion" 
+          class="form-control" 
+          value="{{ mesa.ubicacion }}"
+          placeholder="Ej: Zona 1, Terraza, Ventana..."
+          maxlength="100"
+          required
+        >
+        <div class="form-help">
+          💡 <strong>Sugerencia:</strong> Usa nombres claros como "Zona 1", "Terraza", "Ventana", "Barra", etc.
+        </div>
+      </div>
+
+      <!-- Estado Activa -->
+      <div class="form-group">
+        <label class="form-label">
+          🔘 Estado de la Mesa
+        </label>
+        <div class="form-check">
+          <input 
+            type="checkbox" 
+            id="activa" 
+            name="activa" 
+            class="form-check-input"
+            {% if mesa.activa %}checked{% endif %}
+          >
+          <label for="activa" class="form-check-label">
+            Mesa activa y disponible para ventas
+          </label>
+        </div>
+        <div class="form-help">
+          ✅ <strong>Activa:</strong> La mesa aparece disponible para nuevas ventas.<br>
+          ⏸️ <strong>Inactiva:</strong> La mesa no estará disponible (mantenimiento, reservada, etc.)
+        </div>
+      </div>
+
+      <!-- Información adicional -->
+      <div class="form-info">
+        <h6>📋 Información de la Mesa</h6>
+        <div class="form-info-content">
+          <div><strong>Número:</strong> {{ mesa.numero }} (fijo)</div>
+          <div><strong>Zona automática:</strong> 
+            {% if mesa.numero <= 5 %}
+              Zona 1 (Mesas 1-5)
+            {% elif mesa.numero <= 10 %}
+              Zona 2 (Mesas 6-10)
+            {% elif mesa.numero <= 15 %}
+              Zona 3 (Mesas 11-15)
+            {% else %}
+              Zona 4 (Mesas 16-20)
+            {% endif %}
+          </div>
+          <div><strong>Sistema:</strong> Mesa fija - No se puede eliminar</div>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+          💾 Guardar Cambios
+        </button>
+        <a href="{% url 'mesas_listar' %}" class="btn btn-secondary">
+          ↩️ Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Preview en tiempo real
+  const ubicacionInput = document.getElementById('ubicacion');
+  const activaInput = document.getElementById('activa');
+  const previewUbicacion = document.getElementById('preview-ubicacion-text');
+  const previewEstado = document.getElementById('preview-estado');
+  const previewCard = document.querySelector('.mesa-card-preview');
+  const previewNumero = document.querySelector('.mesa-numero-preview');
+
+  // Actualizar ubicación en preview
+  ubicacionInput.addEventListener('input', function() {
+    const valor = this.value.trim();
+    previewUbicacion.textContent = valor || 'Sin ubicación';
+  });
+
+  // Actualizar estado en preview
+  activaInput.addEventListener('change', function() {
+    const isActiva = this.checked;
+    
+    // Actualizar clases del preview
+    if (isActiva) {
+      previewCard.classList.add('activa');
+      previewCard.classList.remove('inactiva');
+      previewNumero.classList.add('activa');
+      previewNumero.classList.remove('inactiva');
+      previewEstado.className = 'preview-estado activa';
+      previewEstado.innerHTML = '<span style="color: var(--success-soft);">●</span> Activa';
+    } else {
+      previewCard.classList.add('inactiva');
+      previewCard.classList.remove('activa');
+      previewNumero.classList.add('inactiva');
+      previewNumero.classList.remove('activa');
+      previewEstado.className = 'preview-estado inactiva';
+      previewEstado.innerHTML = '<span style="color: var(--neutral-400);">●</span> Inactiva';
+    }
+  });
+
+  // Validación del formulario
+  const form = document.querySelector('form');
+  form.addEventListener('submit', function(e) {
+    const ubicacion = ubicacionInput.value.trim();
+    
+    if (!ubicacion) {
+      e.preventDefault();
+      alert('❌ La ubicación es obligatoria');
+      ubicacionInput.focus();
+      return;
+    }
+
+    if (ubicacion.length < 2) {
+      e.preventDefault();
+      alert('❌ La ubicación debe tener al menos 2 caracteres');
+      ubicacionInput.focus();
+      return;
+    }
+
+    // Confirmación final
+    const estado = activaInput.checked ? 'ACTIVA' : 'INACTIVA';
+    const mensaje = `¿Guardar cambios en Mesa {{ mesa.numero }}?\n\n` +
+                   `Ubicación: ${ubicacion}\n` +
+                   `Estado: ${estado}`;
+    
+    if (!confirm(mensaje)) {
+      e.preventDefault();
+    }
+  });
+
+  // Animación de entrada
+  const container = document.querySelector('.editar-mesa-container');
+  container.style.opacity = '0';
+  container.style.transform = 'translateY(20px)';
+  
+  setTimeout(() => {
+    container.style.transition = 'all 0.4s ease-out';
+    container.style.opacity = '1';
+    container.style.transform = 'translateY(0)';
+  }, 100);
+
+  // Sugerencias de ubicación al enfocar
+  ubicacionInput.addEventListener('focus', function() {
+    if (!this.value.trim()) {
+      const zona = "{% if mesa.numero <= 5 %}Zona 1{% elif mesa.numero <= 10 %}Zona 2{% elif mesa.numero <= 15 %}Zona 3{% else %}Zona 4{% endif %}";
+      this.placeholder = `Sugerencia: ${zona}`;
+    }
+  });
+
+  ubicacionInput.addEventListener('blur', function() {
+    this.placeholder = 'Ej: Zona 1, Terraza, Ventana...';
+  });
+});
+</script>
+{% endblock %}
